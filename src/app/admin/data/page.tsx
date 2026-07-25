@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -27,7 +27,7 @@ type TabKey = (typeof TABS)[number]["key"];
 function SideNav({ activeTab, onSelect, onClose }: { activeTab: TabKey; onSelect: (k: TabKey) => void; onClose?: () => void }) {
   return (
     <nav>
-      <div className="flex flex-col gap-0.5 px-3 py-3">
+      <div className="flex flex-col gap-0.5 pr-3 py-3">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.key;
@@ -35,7 +35,7 @@ function SideNav({ activeTab, onSelect, onClose }: { activeTab: TabKey; onSelect
             <button
               key={tab.key}
               onClick={() => { onSelect(tab.key); onClose?.(); }}
-              className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-2xs transition-colors ${
+              className={`relative flex items-center gap-3 rounded-lg pl-2 pr-3 py-2.5 text-left text-2xs transition-colors ${
                 active
                   ? "bg-blue-50/80 font-semibold text-primary"
                   : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground/80"
@@ -94,7 +94,7 @@ export default function DataManagementPage() {
 
       <div className="flex pt-[84px]">
         {/* 桌面端侧边栏 */}
-        <aside className="hidden md:block w-[224px] flex-shrink-0 border-r border-border bg-white h-[calc(100vh-64px)] sticky top-16 overflow-y-auto">
+        <aside className="hidden md:block w-[224px] flex-shrink-0 border-r border-border bg-white h-[calc(100vh-64px)] sticky top-16 overflow-y-auto pl-[60px] pr-4">
           <SideNav activeTab={activeTab} onSelect={setActiveTab} />
         </aside>
 

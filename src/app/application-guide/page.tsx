@@ -95,7 +95,7 @@ export default function ApplicationGuidePage() {
           <div className="flex flex-col gap-0.5">
             <button
               onClick={() => setSelectedCategory("")}
-              className={`relative rounded-lg px-3 py-2 text-left text-2xs transition-colors ${
+              className={`relative rounded-lg pl-2 pr-3 py-2 text-left text-2xs transition-colors ${
                 selectedCategory === ""
                   ? "bg-blue-50/60 font-semibold text-primary"
                   : "font-medium text-muted-foreground hover:bg-muted"
@@ -110,7 +110,7 @@ export default function ApplicationGuidePage() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`relative rounded-lg px-3 py-2 text-left text-2xs transition-colors ${
+                className={`relative rounded-lg pl-2 pr-3 py-2 text-left text-2xs transition-colors ${
                   selectedCategory === cat.id
                     ? "bg-blue-50/60 font-semibold text-primary"
                     : "font-medium text-muted-foreground hover:bg-muted"

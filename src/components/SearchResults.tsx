@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useLang } from "@/components/LanguageContext";
@@ -198,6 +198,12 @@ function GroupedColorCard({
           </Badge>
         </div>
       )}
+      {/* 配方型号标识（颜色代码） - 左下角 */}
+      <div className="pointer-events-none absolute bottom-2 left-2 z-10 flex items-center rounded-md bg-black/40 px-1.5 py-0.5 backdrop-blur-sm">
+        <span className="font-heading text-2xs text-white">
+          {parent.color.color_code}
+        </span>
+      </div>
     </div>
   );
 
@@ -257,7 +263,7 @@ export default function SearchResults({
   if (isLoading) {
     return (
       <div>
-        <div className="flex items-center px-4 py-3">
+        <div className="flex items-center pl-0 pr-4 py-3">
           <Skeleton className="h-4 w-32" />
         </div>
         <SkeletonGrid />
@@ -305,7 +311,7 @@ export default function SearchResults({
   return (
     <div>
       {/* 结果计数栏 */}
-      <div className="flex items-center px-4 py-3">
+      <div className="flex items-center pl-0 pr-4 py-3">
         <p className="text-sm font-semibold text-primary">
           Found {groupedEntries.length} colors ({rows.length} formulas)
         </p>
