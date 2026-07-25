@@ -103,20 +103,29 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
   return (
     <div>
       {/* 总量控制栏 */}
-      <div className="mb-4 flex flex-col flex-wrap items-stretch gap-2 rounded-xl border border-border/60 bg-muted/30 p-3 sm:flex-row sm:items-center">
-        <div className="flex flex-wrap items-center gap-2 flex-1">
-          <span className="text-xs font-medium text-muted-foreground md:text-sm">{t.volume}</span>
+      <div className="mb-4 flex flex-col flex-wrap items-stretch gap-2 rounded-xl border border-border/60 bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* 左侧：配方属性 */}
+        <span className="flex items-center gap-2 text-[15px] font-semibold text-black">
+          <span>{t.version} {formula.version}</span>
+          <span aria-hidden="true">|</span>
+          <span>{formula.paint_system}</span>
+          <span aria-hidden="true">|</span>
+          <span>{formula.formula_type}</span>
+        </span>
+
+        {/* 右侧：Volume 计算器 */}
+        <div className="flex flex-wrap items-center gap-2 sm:flex-row sm:items-center">
           <Input
             type="number"
             value={volume}
             onChange={(e) => handleVolumeChange(e.target.value)}
-            className="h-8 w-[72px] rounded-md text-center text-xs md:w-[90px]"
+            className="h-8 w-[72px] rounded-md text-center text-[16px] font-semibold md:w-[90px]"
             min={0.1}
             step={0.1}
           />
-          <span className="text-xs text-muted-foreground md:text-sm">×</span>
+          <span className="text-[16px] font-semibold text-muted-foreground">×</span>
           <Select value={unit} onValueChange={(v) => setUnit((v as Unit) || "kg")}>
-            <SelectTrigger className="h-8 w-16 rounded-lg text-xs md:w-20">
+            <SelectTrigger className="h-8 w-16 rounded-lg text-[14px] font-semibold md:w-20">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -125,9 +134,6 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
               ))}
             </SelectContent>
           </Select>
-          <span className="text-xs font-medium text-muted-foreground sm:ml-1 w-full sm:w-auto md:text-sm">
-            = {totalGrams.toLocaleString()} g total
-          </span>
         </div>
 
         {/* Pearl Paint/Ground Paint 切换按钮 */}
@@ -151,16 +157,16 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
       </div>
 
       {/* 配方用量表 */}
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <Table>
+      <div className="overflow-x-auto rounded-lg border border-border text-[16px]">
+        <Table className="text-inherit table-fixed w-full">
           <caption className="sr-only">Formula components and weights</caption>
           <TableHeader>
-            <TableRow className="bg-muted/80">
-              <TableHead className="py-2.5 text-xs font-semibold text-muted-foreground uppercase md:text-base">{t.tonerCode}</TableHead>
-              <TableHead className="py-2.5 text-xs font-semibold text-muted-foreground uppercase md:text-base">{t.tonerName}</TableHead>
-              <TableHead className="py-2.5 text-xs font-semibold text-muted-foreground uppercase md:text-base">{t.weight}</TableHead>
-              <TableHead className="py-2.5 text-xs font-semibold text-muted-foreground uppercase md:text-base">{t.accum}</TableHead>
-              <TableHead className="py-2.5 text-xs font-semibold text-muted-foreground uppercase md:text-base">{t.massTone}</TableHead>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-1/5 py-2.5 text-2xs uppercase font-semibold text-center">{t.tonerCode}</TableHead>
+              <TableHead className="w-1/5 py-2.5 text-2xs uppercase font-semibold text-center">{t.tonerName}</TableHead>
+              <TableHead className="w-1/5 py-2.5 text-2xs uppercase font-semibold text-center">{t.weight}</TableHead>
+              <TableHead className="w-1/5 py-2.5 text-2xs uppercase font-semibold text-center">{t.accum}</TableHead>
+              <TableHead className="w-1/5 py-2.5 text-2xs uppercase font-semibold text-center">{t.massTone}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -169,31 +175,31 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
               for (let i = 0; i <= idx; i++) running += weights[i] ?? 0;
 
               return (
-                <TableRow key={`${comp.toner_code}-${idx}`} className="border-b border-border/50 last:border-b-0">
-                  <TableCell className="py-2.5 text-xs font-semibold text-foreground whitespace-nowrap md:text-base">
+                <TableRow key={`${comp.toner_code}-${idx}`} className="even:bg-muted/30">
+                  <TableCell className="w-1/5 py-2.5 text-center font-semibold truncate">
                     {comp.toner_code}
                   </TableCell>
-                  <TableCell className="py-2.5 text-sm text-foreground md:text-xl">
+                  <TableCell className="w-1/5 py-2.5 text-center truncate">
                     {comp.toner_name}
                   </TableCell>
-                  <TableCell className="py-2.5 min-w-[88px]">
+                  <TableCell className="w-1/5 py-2.5">
                     <Input
                       type="number"
                       value={weights[idx] ?? ""}
                       onChange={(e) => handleWeightChange(idx, e.target.value)}
-                      className="h-8 w-full border-0 bg-transparent px-1 text-center font-mono text-sm tabular-nums shadow-none focus-visible:ring-1 focus-visible:ring-ring/30 md:text-lg"
+                      className="h-8 w-full border-0 bg-transparent px-1 text-center font-sans font-semibold tabular-nums shadow-none focus-visible:ring-1 focus-visible:ring-ring/30"
                       min={0}
                       step={0.1}
                     />
                   </TableCell>
-                  <TableCell className="py-2.5 text-right text-sm font-semibold text-foreground tabular-nums md:text-xl">
+                  <TableCell className="w-1/5 py-2.5 text-center font-semibold tabular-nums">
                     {running.toFixed(1)}
                   </TableCell>
-                  <TableCell className="py-2.5">
+                  <TableCell className="w-1/5 py-2.5">
                     <div
                       role="img"
                       aria-label={`${comp.toner_name} ${t.massTone}`}
-                      className="mx-auto h-5 w-10 rounded-sm border border-border/60 md:h-6 md:w-12"
+                      className="mx-auto h-5 w-10 rounded-sm border border-border/60"
                       style={{ backgroundColor: massToneColor(comp) }}
                     />
                   </TableCell>
@@ -203,7 +209,8 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={5} className="py-2.5 text-xs font-semibold text-foreground bg-muted md:text-base">
+              <TableCell colSpan={4} className="py-[14px]" />
+              <TableCell className="w-1/5 py-[14px] text-center font-bold text-red-500">
                 {t.totalWeightLabel}&nbsp;&nbsp;&nbsp;{totalWeight.toFixed(1)} g
               </TableCell>
             </TableRow>

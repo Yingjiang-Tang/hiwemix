@@ -141,34 +141,17 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   return (
     <>
       <Sheet open onOpenChange={(v) => { if (!v) handleClose(); }}>
-        <SheetContent side="right" className="!fixed !inset-0 !w-screen !max-w-full !translate-x-0 !rounded-none p-0 gap-0 overflow-y-auto bg-white">
+        <SheetContent side="right" className="!fixed !inset-0 !w-screen !max-w-full !translate-x-0 !rounded-none p-0 gap-0 overflow-y-auto bg-white z-[2000]">
           {/* Header Bar: 品牌/颜色代码/名称/元数据 + 操作按钮 */}
           <div className="sticky top-0 z-10 border-b border-border bg-white px-3 py-3 sm:px-5 sm:py-4">
             <div className="flex items-start gap-3 sm:gap-4">
-              {/* 色块预览 */}
-              <div
-                className="size-10 flex-shrink-0 rounded-xl border border-border/60 sm:size-14"
-                style={colorSwatchStyle(previewColor)}
-              />
-
-              {/* 中间：品牌+代码 Badge → 颜色名大标题 → 元数据行 */}
+              {/* 标题：配方代码 | 颜色名称 */}
               <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge variant="secondary" className="text-xs">{make}</Badge>
-                  <Badge variant="outline" className="text-xs font-mono">{color.color_code}</Badge>
-                </div>
-                <h2 className="mt-1.5 text-lg font-bold leading-tight text-foreground font-heading sm:text-xl md:text-2xl">
+                <h2 className="truncate font-heading text-xl font-bold leading-tight text-foreground sm:text-2xl">
+                  {color.color_code}
+                  <span className="mx-2 text-muted-foreground/40" aria-hidden="true">|</span>
                   {color.color_name}
                 </h2>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-2xs text-muted-foreground sm:text-xs">
-                  <span>{origin}</span>
-                  <span className="text-border/70" aria-hidden="true">|</span>
-                  <span>{currentYear}</span>
-                  <span className="text-border/70" aria-hidden="true">|</span>
-                  <span>{activeFormula?.formula_type || "-"}</span>
-                  <span className="text-border/70" aria-hidden="true">|</span>
-                  <span>{t.version} {activeFormula?.version || "-"}</span>
-                </div>
               </div>
 
               {/* 右侧操作按钮 */}
@@ -200,19 +183,6 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
             <div className="flex-1 overflow-auto border-b border-border p-4 sm:p-5 md:flex-[62.5%] md:border-b-0 md:border-r">
               {activeFormula && displayedFormula && (
                 <div>
-                  {/* Version + Chips */}
-                  <div className="mb-4 flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-semibold text-muted-foreground md:text-sm">
-                      {t.version} {activeFormula.version}
-                    </span>
-                    <Badge variant={activeFormula?.paint_system === "2K" ? "default" : "secondary"}>
-                      {activeFormula?.paint_system}
-                    </Badge>
-                    <Badge variant="outline" className="border-amber-200 text-amber-700">
-                      {activeFormula?.formula_type ?? ""}
-                    </Badge>
-                  </div>
-
                   <KapciFormulaTable
                     key={`${activeFormula.id}-${activeGroup}`}
                     formula={displayedFormula}
@@ -227,9 +197,6 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
                       <p className="mt-1 text-xs text-amber-600">{activeFormula.notes}</p>
                     </div>
                   )}
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    {t.updatedLabel} {activeFormula.updated_at}
-                  </p>
                 </div>
               )}
             </div>
@@ -238,11 +205,8 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
             <div className="flex-shrink-0 overflow-auto md:flex-[37.5%]">
               {/* 颜色预览 */}
               <div className="p-4 sm:p-5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-foreground md:text-base">
-                  {t.colorPreview}
-                </span>
                 <div
-                  className="mt-3 h-[50px] rounded-xl border border-border/60 sm:h-[80px]"
+                  className="h-[50px] rounded-xl border border-border/60 sm:h-[80px]"
                   style={colorSwatchStyle(previewColor)}
                 />
               </div>
