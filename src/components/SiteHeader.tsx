@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -57,9 +57,10 @@ export default function SiteHeader() {
           transition: transitionStyle,
         }}
       >
-        <div className="mx-auto flex h-16 items-center px-6 sm:px-8 md:px-[60px] relative">
-          {/* Logo 左侧 */}
-          <Link href="/" className="flex shrink-0 z-[1]">
+        <div className="mx-auto flex h-[79px] items-center justify-between px-6 sm:px-8 md:px-[60px]">
+          {/* Logo + 导航 左侧容器 */}
+          <div className="flex items-center gap-6 shrink-0">
+          <Link href="/" className="flex shrink-0">
             <img
               src="/hiwemix2-01.png"
               alt="HIWE MIX"
@@ -68,9 +69,9 @@ export default function SiteHeader() {
             />
           </Link>
 
-          {/* 中间导航链接 — 绝对定位水平居中 */}
-          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2">
-            <div className="flex items-center gap-6">
+          {/* 导航链接 左对齐紧随Logo */}
+          <div className="hidden md:flex">
+            <div className="flex items-center gap-[34px]">
               {navItems.map((item) => {
                 const active = isActive(item.href);
                 return (
@@ -78,7 +79,7 @@ export default function SiteHeader() {
                     key={item.label}
                     href={item.href}
                     aria-current={active ? "page" : undefined}
-                    className={`header-nav-link text-2xs transition-colors whitespace-nowrap ${active ? "font-semibold" : ""}`}
+                    className={`header-nav-link inline-flex h-8 items-center text-[16px] font-medium capitalize tracking-[-0.5px] transition-colors whitespace-nowrap ${active ? "font-semibold" : ""}`}
                     style={{ transition: transitionStyle }}
                   >
                     {item.label}
@@ -88,8 +89,8 @@ export default function SiteHeader() {
             </div>
           </div>
 
-          {/* 右侧 spacer + actions */}
-          <div className="flex-1" />
+          {/* 右侧操作区 */}
+          </div>
           <div className="flex items-center gap-3 shrink-0 z-[1]">
             {authUser ? (
               <>
@@ -97,14 +98,14 @@ export default function SiteHeader() {
                   <div className="hidden md:flex items-center gap-2">
                     <Link
                       href="/admin/data"
-                      className="header-action-btn inline-flex h-9 items-center rounded-lg border px-3 text-2xs font-semibold transition-all duration-[1.5s] ease-in-out"
+                      className="header-action-btn inline-flex h-8 items-center rounded-lg border border-border bg-background px-3 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
                       style={{ transition: transitionStyle }}
                     >
                       {t.navAdmin}
                     </Link>
                     <Link
                       href="/admin/users"
-                      className="header-action-btn inline-flex h-9 items-center rounded-lg border px-3 text-2xs font-semibold transition-all duration-[1.5s] ease-in-out"
+                      className="header-action-btn inline-flex h-8 items-center rounded-lg border border-border bg-background px-3 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
                       style={{ transition: transitionStyle }}
                     >
                       {authUser.username}
@@ -113,7 +114,7 @@ export default function SiteHeader() {
                 )}
                 <button
                   onClick={logout}
-                  className="header-action-btn hidden md:inline-flex h-9 items-center rounded-lg border px-3 text-2xs font-semibold transition-all duration-[1.5s] ease-in-out"
+                  className="header-action-btn hidden md:inline-flex h-8 items-center rounded-lg border border-border bg-background px-3 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
                   style={{ transition: transitionStyle }}
                 >
                   {t.logout}
@@ -122,14 +123,14 @@ export default function SiteHeader() {
             ) : (
               <Link
                 href="/login"
-                className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-2xs font-semibold text-white transition-all duration-[1.5s] ease-in-out"
+                className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-2xs font-medium text-white transition-all duration-[1.5s] ease-in-out"
                 style={{ transition: transitionStyle }}
               >
                 {t.login}
               </Link>
             )}
 
-            <LanguageSwitcher isHome={isHome} transitionStyle={transitionStyle} />
+            <LanguageSwitcher transitionStyle={transitionStyle} />
 
             {/* 移动端汉堡按钮 */}
             <button

@@ -13,8 +13,6 @@ export interface SearchPanelProps {
   onSearch: (params: SearchParams) => void;
   isLoading: boolean;
   onSubmitRef?: React.MutableRefObject<(() => void) | null>;
-  onFocusCapture?: () => void;
-  onBlurCapture?: () => void;
 }
 
 // ===== 可搜索下拉选择器：Popover + Input 模糊过滤 =====
@@ -60,7 +58,7 @@ function SearchableSelect({
         render={
           <button
             type="button"
-            className="flex h-9 w-full items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent px-2.5 text-sm whitespace-nowrap outline-none transition-colors hover:bg-muted/30 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="flex h-8 w-full items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent px-2.5 text-sm whitespace-nowrap outline-none transition-colors hover:bg-muted/30 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             <span
               className={
@@ -127,8 +125,6 @@ export default function SearchPanel({
   onSearch,
   isLoading,
   onSubmitRef,
-  onFocusCapture,
-  onBlurCapture,
 }: SearchPanelProps) {
   const { t } = useLang();
 
@@ -227,89 +223,98 @@ export default function SearchPanel({
       role="search"
       aria-label={t.search}
       onSubmit={(e) => handleSubmit(e)}
-      onFocus={onFocusCapture}
-      onBlur={onBlurCapture}
     >
-      {/* 2×3 网格布局，标签内嵌到输入框/下拉框的 placeholder */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 w-full">
-        {/* Make — 可搜索下拉 */}
-        <SearchableSelect
-          placeholder={t.make}
-          value={makeId}
-          onValueChange={setMakeId}
-          options={makeOptions}
-          className="w-full"
-        />
+      <section className="bg-card rounded-xl p-6 ring-1 ring-border shadow-[var(--shadow-level-1)]">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-8">
 
-        {/* Color Code */}
-        <Input
-          value={colorCode}
-          onChange={(e) =>
-            setColorCode(e.target.value.replace(/\s/g, "").toUpperCase())
-          }
-          placeholder={t.colorCode}
-          className="h-9 rounded-lg"
-          maxLength={20}
-        />
+          {/* LEFT — 标题栏（桌面端两行，移动端单列堆叠） */}
+          <div className="lg:w-5/12 xl:w-2/5 lg:shrink-0">
+            <h1 className="font-heading font-extrabold leading-tight tracking-tight text-primary text-3xl lg:text-4xl">
+              <span className="block">{t.heroTitlePrefix}</span>
+              <span className="block">{t.heroTitleHighlight}</span>
+            </h1>
+          </div>
 
-        {/* Color Type — 可搜索下拉 */}
-        <SearchableSelect
-          placeholder={t.colorType}
-          value={colorType}
-          onValueChange={setColorType}
-          options={colorTypeOptions}
-          className="w-full"
-        />
+          {/* RIGHT — 表单网格（3 列 × 2 行） */}
+          <div className="flex-1 min-w-0">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 w-full">
+              {/* 第 1 行：Make | Color Code | Color Type */}
+              <SearchableSelect
+                placeholder={t.make}
+                value={makeId}
+                onValueChange={setMakeId}
+                options={makeOptions}
+                className="w-full"
+              />
 
-        {/* Color Name */}
-        <Input
-          value={colorName}
-          onChange={(e) => setColorName(e.target.value)}
-          placeholder={t.colorName}
-          className="h-9 rounded-lg"
-        />
+              <Input
+                value={colorCode}
+                onChange={(e) =>
+                  setColorCode(e.target.value.replace(/\s/g, "").toUpperCase())
+                }
+                placeholder={t.colorCode}
+                className="h-8 rounded-lg"
+                maxLength={20}
+              />
 
-        {/* Year — 可搜索下拉 */}
-        <SearchableSelect
-          placeholder={t.year}
-          value={year}
-          onValueChange={setYear}
-          options={yearOptions}
-          className="w-full"
-        />
+              <SearchableSelect
+                placeholder={t.colorType}
+                value={colorType}
+                onValueChange={setColorType}
+                options={colorTypeOptions}
+                className="w-full"
+              />
 
-        {/* 搜索 + 重置按钮 */}
-        <div className="flex items-end gap-2">
-          <Button
-            type="submit"
-            disabled={isLoading}
-            variant="default"
-            className="h-9 flex-1 rounded-xl bg-primary text-2xs font-semibold hover:bg-primary/80"
-          >
-            <Search className="size-4" />
-            {isLoading ? t.searching : t.search}
-          </Button>
-          <Button
-            type="button"
-            onClick={handleReset}
-            disabled={isLoading}
-            variant="outline"
-            className="h-9 flex-1 rounded-xl text-2xs font-semibold"
-          >
-            <RotateCcw className="size-4" />
-            {t.reset}
-          </Button>
+              {/* 第 2 行：Color Name | Year | [Search | Reset] */}
+              <Input
+                value={colorName}
+                onChange={(e) => setColorName(e.target.value)}
+                placeholder={t.colorName}
+                className="h-8 rounded-lg"
+              />
+
+              <SearchableSelect
+                placeholder={t.year}
+                value={year}
+                onValueChange={setYear}
+                options={yearOptions}
+                className="w-full"
+              />
+
+              <div className="flex items-stretch gap-2">
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  variant="default"
+                  className="h-8 flex-1 rounded-lg bg-primary text-2xs font-semibold hover:bg-primary/80"
+                >
+                  <Search className="size-4" />
+                  {isLoading ? t.searching : t.search}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleReset}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="h-8 flex-1 rounded-lg border-border bg-background text-2xs font-semibold hover:bg-muted"
+                >
+                  <RotateCcw className="size-4" />
+                  {t.reset}
+                </Button>
+              </div>
+            </div>
+
+            {isCodeTooLong && (
+              <div
+                role="alert"
+                className="mt-2 text-xs font-medium text-yellow-600"
+              >
+                {t.codeTooLong}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-
-      {isCodeTooLong && (
-        <div
-          role="alert"
-          className="mt-2 text-xs font-medium text-yellow-600"
-        >
-          {t.codeTooLong}
-        </div>
-      )}
+      </section>
     </form>
   );
 }

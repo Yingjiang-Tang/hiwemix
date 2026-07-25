@@ -118,7 +118,7 @@ export default function AdminUsersPage() {
   return (
     <div className="min-h-screen overflow-x-clip bg-white">
       <SiteHeader />
-      <div className="pt-20 pb-8 px-6 sm:px-8 md:px-[60px]">
+      <div className="pt-[100px] pb-8 px-6 sm:px-8 md:px-[60px]">
         <div className="flex justify-end mb-5">
           <Button onClick={openCreate} className="rounded-lg bg-foreground text-background hover:bg-foreground/80">
             <Plus className="size-4" /> {t.adminNewUser}

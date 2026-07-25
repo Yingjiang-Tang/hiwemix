@@ -75,31 +75,31 @@
 
 /* ===== Header theme — CSS 变量驱动双态 ===== */
 :root {
-  /* 默认（内页）：蓝底白字 */
-  --header-bg: #2487ca;
-  --header-text: #ffffff;
-  --header-text-muted: rgba(255, 255, 255, 0.7);
-  --header-border: rgba(255, 255, 255, 0.3);
-  --header-hover-bg: rgba(255, 255, 255, 0.1);
-  --header-logo-filter: brightness(0) invert(1);
+  /* 默认（内页）：白底深字 */
+  --header-bg: #ffffff;
+  --header-text: #1f2937;
+  --header-text-muted: #6b7280;
+  --header-border: #e5e7eb;
+  --header-hover-bg: rgba(0, 0, 0, 0.04);
+  --header-logo-filter: none;
   --header-position: fixed;
-  --header-bottom-border: rgba(255, 255, 255, 0.15);
+  --header-bottom-border: #e5e7eb;
 }
 
 [data-header-theme="home"] {
-  /* 首页：透明底蓝字 */
-  --header-bg: transparent;
-  --header-text: #2487ca;
+  /* 首页：白底深字 */
+  --header-bg: #ffffff;
+  --header-text: #1f2937;
   --header-text-muted: #6b7280;
-  --header-border: #d1d5db;
-  --header-hover-bg: rgba(36, 135, 202, 0.04);
+  --header-border: #e5e7eb;
+  --header-hover-bg: rgba(0, 0, 0, 0.04);
   --header-logo-filter: none;
-  --header-position: absolute;
-  --header-bottom-border: transparent;
+  --header-position: fixed;
+  --header-bottom-border: #e5e7eb;
 }
 
 /* 导航链接 hover/激活 */
-.header-nav-link { color: var(--header-text-muted); }
+  .header-nav-link { color: var(--header-text-muted); font-family: var(--font-outfit); }
 .header-nav-link:hover,
 .header-nav-link[aria-current="page"] { color: var(--header-text); }
 

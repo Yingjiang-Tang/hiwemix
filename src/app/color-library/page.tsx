@@ -91,39 +91,49 @@ function generateTonerCode(category: TonerCategory, existingCodes: string[]): st
   return `${prefix}${String(maxNum + 1).padStart(4, "0")}`;
 }
 
-// ==================== 色母卡片组件 ====================
+// ==================== 色母卡片组件（首页配方面板风格） ====================
 
-function TonerCard({ code, tradeName, hex }: { code: string; tradeName: string; hex: string }) {
-  const borderColor = isLightColor(hex) ? "#d1d5db" : hex;
-
+function TonerCard({ code, tradeName, nameZh, hex }: { code: string; tradeName: string; nameZh: string; hex: string }) {
   return (
     <div
-      className="group cursor-pointer overflow-hidden rounded-xl border border-border/60 bg-white shadow-sm transition-all duration-200 hover:scale-[1.01] hover:border-primary hover:shadow-md"
+      className="group relative aspect-square cursor-pointer overflow-hidden transition-all duration-300 ease-in-out active:scale-[0.98]"
     >
-      {/* 漆面色块预览 */}
+      {/* 颜色底色 + 金属漆渐变光泽 */}
       <div
-        className="h-14 sm:h-[70px] md:h-20"
-        style={{
-          backgroundColor: hex,
-          backgroundImage:
-            "linear-gradient(to bottom, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.16) 8%, rgba(0,0,0,0.04) 18%, rgba(255,255,255,0.08) 28%, rgba(255,255,255,0.28) 38%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.28) 62%, rgba(255,255,255,0.08) 72%, rgba(0,0,0,0.04) 82%, rgba(0,0,0,0.16) 92%, rgba(0,0,0,0.30) 100%)",
-          borderBottom: `1px solid ${borderColor}`,
-        }}
+        className="absolute inset-0"
+        style={
+          hex
+            ? {
+                backgroundColor: hex,
+                backgroundImage:
+                  "linear-gradient(135deg, rgba(0,0,0,0.21) 0%, rgba(0,0,0,0.11) 8%, rgba(0,0,0,0.03) 18%, rgba(255,255,255,0.08) 28%, rgba(255,255,255,0.28) 38%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.28) 62%, rgba(255,255,255,0.08) 72%, rgba(0,0,0,0.03) 82%, rgba(0,0,0,0.11) 92%, rgba(0,0,0,0.21) 100%)",
+              }
+            : { backgroundColor: "#d1d5db" }
+        }
       />
-      {/* 产品信息 */}
-      <div className="px-3 py-3 md:px-4 md:py-4">
-        <p className="text-xs font-semibold leading-tight text-foreground break-all md:text-sm">
+
+      {/* 悬停时半透明黑色遮罩，平滑淡入 */}
+      <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+      {/* 悬停文字内容，与遮罩同步淡入 */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <p className="max-w-full truncate text-center font-mono text-2xl font-bold tracking-tight text-white">
           {code}
         </p>
-        <p className="mt-1 truncate text-[10px] font-medium text-muted-foreground md:text-xs">
+        <p className="max-w-full truncate text-center text-sm font-medium text-white">
           {tradeName}
         </p>
+        {nameZh && (
+          <p className="max-w-full truncate text-center text-xs text-white/80">
+            {nameZh}
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
-// ==================== 新增材料对话框 ====================
+// ==================== 添加色母对话框 ====================
 
 const ADD_FORM_INITIAL = {
   category: "" as TonerCategory | "",
@@ -185,12 +195,12 @@ function AddMaterialDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-sm bg-white">
+      <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+        <DialogContent className="max-w-sm bg-white z-[1500] shadow-xl ring-1 ring-foreground/10">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Plus className="size-5 text-primary" />
-            新增材料
+              <Plus className="size-5 text-primary" />
+              添加色母
           </DialogTitle>
         </DialogHeader>
 
@@ -205,7 +215,7 @@ function AddMaterialDialog({
               <SelectTrigger className="h-9 w-full rounded-lg">
                 <SelectValue placeholder="请选择分类" />
               </SelectTrigger>
-              <SelectContent className="z-[130] max-h-[200px]">
+               <SelectContent className="z-[1600] max-h-[200px]">
                 {TONER_CATEGORIES.map((cat) => (
                   <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>
                 ))}
@@ -286,8 +296,8 @@ function AddMaterialDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="rounded-lg">取消</Button>
-          <Button onClick={handleSave} className="rounded-lg bg-primary hover:bg-primary/80">保存提交</Button>
+          <Button variant="outline" onClick={onClose} className="rounded-[6px]">取消</Button>
+          <Button onClick={handleSave} className="rounded-[6px] bg-primary hover:bg-primary/80">保存提交</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -400,15 +410,20 @@ function ManagementModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-4xl w-full p-6 rounded-2xl bg-white dark:bg-zinc-900 !max-w-[850px] max-h-[85vh] flex flex-col">
-        {/* 固定置顶 Header */}
-        <div className="shrink-0">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 pr-8">
-              <Settings className="size-5 text-primary" />
-              管理材料 — 数据管理中心
-            </DialogTitle>
-          </DialogHeader>
+      <DialogContent className="max-w-4xl w-full p-6 rounded-2xl bg-white dark:bg-zinc-900 !max-w-[850px] max-h-[85vh] flex flex-col overflow-hidden">
+
+            {/* 二级弹窗展开时的轻度蒙版 */}
+            {(addOpen || editingItem) && (
+              <div className="absolute inset-0 z-[1400] rounded-2xl bg-black/20 pointer-events-none" />
+            )}
+          {/* 固定置顶 Header */}
+          <div className="shrink-0 px-6 pt-3 mb-5">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 pr-8 font-heading text-lg font-semibold text-foreground">
+                <Settings className="size-5 text-foreground/70" />
+                色母管理中心
+              </DialogTitle>
+            </DialogHeader>
 
           {/* 搜索 + 添加按钮 */}
           <div className="flex flex-col items-start justify-between gap-2 pt-2 sm:flex-row sm:items-center">
@@ -418,7 +433,7 @@ function ManagementModal({
                 placeholder="搜索色母代码、名称、分类..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 rounded-lg border-2 border-[#3b82f6] pl-9 text-2xs focus-visible:border-[#2563eb] focus-visible:ring-[#2563eb]/20"
+                className="h-9 rounded-lg border-input pl-9 text-2xs focus-visible:ring-1 focus-visible:ring-border"
               />
             </div>
             <div className="flex items-center gap-3">
@@ -426,13 +441,11 @@ function ManagementModal({
                 共 {filteredRows.length} 条记录
               </span>
               <Button
-                size="sm"
-                variant="default"
-                onClick={() => setAddOpen(true)}
-                className="h-9 rounded-lg bg-primary text-2xs font-semibold hover:bg-primary/80"
-              >
-                <Plus className="size-4" />
-                添加材料
+                  variant="default"
+                  onClick={() => setAddOpen(true)}
+                    className="inline-flex items-center justify-center h-8 rounded-[6px] text-2xs leading-none text-white"
+                >
+                  添加色母
               </Button>
             </div>
           </div>
@@ -506,15 +519,11 @@ function ManagementModal({
           </div>
         </div>
 
-        {/* 固定置底 Footer */}
-        <DialogFooter className="shrink-0">
-          <Button variant="outline" onClick={onClose} className="rounded-lg">关闭</Button>
-        </DialogFooter>
       </DialogContent>
 
       {/* ===== 编辑子弹窗（独立 Dialog，Portal 到 body） ===== */}
-      <Dialog open={!!editingItem} onOpenChange={(v) => { if (!v) setEditingItem(null); }}>
-        <DialogContent className="max-w-sm bg-white">
+        <Dialog open={!!editingItem} onOpenChange={(v) => { if (!v) setEditingItem(null); }}>
+          <DialogContent className="max-w-sm bg-white z-[1500] shadow-xl ring-1 ring-foreground/10">
           <DialogHeader>
             <DialogTitle>编辑色母 — {editingItem?.code}</DialogTitle>
           </DialogHeader>
@@ -552,7 +561,7 @@ function ManagementModal({
                 <SelectTrigger className="h-9 w-full rounded-lg">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-[130] max-h-[200px]">
+                 <SelectContent className="z-[1600] max-h-[200px]">
                   {TONER_CATEGORIES.map((cat) => (
                     <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>
                   ))}
@@ -719,7 +728,7 @@ export default function TonerPage() {
       <SiteHeader />
 
       {/* 顶部占位 */}
-      <div className="h-16" />
+        <div className="h-[84px]" />
 
       {/* 分类 Tabs + 搜索栏 */}
       <div className="sticky top-16 z-30 border-b border-border bg-white px-6 py-3 sm:px-8 md:px-[60px]">
@@ -760,7 +769,7 @@ export default function TonerPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setManageOpen(true)}
-                className="h-9 shrink-0 rounded-lg border-[#3b82f6] text-2xs font-medium text-[#3b82f6] hover:bg-[#3b82f6]/5 hover:text-[#2563eb]"
+                className="inline-flex items-center justify-center h-8 shrink-0 rounded-lg gap-1.5 text-2xs leading-none"
               >
                 <Settings className="size-4" />
                 管理材料
@@ -783,9 +792,9 @@ export default function TonerPage() {
             <span className="mt-1 text-xs">Try a different search or category</span>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-5 lg:grid-cols-6">
+          <div className="grid grid-cols-4 gap-x-0 gap-y-[30px] px-0 pb-4 sm:grid-cols-6 md:grid-cols-8">
             {filteredToners.map((toner) => (
-              <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} hex={toner.hex} />
+              <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} nameZh={toner.nameZh} hex={toner.hex} />
             ))}
           </div>
         )}

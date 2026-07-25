@@ -18,7 +18,7 @@ export interface SearchResultsProps {
 
 function SkeletonGrid() {
   return (
-    <div className="grid grid-cols-6 gap-x-0 gap-y-[30px] px-4 pb-4">
+    <div className="grid grid-cols-6 gap-x-0 gap-y-[30px] px-0 pb-4">
       {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => (
         <Skeleton key={i} className="aspect-square w-full rounded-none" />
       ))}
@@ -312,7 +312,7 @@ export default function SearchResults({
       </div>
 
       {/* 色块网格：每行 6 列，全量展示，滚轮滑动 */}
-      <div className="grid grid-cols-6 gap-x-0 gap-y-[30px] px-4 pb-4">
+      <div className="grid grid-cols-6 gap-x-0 gap-y-[30px] px-0 pb-4">
         {groupedEntries.map(([colorCode, groupRows]) => (
           <GroupedColorCard
             key={colorCode}

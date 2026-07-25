@@ -92,7 +92,7 @@ export default function DataManagementPage() {
         <Menu className="size-5" />
       </button>
 
-      <div className="flex pt-16">
+      <div className="flex pt-[84px]">
         {/* 桌面端侧边栏 */}
         <aside className="hidden md:block w-[224px] flex-shrink-0 border-r border-border bg-white h-[calc(100vh-64px)] sticky top-16 overflow-y-auto">
           <SideNav activeTab={activeTab} onSelect={setActiveTab} />

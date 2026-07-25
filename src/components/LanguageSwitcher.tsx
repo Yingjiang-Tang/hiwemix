@@ -39,12 +39,10 @@ function FlagIcon({ code }: { code: string }) {
   );
 }
 
-/* LanguageSwitcher — 颜色跟随父级 data-header-theme 驱动 */
+/* LanguageSwitcher — 样式与右侧按钮组严格统一 */
 export default function LanguageSwitcher({
-  isHome,
   transitionStyle,
 }: {
-  isHome: boolean;
   transitionStyle: string;
 }) {
   const { lang, setLang } = useLang();
@@ -52,17 +50,12 @@ export default function LanguageSwitcher({
   return (
     <Select value={lang} onValueChange={(v) => setLang((v as Lang) || "en")}>
       <SelectTrigger
-        className="h-9 w-auto min-w-0 gap-1 rounded-lg border px-3 text-2xs font-semibold transition-all duration-[1.5s] ease-in-out lang-switcher-trigger"
-        style={{
-          borderColor: isHome ? "var(--border)" : "var(--header-border)",
-          color: isHome ? "var(--color-mute)" : "var(--header-text-muted)",
-          backgroundColor: "transparent",
-          transition: transitionStyle,
-        }}
+        className="h-8 w-auto min-w-0 gap-1.5 rounded-lg border border-border bg-background px-3 text-2xs font-medium"
+        style={{ transition: transitionStyle }}
       >
         <SelectValue />
       </SelectTrigger>
-      <SelectContent className="max-h-80 min-w-[200px]">
+      <SelectContent align="end" side="bottom" sideOffset={8} alignItemWithTrigger={false} className="max-h-[300px] min-w-[200px] overflow-y-auto bg-popover text-popover-foreground rounded-lg shadow-md border border-border">
         {LANGS.map((l) => (
           <SelectItem key={l.code} value={l.code} className="gap-3 text-sm">
             <FlagIcon code={l.flag} />

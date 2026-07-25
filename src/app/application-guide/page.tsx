@@ -86,7 +86,7 @@ export default function ApplicationGuidePage() {
       <SiteHeader />
 
       {/* Body: 三栏布局 */}
-      <div className="flex flex-1 flex-col pt-16 lg:flex-row lg:overflow-hidden">
+      <div className="flex flex-1 flex-col pt-[84px] lg:flex-row lg:overflow-hidden">
         {/* 左栏：分类菜单 */}
         <div className="border-b border-border px-6 pt-5 pb-3 sm:px-8 md:pl-[60px] md:pr-4 lg:w-[240px] lg:flex-shrink-0 lg:border-b-0 lg:border-r lg:pt-8 lg:overflow-y-auto lg:max-h-[calc(100vh-64px)]">
           <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
