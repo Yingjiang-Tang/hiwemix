@@ -103,13 +103,11 @@ export default function SiteHeader() {
                     >
                       {t.navAdmin}
                     </Link>
-                    <Link
-                      href="/admin/users"
-                      className="header-action-btn inline-flex h-8 items-center rounded-lg border border-border bg-background px-3 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
+                    <span className="inline-flex h-8 items-center rounded-lg border border-border bg-background px-3 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
                       style={{ transition: transitionStyle }}
                     >
                       {authUser.email}
-                    </Link>
+                    </span>
                   </div>
                 )}
                 <button
@@ -194,13 +192,9 @@ export default function SiteHeader() {
               >
                 {t.navAdmin}
               </Link>
-              <Link
-                href="/admin/users"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block mx-3 px-3 py-3.5 rounded-xl text-sm font-semibold text-foreground/80 hover:bg-muted"
-              >
+              <span className="block mx-3 px-3 py-3.5 rounded-xl text-sm text-foreground/80">
                 {authUser.email}
-              </Link>
+              </span>
               <Separator className="my-1" />
             </>
           )}

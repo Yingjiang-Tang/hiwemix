@@ -20,15 +20,27 @@ export async function middleware(req: NextRequest) {
   }
 
   // 公开路由，不需要认证
-  const publicPaths = [
-    "/login",
+  // 精确匹配的路由（页面）
+  const exactPublic = ["/", "/login", "/color-library", "/application-guide"];
+  // 前缀匹配的路由（API + 静态资源）
+  const prefixPublic = [
     "/auth/callback",
     "/api/auth/login",
     "/api/auth/register",
+    "/api/colors",
+    "/api/formulas",
+    "/api/brands",
+    "/api/settings",
+    "/api/guides",
+    "/api/toners",
+    "/api/regions",
     "/_next",
     "/favicon.ico",
   ];
-  if (publicPaths.some((p) => pathname.startsWith(p))) {
+  if (
+    exactPublic.includes(pathname) ||
+    prefixPublic.some((p) => pathname.startsWith(p))
+  ) {
     return NextResponse.next();
   }
 
