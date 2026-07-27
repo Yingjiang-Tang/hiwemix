@@ -1,26 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, requireAdmin } from "@/lib/auth";
+import { requireSupabaseAuth, requireSupabaseAdmin } from "@/lib/auth";
 import { applyRateLimit, ADMIN_LIMIT } from "@/lib/rate-limit";
 import { getBrands, saveBrand, deleteBrand } from "@/lib/db-formula";
 import type { CarMake } from "@/types";
 
+/** 检查管理员权限，不通过则返回 401/403 响应 */
+async function checkAdmin() {
+  const { user, error } = await requireSupabaseAuth();
+  if (error) return { user: null, error };
+  const adminErr = requireSupabaseAdmin(user);
+  if (adminErr) return { user: null, error: adminErr };
+  return { user, error: null };
+}
+
 export async function GET(req: NextRequest) {
-  // 管理后台限流：每分钟 60 次
   const limitRes_GET = applyRateLimit(req, ADMIN_LIMIT);
   if (limitRes_GET) return limitRes_GET;
-  const user = getUserFromRequest(req);
-  const forbidden = requireAdmin(user);
-  if (forbidden) return forbidden;
+  const { error } = await checkAdmin();
+  if (error) return error;
   return NextResponse.json(await getBrands());
 }
 
 export async function POST(req: NextRequest) {
-  // 管理后台限流：每分钟 60 次
   const limitRes_POST = applyRateLimit(req, ADMIN_LIMIT);
   if (limitRes_POST) return limitRes_POST;
-  const user = getUserFromRequest(req);
-  const forbidden = requireAdmin(user);
-  if (forbidden) return forbidden;
+  const { error } = await checkAdmin();
+  if (error) return error;
   let body: CarMake;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "请求格式错误" }, { status: 400 }); }
   if (!body.id || !body.name || !body.region) {
@@ -31,12 +36,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  // 管理后台限流：每分钟 60 次
   const limitRes_PUT = applyRateLimit(req, ADMIN_LIMIT);
   if (limitRes_PUT) return limitRes_PUT;
-  const user = getUserFromRequest(req);
-  const forbidden = requireAdmin(user);
-  if (forbidden) return forbidden;
+  const { error } = await checkAdmin();
+  if (error) return error;
   let body: CarMake;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "请求格式错误" }, { status: 400 }); }
   if (!body.id) {
@@ -47,12 +50,10 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  // 管理后台限流：每分钟 60 次
   const limitRes_DELETE = applyRateLimit(req, ADMIN_LIMIT);
   if (limitRes_DELETE) return limitRes_DELETE;
-  const user = getUserFromRequest(req);
-  const forbidden = requireAdmin(user);
-  if (forbidden) return forbidden;
+  const { error } = await checkAdmin();
+  if (error) return error;
   let body: { id?: string };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "请求格式错误" }, { status: 400 }); }
   const { id } = body;

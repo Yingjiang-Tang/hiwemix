@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, requireAdmin } from "@/lib/auth";
+import { checkSupabaseAdmin } from "@/lib/auth";
 import { applyRateLimit, ADMIN_LIMIT } from "@/lib/rate-limit";
 import { getToners, saveToner, deleteToner } from "@/lib/db-toner";
 import type { Toner } from "@/types";
@@ -14,9 +14,8 @@ function extractError(e: unknown): string {
 export async function GET(req: NextRequest) {
   const limitRes = applyRateLimit(req, ADMIN_LIMIT);
   if (limitRes) return limitRes;
-  const user = getUserFromRequest(req);
-  const forbidden = requireAdmin(user);
-  if (forbidden) return forbidden;
+  const { error: authError } = await checkSupabaseAdmin();
+  if (authError) return authError;
   return NextResponse.json(await getToners());
 }
 
@@ -24,9 +23,8 @@ export async function POST(req: NextRequest) {
   try {
     const limitRes = applyRateLimit(req, ADMIN_LIMIT);
     if (limitRes) return limitRes;
-    const user = getUserFromRequest(req);
-    const forbidden = requireAdmin(user);
-    if (forbidden) return forbidden;
+    const { error: authError } = await checkSupabaseAdmin();
+    if (authError) return authError;
 
     let body: Toner;
     try {
@@ -52,9 +50,8 @@ export async function PUT(req: NextRequest) {
   try {
     const limitRes = applyRateLimit(req, ADMIN_LIMIT);
     if (limitRes) return limitRes;
-    const user = getUserFromRequest(req);
-    const forbidden = requireAdmin(user);
-    if (forbidden) return forbidden;
+    const { error: authError } = await checkSupabaseAdmin();
+    if (authError) return authError;
 
     let body: Toner;
     try {
@@ -80,9 +77,8 @@ export async function DELETE(req: NextRequest) {
   try {
     const limitRes = applyRateLimit(req, ADMIN_LIMIT);
     if (limitRes) return limitRes;
-    const user = getUserFromRequest(req);
-    const forbidden = requireAdmin(user);
-    if (forbidden) return forbidden;
+    const { error: authError } = await checkSupabaseAdmin();
+    if (authError) return authError;
 
     let body: { code?: string };
     try {

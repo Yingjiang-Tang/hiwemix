@@ -1,39 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-// 使用 Web Crypto API 验证 JWT 签名（Edge Runtime 兼容）
-async function verifyJwtSignature(token: string): Promise<Record<string, unknown> | null> {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-
-    // 与 auth.ts 保持一致：生产环境无 JWT_SECRET 则拒绝，开发环境用 fallback
-    if (!process.env.JWT_SECRET) {
-      if (process.env.NODE_ENV === "production") {
-        console.error("FATAL: JWT_SECRET 未设置，middleware 无法验证 token");
-        return null;
-      }
-    }
-    const secret = process.env.JWT_SECRET || "hiwen-mix-secret-key-dev-only";
-    const key = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(secret),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["verify"]
-    );
-
-    const data = new TextEncoder().encode(`${parts[0]}.${parts[1]}`);
-    const signature = Uint8Array.from(atob(parts[2].replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
-
-    const valid = await crypto.subtle.verify("HMAC", key, signature, data);
-    if (!valid) return null;
-
-    return JSON.parse(Buffer.from(parts[1], "base64url").toString());
-  } catch {
-    return null;
-  }
-}
+import { updateSession } from "@/lib/supabase/middleware";
 
 const NEW_DOMAIN = "hiwemix.com";
 const REDIRECT_HOSTS = ["hiwe-formula-search.vercel.app", "www.hiwemix.com"];
@@ -53,40 +20,42 @@ export async function middleware(req: NextRequest) {
   }
 
   // 公开路由，不需要认证
-  const publicPaths = ["/login", "/api/auth/login", "/api/auth/register", "/_next", "/favicon.ico"];
+  const publicPaths = [
+    "/login",
+    "/auth/callback",
+    "/api/auth/login",
+    "/api/auth/register",
+    "/_next",
+    "/favicon.ico",
+  ];
   if (publicPaths.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  // 获取 token
-  let token: string | undefined;
-  const cookie = req.cookies.get("auth_token")?.value;
-  if (cookie) {
-    token = cookie;
-  } else {
-    const auth = req.headers.get("Authorization");
-    if (auth?.startsWith("Bearer ")) {
-      token = auth.slice(7);
-    }
-  }
+  // 使用 Supabase SSR 刷新 session 并获取用户
+  const { supabaseResponse, user } = await updateSession(req);
 
-  // 验证 token 是否存在且签名有效
-  const payload = token ? await verifyJwtSignature(token) : null;
-  if (!payload) {
+  // 未登录 → 返回 401（API）或重定向到登录页（页面）
+  if (!user) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
     }
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // 管理员 API 需要 admin 角色
-  if (pathname.startsWith("/api/admin/")) {
-    if (payload.role !== "admin") {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
-    }
-  }
+  // 将用户信息附加到 request header，供下游 API 路由使用
+  // admin 角色的具体授权检查在各 API 路由中独立完成
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-user-id", user.id);
+  requestHeaders.set("x-user-email", user.email ?? "");
 
-  return NextResponse.next();
+  // 复制 supabase 写入的 session cookie 到最终响应
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  supabaseResponse.cookies.getAll().forEach((c) => {
+    response.cookies.set(c.name, c.value, c);
+  });
+
+  return response;
 }
 
 export const config = {

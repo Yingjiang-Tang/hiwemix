@@ -108,7 +108,7 @@ export default function SiteHeader() {
                       className="header-action-btn inline-flex h-8 items-center rounded-lg border border-border bg-background px-3 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
                       style={{ transition: transitionStyle }}
                     >
-                      {authUser.username}
+                      {authUser.email}
                     </Link>
                   </div>
                 )}
@@ -199,7 +199,7 @@ export default function SiteHeader() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block mx-3 px-3 py-3.5 rounded-xl text-sm font-semibold text-foreground/80 hover:bg-muted"
               >
-                {authUser.username}
+                {authUser.email}
               </Link>
               <Separator className="my-1" />
             </>

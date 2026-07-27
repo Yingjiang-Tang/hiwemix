@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest, requireAdmin } from "@/lib/auth";
+import { checkSupabaseAdmin } from "@/lib/auth";
 import { applyRateLimit, ADMIN_LIMIT } from "@/lib/rate-limit";
 import { getFormulas, saveFormula, deleteFormula } from "@/lib/db-formula";
 import type { Formula } from "@/types";
@@ -41,9 +41,8 @@ export async function GET(req: NextRequest) {
   // 管理后台限流：每分钟 60 次
   const limitRes_GET = applyRateLimit(req, ADMIN_LIMIT);
   if (limitRes_GET) return limitRes_GET;
-  const user = getUserFromRequest(req);
-  const forbidden = requireAdmin(user);
-  if (forbidden) return forbidden;
+  const { error } = await checkSupabaseAdmin();
+  if (error) return error;
   return NextResponse.json(await getFormulas());
 }
 
@@ -51,9 +50,8 @@ export async function POST(req: NextRequest) {
   // 管理后台限流：每分钟 60 次
   const limitRes_POST = applyRateLimit(req, ADMIN_LIMIT);
   if (limitRes_POST) return limitRes_POST;
-  const user = getUserFromRequest(req);
-  const forbidden = requireAdmin(user);
-  if (forbidden) return forbidden;
+  const { error } = await checkSupabaseAdmin();
+  if (error) return error;
   let body: Formula;
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
@@ -78,9 +76,8 @@ export async function PUT(req: NextRequest) {
   // 管理后台限流：每分钟 60 次
   const limitRes_PUT = applyRateLimit(req, ADMIN_LIMIT);
   if (limitRes_PUT) return limitRes_PUT;
-  const user = getUserFromRequest(req);
-  const forbidden = requireAdmin(user);
-  if (forbidden) return forbidden;
+  const { error } = await checkSupabaseAdmin();
+  if (error) return error;
   let body: Formula;
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
@@ -105,9 +102,8 @@ export async function DELETE(req: NextRequest) {
   // 管理后台限流：每分钟 60 次
   const limitRes_DELETE = applyRateLimit(req, ADMIN_LIMIT);
   if (limitRes_DELETE) return limitRes_DELETE;
-  const user = getUserFromRequest(req);
-  const forbidden = requireAdmin(user);
-  if (forbidden) return forbidden;
+  const { error } = await checkSupabaseAdmin();
+  if (error) return error;
   let body: { id?: string };
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
