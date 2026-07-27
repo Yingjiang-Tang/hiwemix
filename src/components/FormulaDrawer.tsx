@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { SearchResult, Formula, FormulaComponent, ComponentGroup } from "@/types";
+import type { SearchResult, Formula, FormulaComponent, ComponentGroup, YearEntry } from "@/types";
 import { colorSwatchStyle } from "@/lib/utils";
+import { formatYearEntry } from "@/lib/db-formula";
 import { useLang } from "@/components/LanguageContext";
 import KapciFormulaTable from "./KapciFormulaTable";
 import Toast from "./Toast";
@@ -18,7 +19,7 @@ interface FormulaDrawerProps {
   onClose: () => void;
   initialFormulaIdx?: number;
   formulaId?: string;
-  initialYear?: number;
+  initialYear?: YearEntry;
 }
 
 function formatComponents(components: FormulaComponent[]): string[] {
@@ -136,7 +137,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
     );
   }
 
-  const currentYear = initialYear?.toString() || "-";
+  const currentYear = initialYear ? formatYearEntry(initialYear) : "-";
 
   return (
     <>

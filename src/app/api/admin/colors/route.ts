@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, requireAdmin } from "@/lib/auth";
 import { applyRateLimit, ADMIN_LIMIT } from "@/lib/rate-limit";
 import { getColors, saveColor, deleteColor, saveColorYears } from "@/lib/db-formula";
-import type { Color } from "@/types";
+import type { Color, YearEntry } from "@/types";
 
 export async function GET(req: NextRequest) {
   // 管理后台限流：每分钟 60 次
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     // 保存年份
     if (years && Array.isArray(years)) {
-      await saveColorYears(color.id, years as number[]);
+      await saveColorYears(color.id, years as YearEntry[]);
     }
 
     return NextResponse.json(saved, { status: 201 });
@@ -65,7 +65,7 @@ export async function PUT(req: NextRequest) {
 
     // 保存年份
     if (years && Array.isArray(years)) {
-      await saveColorYears(color.id, years as number[]);
+      await saveColorYears(color.id, years as YearEntry[]);
     }
 
     return NextResponse.json(saved);

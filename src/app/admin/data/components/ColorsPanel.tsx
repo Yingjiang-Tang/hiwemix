@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import type { CarMake, Color, ColorVariant } from "@/types";
+import type { CarMake, Color, ColorVariant, YearEntry } from "@/types";
 import { colorSwatchStyle } from "@/lib/utils";
+import { formatYearEntry } from "@/lib/db-formula";
 import { generateUniqueColorId } from "@/lib/id-generator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,9 +32,12 @@ import {
 } from "@/components/ui/table";
 import { Search, Edit, Trash2, Plus, X } from "lucide-react";
 
+import { useLang } from "@/components/LanguageContext";
+
 const COLOR_TYPES = ["solid", "metallic", "pearl", "matte", "candy", "special"] as const;
 
 export default function ColorsPanel() {
+  const { t } = useLang();
   const [colors, setColors] = useState<Color[]>([]);
   const [brands, setBrands] = useState<CarMake[]>([]);
   const [allVariants, setAllVariants] = useState<ColorVariant[]>([]);
@@ -42,12 +46,14 @@ export default function ColorsPanel() {
   const [editing, setEditing] = useState<Color | null>(null);
   const [form, setForm] = useState({ id: "", make_id: "", color_code: "", color_name: "", color_type: "solid" as Color["color_type"], hex_preview: "#FFFFFF", car_model: "" });
   const [variantIds, setVariantIds] = useState<string[]>([]);
-  const [years, setYears] = useState<number[]>([]);
+  const [yearEntries, setYearEntries] = useState<YearEntry[]>([]);
+  const [yearMode, setYearMode] = useState<"single" | "range">("single");
+  const [yearInput, setYearInput] = useState("");
+  const [yearEndInput, setYearEndInput] = useState("");
   const [error, setError] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
-  const [yearInput, setYearInput] = useState("");
   const idManuallyEdited = useRef(false);
 
   useEffect(() => {
@@ -73,11 +79,13 @@ export default function ColorsPanel() {
 
   function openCreate() {
     setEditing(null); setForm({ id: "", make_id: "", color_code: "", color_name: "", color_type: "solid", hex_preview: "#FFFFFF", car_model: "" });
-    setVariantIds([]); setYears([]); setError(""); idManuallyEdited.current = false; setShowModal(true);
+    setVariantIds([]); setYearEntries([]); setYearMode("single"); setYearInput(""); setYearEndInput("");
+    setError(""); idManuallyEdited.current = false; setShowModal(true);
   }
   function openEdit(c: Color) {
     setEditing(c); setForm({ id: c.id, make_id: c.make_id, color_code: c.color_code, color_name: c.color_name, color_type: c.color_type, hex_preview: c.hex_preview, car_model: c.car_model ?? "" });
-    setVariantIds(c.variants.map((v) => v.id)); setYears(c.years || []); setError(""); setShowModal(true);
+    setVariantIds(c.variants.map((v) => v.id)); setYearEntries(c.years || []); setYearMode("single"); setYearInput(""); setYearEndInput("");
+    setError(""); setShowModal(true);
   }
   async function handleSave() {
     setError("");
@@ -93,7 +101,7 @@ export default function ColorsPanel() {
     }
     try {
       const m = editing ? "PUT" : "POST";
-      const res = await fetch("/api/admin/colors", { method: m, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, variantIds, years }) });
+      const res = await fetch("/api/admin/colors", { method: m, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, variantIds, years: yearEntries }) });
       if (res.ok) { setShowModal(false); fetchColors(); }
       else { const d = await res.json(); setError(d.error || "保存失败"); }
     } catch { setError("网络错误，请重试"); }
@@ -107,18 +115,44 @@ export default function ColorsPanel() {
   }
   function toggleVariant(id: string) { setVariantIds((prev) => prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]); }
 
+  // 添加 YearEntry（单年或区间）
+  function addYearEntry() {
+    const start = parseInt(yearInput, 10);
+    if (isNaN(start) || start < 1900 || start > 2100) return;
+    if (yearMode === "range") {
+      const end = parseInt(yearEndInput, 10);
+      if (isNaN(end) || end < start || end > 2100) return;
+      // 去重：同一颜色的同一起始、同一结束年份不允许重复
+      const dup = yearEntries.find(e => e.year === start && e.year_end === end);
+      if (dup) return;
+      setYearEntries([...yearEntries, { year: start, year_end: end }].sort((a, b) => a.year - b.year));
+      setYearEndInput("");
+    } else {
+      const dup = yearEntries.find(e => e.year === start && e.year_end == null);
+      if (dup) return;
+      setYearEntries([...yearEntries, { year: start }].sort((a, b) => a.year - b.year));
+    }
+    setYearInput("");
+  }
+
+  // 移除 YearEntry
+  function removeYearEntry(entry: YearEntry) {
+    setYearEntries(yearEntries.filter(e => !(e.year === entry.year && e.year_end === entry.year_end)));
+  }
+
   const brandMap = useMemo(() => new Map(brands.map((b) => [b.id, b.name])), [brands]);
 
+  // 每个 YearEntry 展开为一行（而非每个单年一行）
   const allExpandedRows = useMemo(() => colors.flatMap((c): {
     colorId: string; groupIndex: number; groupSize: number;
-    year: number | undefined; brandName: string; yearCount: number; originalColor: Color;
+    yearEntry: YearEntry | undefined; brandName: string; entryCount: number; originalColor: Color;
     color_code: string; color_name: string; color_type: Color["color_type"];
     hex_preview: string; car_model?: string;
   }[] => {
     const brandName = brandMap.get(c.make_id) ?? c.make_id;
-    const sortedYears = [...(c.years ?? [])].sort((a, b) => a - b);
-    if (sortedYears.length === 0) return [{ colorId: c.id, groupIndex: 0, groupSize: 1, year: undefined, ...c, brandName, yearCount: 0, originalColor: c }];
-    return sortedYears.map((year, i) => ({ colorId: c.id, groupIndex: i, groupSize: sortedYears.length, year, ...c, brandName, yearCount: sortedYears.length, originalColor: c }));
+    const sorted = [...(c.years ?? [])].sort((a, b) => a.year - b.year);
+    if (sorted.length === 0) return [{ colorId: c.id, groupIndex: 0, groupSize: 1, yearEntry: undefined, brandName, entryCount: 0, originalColor: c, color_code: c.color_code, color_name: c.color_name, color_type: c.color_type, hex_preview: c.hex_preview, car_model: c.car_model }];
+    return sorted.map((entry, i) => ({ colorId: c.id, groupIndex: i, groupSize: sorted.length, yearEntry: entry, brandName, entryCount: sorted.length, originalColor: c, color_code: c.color_code, color_name: c.color_name, color_type: c.color_type, hex_preview: c.hex_preview, car_model: c.car_model }));
   }), [colors, brandMap]);
 
   const filteredRows = useMemo(() => {
@@ -130,7 +164,7 @@ export default function ColorsPanel() {
       if (row.car_model?.toLowerCase().includes(q)) return true;
       if (row.brandName.toLowerCase().includes(q)) return true;
       if (row.color_type.toLowerCase().includes(q)) return true;
-      if (row.year !== undefined && String(row.year).includes(q)) return true;
+      if (row.yearEntry && formatYearEntry(row.yearEntry).toLowerCase().includes(q)) return true;
       return false;
     });
   }, [allExpandedRows, searchQuery]);
@@ -166,7 +200,7 @@ export default function ColorsPanel() {
           </TableHeader>
           <TableBody>
             {pageRows.map((row) => (
-              <TableRow key={`${row.colorId}-${row.year ?? 'none'}`} className="border-b border-border/50 last:border-b-0 hover:bg-muted/50">
+              <TableRow key={`${row.colorId}-${row.yearEntry?.year ?? 'none'}-${row.yearEntry?.year_end ?? 's'}`} className="border-b border-border/50 last:border-b-0 hover:bg-muted/50">
                 <TableCell className="py-3 text-center">
                   <div className="mx-auto w-10 h-6 rounded border border-border" style={colorSwatchStyle(row.hex_preview)} />
                 </TableCell>
@@ -186,7 +220,7 @@ export default function ColorsPanel() {
                   <span className="text-2xs text-muted-foreground">{row.color_type}</span>
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <span className="text-2xs text-muted-foreground">{row.year ?? ""}</span>
+                  <span className="text-2xs text-muted-foreground">{row.yearEntry ? formatYearEntry(row.yearEntry) : ""}</span>
                 </TableCell>
                 <TableCell className="py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
@@ -261,41 +295,56 @@ export default function ColorsPanel() {
             {/* 适用年份卡片 */}
             <div className="rounded-xl border border-border p-5">
               <h3 className="mb-4 text-sm font-semibold text-foreground/80 border-b border-border/50 pb-3">适用年份</h3>
+              {/* 年份芯片列表 */}
               <div className="flex flex-wrap gap-2 mb-3">
-                {years.map((year) => (
-                  <span key={year} className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-2xs text-blue-700">
-                    {year}
-                    <button onClick={() => setYears(years.filter((y) => y !== year))} className="size-4 text-blue-400 hover:text-blue-600"><X className="size-3" /></button>
+                {yearEntries.map((entry) => (
+                  <span key={`${entry.year}-${entry.year_end ?? 's'}`} className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-2xs text-blue-700">
+                    {formatYearEntry(entry)}
+                    <button onClick={() => removeYearEntry(entry)} className="size-4 text-blue-400 hover:text-blue-600"><X className="size-3" /></button>
                   </span>
                 ))}
-                {years.length === 0 && <p className="text-2xs text-muted-foreground">暂无年份</p>}
+                {yearEntries.length === 0 && <p className="text-2xs text-muted-foreground">暂无年份</p>}
               </div>
+              {/* 模式切换 */}
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={() => setYearMode("single")}
+                  className={`text-2xs px-3 py-1 rounded-lg border transition-colors ${yearMode === "single" ? "bg-primary text-white border-primary" : "border-border text-muted-foreground hover:bg-muted"}`}
+                >
+                  {t.yearSingle}
+                </button>
+                <button
+                  onClick={() => setYearMode("range")}
+                  className={`text-2xs px-3 py-1 rounded-lg border transition-colors ${yearMode === "range" ? "bg-primary text-white border-primary" : "border-border text-muted-foreground hover:bg-muted"}`}
+                >
+                  {t.yearRange}
+                </button>
+              </div>
+              {/* 输入框 */}
               <div className="flex gap-2">
                 <Input
                   type="number"
-                  placeholder="年份 (1900-2100)"
+                  placeholder={yearMode === "single" ? "年份 (1900-2100)" : "起始年份"}
                   className="h-9 w-32 rounded-lg"
                   min={1900}
                   max={2100}
                   value={yearInput}
                   onChange={(e) => setYearInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      const val = parseInt((e.target as HTMLInputElement).value, 10);
-                      if (val >= 1900 && val <= 2100 && !years.includes(val)) {
-                        setYears([...years, val].sort((a, b) => a - b));
-                        setYearInput("");
-                      }
-                    }
-                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter") addYearEntry(); }}
                 />
-                <Button variant="outline" size="sm" className="rounded-lg text-2xs" onClick={() => {
-                  const val = parseInt(yearInput, 10);
-                  if (val >= 1900 && val <= 2100 && !years.includes(val)) {
-                    setYears([...years, val].sort((a, b) => a - b));
-                    setYearInput("");
-                  }
-                }}>添加</Button>
+                {yearMode === "range" && (
+                  <Input
+                    type="number"
+                    placeholder="结束年份"
+                    className="h-9 w-32 rounded-lg"
+                    min={1900}
+                    max={2100}
+                    value={yearEndInput}
+                    onChange={(e) => setYearEndInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") addYearEntry(); }}
+                  />
+                )}
+                <Button variant="outline" size="sm" className="rounded-lg text-2xs" onClick={addYearEntry}>添加</Button>
               </div>
             </div>
 

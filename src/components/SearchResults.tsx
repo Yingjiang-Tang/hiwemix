@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useLang } from "@/components/LanguageContext";
 import { colorSwatchStyle } from "@/lib/utils";
 import type { FormulaTableRow } from "@/types";
+import { formatYearEntry } from "@/lib/db-formula";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -36,7 +37,7 @@ function VariantSubCard({
 }) {
   const hex = row.color.hex_preview;
   const displayTitle = row.variant?.name || row.formula.version;
-  const displayYear = row.variant?.year_range || row.year?.toString() || "";
+  const displayYear = row.variant?.year_range || (row.yearEntry ? formatYearEntry(row.yearEntry) : "");
   const displayMeta = `${row.formula.paint_system} | ${row.formula.formula_type}`;
 
   return (

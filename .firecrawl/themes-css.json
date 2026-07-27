@@ -1,0 +1,18 @@
+{
+  "name": "themes.css",
+  "path": "packages/tailwind-config/themes.css",
+  "sha": "3789e41787ba3d352826ee590f58ab584b979e51",
+  "size": 1470,
+  "url": "https://api.github.com/repos/dubinc/dub/contents/packages/tailwind-config/themes.css?ref=main",
+  "html_url": "https://github.com/dubinc/dub/blob/main/packages/tailwind-config/themes.css",
+  "git_url": "https://api.github.com/repos/dubinc/dub/git/blobs/3789e41787ba3d352826ee590f58ab584b979e51",
+  "download_url": "https://raw.githubusercontent.com/dubinc/dub/main/packages/tailwind-config/themes.css",
+  "type": "file",
+  "content": "OnJvb3QsCi5saWdodCB7CiAgLS1iZy1kZWZhdWx0OiAyNTUgMjU1IDI1NTsK\nICAtLWJnLW11dGVkOiAyNTAgMjUwIDI1MDsKICAtLWJnLXN1YnRsZTogMjQ1\nIDI0NSAyNDU7CiAgLS1iZy1lbXBoYXNpczogMjI5IDIyOSAyMjk7CiAgLS1i\nZy1pbnZlcnRlZDogMjMgMjMgMjM7CgogIC0tYmctaW5mbzogMjE5IDIzNCAy\nNTQ7CiAgLS1iZy1zdWNjZXNzOiAyMjAgMjUyIDIzMTsKICAtLWJnLWF0dGVu\ndGlvbjogMjU1IDIzNyAyMTM7CiAgLS1iZy13YXJuaW5nOiAyNTQgMjQ5IDE5\nNTsKICAtLWJnLWVycm9yOiAyNTQgMjI2IDIyNjsKCiAgLS1ib3JkZXItZW1w\naGFzaXM6IDE2MyAxNjMgMTYzOwogIC0tYm9yZGVyLWRlZmF1bHQ6IDIxMiAy\nMTIgMjEyOwogIC0tYm9yZGVyLW11dGVkOiAyNDUgMjQ1IDI0NTsKICAtLWJv\ncmRlci1zdWJ0bGU6IDIyOSAyMjkgMjI5OwoKICAtLWNvbnRlbnQtaW52ZXJ0\nZWQ6IDI1NSAyNTUgMjU1OwogIC0tY29udGVudC1tdXRlZDogMTYzIDE2MyAx\nNjM7CiAgLS1jb250ZW50LXN1YnRsZTogMTE1IDExNSAxMTU7CiAgLS1jb250\nZW50LWRlZmF1bHQ6IDY0IDY0IDY0OwogIC0tY29udGVudC1lbXBoYXNpczog\nMjMgMjMgMjM7CgogIC0tY29udGVudC1pbmZvOiAzNyA5OSAyMzU7CiAgLS1j\nb250ZW50LXN1Y2Nlc3M6IDIyIDE2MyA3NDsKICAtLWNvbnRlbnQtYXR0ZW50\naW9uOiAyMzQgODggMTI7CiAgLS1jb250ZW50LXdhcm5pbmc6IDIwMiAxMzgg\nNDsKICAtLWNvbnRlbnQtZXJyb3I6IDIyMCAzOCAzODsKfQoKLmRhcmsgewog\nIC0tYmctZGVmYXVsdDogMCAwIDA7CiAgLS1iZy1tdXRlZDogMjMgMjMgMjM7\nCiAgLS1iZy1zdWJ0bGU6IDM4IDM4IDM4OwogIC0tYmctZW1waGFzaXM6IDY0\nIDY0IDY0OwogIC0tYmctaW52ZXJ0ZWQ6IDI1MCAyNTAgMjUwOwoKICAtLWJn\nLWluZm86IDIzIDM3IDg0OwogIC0tYmctc3VjY2VzczogNSA0NiAyMjsKICAt\nLWJnLWF0dGVudGlvbjogNjcgMjAgNzsKICAtLWJnLXdhcm5pbmc6IDY2IDMy\nIDY7CiAgLS1iZy1lcnJvcjogNjkgMTAgMTA7CgogIC0tYm9yZGVyLW11dGVk\nOiAzOCAzOCAzODsKICAtLWJvcmRlci1zdWJ0bGU6IDY0IDY0IDY0OwogIC0t\nYm9yZGVyLWRlZmF1bHQ6IDgyIDgyIDgyOwogIC0tYm9yZGVyLWVtcGhhc2lz\nOiAxMTUgMTE1IDExNTsKCiAgLS1jb250ZW50LWludmVydGVkOiAwIDAgMDsK\nICAtLWNvbnRlbnQtbXV0ZWQ6IDgyIDgyIDgyOwogIC0tY29udGVudC1zdWJ0\nbGU6IDE2MyAxNjMgMTYzOwogIC0tY29udGVudC1kZWZhdWx0OiAyMTIgMjEy\nIDIxMjsKICAtLWNvbnRlbnQtZW1waGFzaXM6IDI1MCAyNTAgMjUwOwoKICAt\nLWNvbnRlbnQtaW5mbzogMTQ3IDE5NyAyNTM7CiAgLS1jb250ZW50LXN1Y2Nl\nc3M6IDEzNCAyMzkgMTcyOwogIC0tY29udGVudC1hdHRlbnRpb246IDI1MyAx\nODYgMTE2OwogIC0tY29udGVudC13YXJuaW5nOiAyNTMgMjI0IDcxOwogIC0t\nY29udGVudC1lcnJvcjogMjUyIDE2NSAxNjU7Cn0K\n",
+  "encoding": "base64",
+  "_links": {
+    "self": "https://api.github.com/repos/dubinc/dub/contents/packages/tailwind-config/themes.css?ref=main",
+    "git": "https://api.github.com/repos/dubinc/dub/git/blobs/3789e41787ba3d352826ee590f58ab584b979e51",
+    "html": "https://github.com/dubinc/dub/blob/main/packages/tailwind-config/themes.css"
+  }
+}

@@ -68,6 +68,8 @@ export interface I18nDict {
   colorNamePlaceholder: string;
   year: string;
   yearPlaceholder: string;
+  yearSingle: string;
+  yearRange: string;
   formulasCount: (n: number) => string;
   detail: string;
   expand: string;

@@ -42,6 +42,7 @@ const dict_nl = dict({
     colorCodePlaceholder: "bijv. 040, NH731P",
     colorNamePlaceholder: "bijv. Super White",
     year: "Jaar", yearPlaceholder: "bijv. 2020 of 2018-2022",
+    yearSingle: "Enkel", yearRange: "Bereik",
     detail: "Detail", expand: "Uitklappen", collapse: "Inklappen",
     version: "Versie", paintSystemNotes: "Notities",
     volume: "Volume", tonerCode: "Tonercode", tonerName: "Toner naam",

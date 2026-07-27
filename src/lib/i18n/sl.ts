@@ -42,6 +42,7 @@ const dict_sl = dict({
     colorCodePlaceholder: "npr. 040, NH731P",
     colorNamePlaceholder: "npr. Super White",
     year: "Leto", yearPlaceholder: "npr. 2020 ali 2018-2022",
+    yearSingle: "Enojno", yearRange: "Razpon",
     detail: "Podrobnosti", expand: "Razširi", collapse: "Strni",
     version: "Različica", paintSystemNotes: "Opombe",
     volume: "Prostornina", tonerCode: "Koda tonerja", tonerName: "Ime tonerja",

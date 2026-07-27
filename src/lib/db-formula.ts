@@ -7,6 +7,7 @@ import type {
   Formula,
   FormulaComponent,
   AppSettings,
+  YearEntry,
 } from "@/types";
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -40,33 +41,51 @@ export async function getFormulaTypes(): Promise<ColorVariant[]> {
 
 // ====== Color Years ======
 
-export async function getColorYears(colorId: string): Promise<number[]> {
+// 判断 YearEntry 是否包含目标年份
+export function yearEntryContains(entry: YearEntry, target: number): boolean {
+  if (entry.year_end == null) return entry.year === target;
+  return entry.year <= target && target <= entry.year_end;
+}
+
+// 格式化 YearEntry 为显示字符串："2020" 或 "2001-2009"
+export function formatYearEntry(entry: YearEntry): string {
+  if (entry.year_end == null) return String(entry.year);
+  return `${entry.year}-${entry.year_end}`;
+}
+
+export async function getColorYears(colorId: string): Promise<YearEntry[]> {
   const { data, error } = await getSupabase()
     .from("color_years")
-    .select("year")
+    .select("year, year_end")
     .eq("color_id", colorId)
     .order("year", { ascending: true });
   if (error) throw error;
-  return (data ?? []).map((r) => r.year as number);
+  return (data ?? []).map((r: Record<string, unknown>) => ({
+    year: r.year as number,
+    year_end: (r.year_end as number | null) ?? undefined,
+  }));
 }
 
-export async function getAllColorYears(): Promise<Record<string, number[]>> {
+export async function getAllColorYears(): Promise<Record<string, YearEntry[]>> {
   const { data, error } = await getSupabase()
     .from("color_years")
-    .select("color_id, year")
+    .select("color_id, year, year_end")
     .order("year", { ascending: true });
   if (error) throw error;
-  const map: Record<string, number[]> = {};
+  const map: Record<string, YearEntry[]> = {};
   for (const row of data ?? []) {
     const colorId = row.color_id as string;
-    const year = row.year as number;
+    const entry: YearEntry = {
+      year: row.year as number,
+      year_end: (row.year_end as number | null) ?? undefined,
+    };
     if (!map[colorId]) map[colorId] = [];
-    map[colorId].push(year);
+    map[colorId].push(entry);
   }
   return map;
 }
 
-export async function saveColorYears(colorId: string, years: number[]): Promise<void> {
+export async function saveColorYears(colorId: string, entries: YearEntry[]): Promise<void> {
   // 删除现有的年份
   const { error: delErr } = await getSupabaseAdmin()
     .from("color_years")
@@ -74,9 +93,13 @@ export async function saveColorYears(colorId: string, years: number[]): Promise<
     .eq("color_id", colorId);
   if (delErr) throw delErr;
 
-  // 插入新的年份
-  if (years.length > 0) {
-    const rows = years.map((year) => ({ color_id: colorId, year }));
+  // 插入新的年份（含 year_end）
+  if (entries.length > 0) {
+    const rows = entries.map((e) => ({
+      color_id: colorId,
+      year: e.year,
+      year_end: e.year_end ?? null,
+    }));
     const { error: insErr } = await getSupabaseAdmin().from("color_years").insert(rows);
     if (insErr) throw insErr;
   }

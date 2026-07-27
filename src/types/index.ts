@@ -3,6 +3,12 @@ export interface Region {
   code: string           // 产地代码，例如 "JPN"、"EUR"
 }
 
+// 年份条目（color_years 表中的一行）
+export interface YearEntry {
+  year: number          // 起始年份；若 year_end 为空则为单一年份
+  year_end?: number     // 结束年份；undefined/null 表示单年（不展开）
+}
+
 // 车辆品牌
 export interface CarMake {
   id: string
@@ -27,7 +33,7 @@ export interface Color {
   hex_preview: string     // 颜色预览 hex，例如 "#F5F5F0"
   car_model?: string      // 车型，例如 "Camry" "Corolla"
   variants: ColorVariant[]
-  years?: number[]        // 适用年份列表，例如 [2018, 2019, 2020, 2021, 2022]
+  years?: YearEntry[]     // 适用年份列表（含区间）
 }
 
 // 配方类型
@@ -87,7 +93,7 @@ export interface FormulaTableRow {
   formula: Formula
   variant: ColorVariant | undefined  // 通过 formula.variant_id 在 color.variants 中查找
   makeName: string                    // 通过 brands 解析 make_id -> name
-  year?: number                       // 展平后的单个年份
+  yearEntry?: YearEntry             // 展平后的年份条目（可能是单年或区间）
 }
 
 // 系统设置

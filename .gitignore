@@ -65,3 +65,4 @@ Desktop.ini
 # Build artifacts
 dist/
 build/
+.firecrawl/

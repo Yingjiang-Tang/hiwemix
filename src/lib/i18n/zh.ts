@@ -63,6 +63,7 @@ const dict_zh = dict({
     colorCodePlaceholder: "例如 040, NH731P",
     colorNamePlaceholder: "例如 Super White, 珍珠白",
     year: "年份", yearPlaceholder: "例如 2020 或 2018-2022",
+    yearSingle: "单年", yearRange: "区间",
 
     detail: "详情", expand: "展开", collapse: "收起",
     version: "版本", paintSystemNotes: "备注",

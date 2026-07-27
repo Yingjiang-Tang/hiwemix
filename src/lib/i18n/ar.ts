@@ -42,6 +42,7 @@ const dict_ar = dict({
     colorCodePlaceholder: "مثال: 040, NH731P",
     colorNamePlaceholder: "مثال: Super White",
     year: "السنة", yearPlaceholder: "مثال: 2020 أو 2018-2022",
+    yearSingle: "مفرد", yearRange: "نطاق",
     detail: "تفاصيل", expand: "توسيع", collapse: "طي",
     version: "الإصدار", paintSystemNotes: "ملاحظات",
     volume: "الحجم", tonerCode: "رمز الحبر", tonerName: "اسم الحبر",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo, type CSSProperties, type FocusEvent } from "react";
-import type { Formula, FormulaComponent, FormulaType, ComponentGroup, Color, ColorVariant } from "@/types";
+import type { Formula, FormulaComponent, FormulaType, ComponentGroup, Color, ColorVariant, YearEntry } from "@/types";
 import type { Toner, CarMake } from "@/types";
 import { generateFormulaId } from "@/lib/id-generator";
 import { hexToRgb, filterTonersBySystem, matchingToners, matchingColors } from "./formula-helpers";
@@ -32,7 +32,19 @@ export default function FormulasPanel() {
   const [message, setMessage] = useState("");
   const idManuallyEdited = useRef(false);
   const [formulaSearch, setFormulaSearch] = useState("");
-  const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [availableYears, setAvailableYears] = useState<YearEntry[]>([]);
+  // 将 YearEntry[] 展开为所有包含的单年（用于下拉选项）
+  const expandedYears = useMemo(() => {
+    const result: number[] = [];
+    for (const e of availableYears) {
+      if (e.year_end == null) {
+        result.push(e.year);
+      } else {
+        for (let y = e.year; y <= e.year_end; y++) result.push(y);
+      }
+    }
+    return [...new Set(result)].sort((a, b) => a - b);
+  }, [availableYears]);
   const [pctInputs, setPctInputs] = useState<Record<number, string>>({});
   const [colorQuery, setColorQuery] = useState("");
   const [colorDropdownOpen, setColorDropdownOpen] = useState(false);
@@ -322,7 +334,7 @@ export default function FormulasPanel() {
             <Label className="text-sm font-medium text-foreground/80">适用年份</Label>
             <Select value={form.year?.toString() || ""} onValueChange={(v) => setForm({ ...form, year: v ? parseInt(v, 10) : undefined })} disabled={!form.color_id}>
               <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue placeholder="所有年份" /></SelectTrigger>
-              <SelectContent>{availableYears.map((y) => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}</SelectContent>
+              <SelectContent>{expandedYears.map((y) => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="flex flex-col gap-1.5">

@@ -42,6 +42,7 @@ const dict_it = dict({
     colorCodePlaceholder: "es. 040, NH731P",
     colorNamePlaceholder: "es. Super White",
     year: "Anno", yearPlaceholder: "es. 2020 o 2018-2022",
+    yearSingle: "Singolo", yearRange: "Intervallo",
     detail: "Dettaglio", expand: "Espandi", collapse: "Riduci",
     version: "Versione", paintSystemNotes: "Note",
     volume: "Volume", tonerCode: "Codice toner", tonerName: "Nome toner",

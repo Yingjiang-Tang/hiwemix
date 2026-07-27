@@ -42,6 +42,7 @@ const dict_ru = dict({
     colorCodePlaceholder: "напр. 040, NH731P",
     colorNamePlaceholder: "напр. Super White",
     year: "Год", yearPlaceholder: "напр. 2020 или 2018-2022",
+    yearSingle: "Один", yearRange: "Диапазон",
     detail: "Подробнее", expand: "Развернуть", collapse: "Свернуть",
     version: "Версия", paintSystemNotes: "Примечания",
     volume: "Объём", tonerCode: "Код тонера", tonerName: "Название тонера",

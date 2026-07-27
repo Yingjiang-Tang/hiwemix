@@ -7,7 +7,8 @@ import FormulaDrawer from "@/components/FormulaDrawer";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import { useLang } from "@/components/LanguageContext";
-import type { CarMake, Color, Formula, SearchParams, SearchResult, FormulaTableRow } from "@/types";
+import { yearEntryContains } from "@/lib/db-formula";
+import type { CarMake, Color, Formula, SearchParams, SearchResult, FormulaTableRow, YearEntry } from "@/types";
 
 export default function Home() {
   const { t } = useLang();
@@ -17,7 +18,7 @@ export default function Home() {
   const [hasSearched, setHasSearched] = useState(false);
   const [drawerResult, setDrawerResult] = useState<SearchResult | null>(null);
   const [drawerFormulaId, setDrawerFormulaId] = useState<string | undefined>();
-  const [drawerYear, setDrawerYear] = useState<number | undefined>();
+  const [drawerYear, setDrawerYear] = useState<YearEntry | undefined>();
 
   const dataPromiseRef = useRef<Promise<{ colors: Color[]; formulas: Formula[]; brands: CarMake[] }> | null>(null);
 
@@ -65,7 +66,7 @@ export default function Home() {
         const searchYear = parseInt(params.year, 10);
         if (!isNaN(searchYear)) {
           filtered = filtered.filter((c) =>
-            c.years && c.years.some((y) => y === searchYear)
+            c.years && c.years.some((entry) => yearEntryContains(entry, searchYear))
           );
         }
       }
@@ -77,17 +78,18 @@ export default function Home() {
       const searchYear = params.year ? parseInt(params.year, 10) : undefined;
       const rows: FormulaTableRow[] = [];
       for (const r of results) {
-        const colorYears = searchYear && !isNaN(searchYear)
-          ? [searchYear]
-          : r.color.years && r.color.years.length > 0 ? r.color.years : [undefined];
+        // 匹配的 YearEntry（按搜索年份过滤）；若无搜索年份则展示全部 YearEntry
+        const matchedEntries = searchYear && !isNaN(searchYear)
+          ? r.color.years?.filter(e => yearEntryContains(e, searchYear)) ?? []
+          : (r.color.years && r.color.years.length > 0 ? r.color.years : [undefined]);
         for (const f of r.formulas) {
-          for (const year of colorYears) {
+          for (const entry of matchedEntries) {
             rows.push({
               color: r.color,
               formula: f,
               variant: r.color.variants.find((v) => v.id === f.variant_id),
               makeName: brandsMap.get(r.color.make_id) ?? r.color.make_id,
-              year,
+              yearEntry: entry,
             });
           }
         }
@@ -102,7 +104,7 @@ export default function Home() {
     if (!r) return;
     setDrawerResult(r);
     setDrawerFormulaId(row.formula.id);
-    setDrawerYear(row.year);
+    setDrawerYear(row.yearEntry);
   }
 
   return (

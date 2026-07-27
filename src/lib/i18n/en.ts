@@ -64,6 +64,7 @@ const dict_en = dict({
     colorCodePlaceholder: "e.g. 040, NH731P",
     colorNamePlaceholder: "e.g. Super White",
     year: "Year", yearPlaceholder: "e.g. 2020 or 2018-2022",
+    yearSingle: "Single", yearRange: "Range",
 
     detail: "Detail", expand: "Expand", collapse: "Collapse",
     version: "Version", paintSystemNotes: "Notes",

@@ -1,0 +1,18 @@
+{
+  "name": "fonts.ts",
+  "path": "apps/web/styles/fonts.ts",
+  "sha": "c23622572c80551726ff914db466c8b942db5599",
+  "size": 421,
+  "url": "https://api.github.com/repos/dubinc/dub/contents/apps/web/styles/fonts.ts?ref=main",
+  "html_url": "https://github.com/dubinc/dub/blob/main/apps/web/styles/fonts.ts",
+  "git_url": "https://api.github.com/repos/dubinc/dub/git/blobs/c23622572c80551726ff914db466c8b942db5599",
+  "download_url": "https://raw.githubusercontent.com/dubinc/dub/main/apps/web/styles/fonts.ts",
+  "type": "file",
+  "content": "aW1wb3J0IHsgR2Vpc3RNb25vIH0gZnJvbSAiZ2Vpc3QvZm9udC9tb25vIjsK\naW1wb3J0IHsgSW50ZXIgfSBmcm9tICJuZXh0L2ZvbnQvZ29vZ2xlIjsKaW1w\nb3J0IGxvY2FsRm9udCBmcm9tICJuZXh0L2ZvbnQvbG9jYWwiOwoKZXhwb3J0\nIGNvbnN0IHNhdG9zaGkgPSBsb2NhbEZvbnQoewogIHNyYzogIi4uL3N0eWxl\ncy9TYXRvc2hpLVZhcmlhYmxlLndvZmYyIiwKICB2YXJpYWJsZTogIi0tZm9u\ndC1zYXRvc2hpIiwKICB3ZWlnaHQ6ICIzMDAgOTAwIiwKICBkaXNwbGF5OiAi\nc3dhcCIsCiAgc3R5bGU6ICJub3JtYWwiLAp9KTsKCmV4cG9ydCBjb25zdCBp\nbnRlciA9IEludGVyKHsKICB2YXJpYWJsZTogIi0tZm9udC1pbnRlciIsCiAg\nc3Vic2V0czogWyJsYXRpbiJdLAp9KTsKCmV4cG9ydCBjb25zdCBnZWlzdE1v\nbm8gPSBHZWlzdE1vbm87Cg==\n",
+  "encoding": "base64",
+  "_links": {
+    "self": "https://api.github.com/repos/dubinc/dub/contents/apps/web/styles/fonts.ts?ref=main",
+    "git": "https://api.github.com/repos/dubinc/dub/git/blobs/c23622572c80551726ff914db466c8b942db5599",
+    "html": "https://github.com/dubinc/dub/blob/main/apps/web/styles/fonts.ts"
+  }
+}
