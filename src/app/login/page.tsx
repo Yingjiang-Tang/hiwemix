@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +12,17 @@ import { createClient } from "@/lib/supabase/client";
 import { getErrorMessage } from "@/lib/error-utils";
 import Link from "next/link";
 
+// 外层 page：只负责 Suspense 包裹，保证 prerender 正常
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+// 内层组件：使用 useSearchParams，必须在 Suspense boundary 内
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -21,7 +31,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // 显示密码重置成功的消息
+  // 显示密码重置成功 / 邮箱确认成功的消息
   useEffect(() => {
     if (searchParams.get("reset") === "success") {
       setSuccess("Password updated. Please sign in with your new password.");
