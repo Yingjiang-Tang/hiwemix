@@ -32,6 +32,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={cn("h-full", "antialiased", inter.variable, notoSansSC.variable, notoSansArabic.variable, notoSansHebrew.variable, outfit.variable, "font-sans", geist.variable)}
     >
       <body className="min-h-full">
