@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import TwoPanelLayout from "@/components/auth/TwoPanelLayout";
 import { createClient } from "@/lib/supabase/client";
 import { getErrorMessage } from "@/lib/error-utils";
+import { getEmailRedirectTo } from "@/lib/auth-redirect";
 import Link from "next/link";
 
 type Step = "email" | "check-email" | "new-password";
@@ -27,20 +28,20 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(0);
 
-  // 监听 session 变化：用户点击邮件链接后会话建立，自动弹出设置密码
+  // 监听 session 变化：用户点击邮件链接后 /auth/callback 服务端已设置 cookie session，
+  // 页面打开时直接 getSession() 即可拿到。无需依赖 localStorage。
   useEffect(() => {
-    const pending = localStorage.getItem(RESET_KEY);
     const supabase = createClient();
-    // 先检查当前是否已有 session
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user && pending) {
-        setEmail(user.email ?? "");
+    // 先检查当前是否已有 session（处理 ?from=email 从 callback 跳转来的情况）
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setEmail(session.user.email ?? "");
         setStep("new-password");
       }
     });
-    // 实时监听 session 变化
+    // 实时监听后续 session 变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session?.user && localStorage.getItem(RESET_KEY)) {
+      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session?.user) {
         setEmail(session.user.email ?? "");
         setStep("new-password");
       }
@@ -89,7 +90,7 @@ export default function ResetPasswordPage() {
     try {
       const supabase = createClient();
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: getEmailRedirectTo("/reset-password"),
       });
       if (resetError) {
         localStorage.removeItem(RESET_KEY);
@@ -114,7 +115,7 @@ export default function ResetPasswordPage() {
     try {
       const supabase = createClient();
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: getEmailRedirectTo("/reset-password"),
       });
       if (resetError) {
         setError(getErrorMessage(resetError, "Failed to send reset email"));

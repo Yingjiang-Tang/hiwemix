@@ -26,6 +26,9 @@ export default function LoginPage() {
     if (searchParams.get("reset") === "success") {
       setSuccess("Password updated. Please sign in with your new password.");
     }
+    if (searchParams.get("confirmed") === "1") {
+      setSuccess("Email confirmed. Please sign in with your password.");
+    }
   }, [searchParams]);
 
 

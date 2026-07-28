@@ -1,22 +1,25 @@
 import { NextResponse } from "next/server";
-// The client send the user to this route from the browser so our supabase client
+// The client sends the user to this route from the browser so our supabase client
 // must be the server one (cookies).
 import { createClient } from "@/lib/supabase/server";
 
-// Google OAuth 回调路由
-// Supabase 在 OAuth 完成后将用户重定向到此地址，URL 中带有 ?code=xxx
-// 此路由用 code 交换 session，然后重定向回首页
+// 统一的 Auth 回调路由
+// - Google OAuth 完成后 Supabase 跳转：/auth/callback?code=xxx
+// - 邮箱注册确认链接：/auth/callback?code=xxx&type=signup
+// - 密码重置链接：/auth/callback?code=xxx&type=recovery
+// 此路由用 code 交换 session，设置 cookie，然后根据 type/next 重定向到目标页面
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  // 如果 OAuth 提供者传回 error（例如用户取消授权），重定向到登录页
   const error = searchParams.get("error");
-
-  // 如果有 next 参数，登录成功后跳转到该地址
+  const type = searchParams.get("type"); // signup | recovery | implicit | null
   const next = searchParams.get("next") ?? "/";
 
   if (error) {
-    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error)}`);
+    const errorPath = next.startsWith("/login")
+      ? `/login?error=${encodeURIComponent(error)}`
+      : `/login?error=${encodeURIComponent(error)}`;
+    return NextResponse.redirect(`${origin}${errorPath}`);
   }
 
   if (code) {
@@ -24,17 +27,23 @@ export async function GET(request: Request) {
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!exchangeError) {
-      // 登录成功，跳转到目标页面
+      // 根据 type 决定下一步：注册确认 / 密码重置 走专门页面，其他走 next
+      if (type === "recovery") {
+        return NextResponse.redirect(`${origin}/reset-password?from=email`);
+      }
+      if (type === "signup" || type === "email") {
+        return NextResponse.redirect(`${origin}/login?confirmed=1`);
+      }
+      // OAuth 或未指定 type：跳到 next（默认 /）
       return NextResponse.redirect(`${origin}${next}`);
     }
 
-    // code 交换失败
-    console.error("OAuth callback error:", exchangeError.message);
+    console.error("Auth callback error:", exchangeError.message);
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(exchangeError.message)}`
     );
   }
 
-  // 没有 code 也没有 error，直接回登录页
+  // 没有 code 也没有 error，回登录页
   return NextResponse.redirect(`${origin}/login`);
 }
