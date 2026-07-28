@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import TwoPanelLayout from "@/components/auth/TwoPanelLayout";
 import { createClient } from "@/lib/supabase/client";
+import { getErrorMessage } from "@/lib/error-utils";
 import Link from "next/link";
 
 export default function LoginPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,20 +28,6 @@ export default function LoginPage() {
     }
   }, [searchParams]);
 
-  function getErrorMessage(err: unknown, fallback: string): string {
-    if (!err) return fallback;
-    if (err instanceof Error) return err.message || fallback;
-    if (typeof err === "string") {
-      if (!err || err === "{}") return fallback;
-      return err;
-    }
-    if (typeof err === "object" && err !== null) {
-      const obj = err as Record<string, unknown>;
-      if (typeof obj.message === "string" && obj.message && obj.message !== "{}") return obj.message;
-      if (typeof obj.error_description === "string") return obj.error_description;
-    }
-    return fallback;
-  }
 
   // 邮箱+密码登录
   async function handleEmailLogin(e: React.FormEvent) {
@@ -62,7 +50,10 @@ export default function LoginPage() {
           setError(msg);
         }
         setLoading(false);
+        return;
       }
+      // 登录成功，跳转首页
+      router.push("/");
     } catch (err) {
       setError(getErrorMessage(err, "Login failed"));
       setLoading(false);

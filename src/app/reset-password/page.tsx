@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import TwoPanelLayout from "@/components/auth/TwoPanelLayout";
 import { createClient } from "@/lib/supabase/client";
+import { getErrorMessage } from "@/lib/error-utils";
 import Link from "next/link";
 
 type Step = "email" | "check-email" | "new-password";
@@ -47,7 +48,7 @@ export default function ResetPasswordPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // 页面可见性检测 + 轮询（处理跨标签页认证）
+  // 轮询检查 session + 页面可见性检测
   useEffect(() => {
     function checkSession() {
       if (step !== "check-email") return;
@@ -59,12 +60,13 @@ export default function ResetPasswordPage() {
         }
       });
     }
-    document.addEventListener("visibilitychange", () => {
+    const onVisible = () => {
       if (document.visibilityState === "visible") checkSession();
-    });
+    };
+    document.addEventListener("visibilitychange", onVisible);
     const interval = setInterval(checkSession, 2000);
     return () => {
-      document.removeEventListener("visibilitychange", () => {});
+      document.removeEventListener("visibilitychange", onVisible);
       clearInterval(interval);
     };
   }, [step]);
@@ -76,20 +78,6 @@ export default function ResetPasswordPage() {
     return () => clearTimeout(timer);
   }, [cooldown]);
 
-  function getErrorMessage(err: unknown, fallback: string): string {
-    if (!err) return fallback;
-    if (err instanceof Error) return err.message || fallback;
-    if (typeof err === "string") {
-      if (!err || err === "{}") return fallback;
-      return err;
-    }
-    if (typeof err === "object" && err !== null) {
-      const obj = err as Record<string, unknown>;
-      if (typeof obj.message === "string" && obj.message && obj.message !== "{}") return obj.message;
-      if (typeof obj.error_description === "string") return obj.error_description;
-    }
-    return fallback;
-  }
 
   // Step 1: 发送重置邮件
   async function handleSendResetEmail(e: React.FormEvent) {
@@ -101,7 +89,7 @@ export default function ResetPasswordPage() {
     try {
       const supabase = createClient();
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       if (resetError) {
         localStorage.removeItem(RESET_KEY);
@@ -126,7 +114,7 @@ export default function ResetPasswordPage() {
     try {
       const supabase = createClient();
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       if (resetError) {
         setError(getErrorMessage(resetError, "Failed to send reset email"));
@@ -153,6 +141,13 @@ export default function ResetPasswordPage() {
     setLoading(true);
     setError("");
     const supabase = createClient();
+    // 先确认 session 存在（跨标签页认证时 cookie 可能在其他标签页）
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setError("Session expired. Please try resetting your password again.");
+      setLoading(false);
+      return;
+    }
     const { error: updateError } = await supabase.auth.updateUser({ password });
     if (updateError) {
       setError(updateError.message);

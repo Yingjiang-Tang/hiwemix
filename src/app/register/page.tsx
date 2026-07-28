@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import TwoPanelLayout from "@/components/auth/TwoPanelLayout";
 import { createClient } from "@/lib/supabase/client";
+import { getErrorMessage } from "@/lib/error-utils";
 import Link from "next/link";
 
 type Step = "email" | "check-email" | "password";
@@ -32,19 +33,19 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [cooldown, setCooldown] = useState(0);
 
-  // 监听 session 变化：用户在其他标签页点击 Magic Link 后，本页自动检测到并弹出密码框
+  // 监听 session 变化：Magic Link 回调后自动检测并弹出密码框
   useEffect(() => {
     const supabase = createClient();
-    // 先检查当前是否已有 session（从回调页面跳回来的情况）
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user && localStorage.getItem(REGISTER_KEY)) {
-        setEmail(user.email ?? "");
+    // 页面加载时立刻检查一次（Magic Link 直接跳回 /register，session 已建立）
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && localStorage.getItem(REGISTER_KEY)) {
+        setEmail(session.user.email ?? "");
         setStep("password");
       }
     });
-    // 再注册实时监听：用户在邮箱点了链接后，session 会建立
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session?.user && localStorage.getItem(REGISTER_KEY)) {
+    // 实时监听后续 session 变化
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session)  => {
+      if ((event  === "SIGNED_IN" || event === "INITIAL_SESSION") && session?.user && localStorage.getItem(REGISTER_KEY)) {
         setEmail(session.user.email ?? "");
         setStep("password");
       }
@@ -52,7 +53,7 @@ export default function RegisterPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // 当用户从邮箱切回本页面时，主动检查 session（处理跨标签页认证）
+  // 轮询检查 session + 页面可见性检测（处理跨标签页认证的后备方案）
   useEffect(() => {
     function checkSession() {
       if (step !== "check-email") return;
@@ -64,13 +65,13 @@ export default function RegisterPage() {
         }
       });
     }
-    document.addEventListener("visibilitychange", () => {
+    const onVisible = () => {
       if (document.visibilityState === "visible") checkSession();
-    });
-    // 轮询检查 session（每 2 秒，处理跨标签页认证）
+    };
+    document.addEventListener("visibilitychange", onVisible);
     const interval = setInterval(checkSession, 2000);
     return () => {
-      document.removeEventListener("visibilitychange", () => {});
+      document.removeEventListener("visibilitychange", onVisible);
       clearInterval(interval);
     };
   }, [step]);
@@ -82,22 +83,6 @@ export default function RegisterPage() {
     return () => clearTimeout(timer);
   }, [cooldown]);
 
-  // 提取错误信息（Supabase 错误对象可能没有 message 属性）
-  function getErrorMessage(err: unknown, fallback: string): string {
-    if (!err) return fallback;
-    if (err instanceof Error) return err.message || fallback;
-    if (typeof err === "string") {
-      // Supabase 有时返回 message 为字符串 "{}"（服务端内部错误）
-      if (!err || err === "{}") return fallback;
-      return err;
-    }
-    if (typeof err === "object" && err !== null) {
-      const obj = err as Record<string, unknown>;
-      if (typeof obj.message === "string" && obj.message && obj.message !== "{}") return obj.message;
-      if (typeof obj.error_description === "string") return obj.error_description;
-    }
-    return fallback;
-  }
 
   // Step 1: 发送 Magic Link
   async function handleSendMagicLink(e: React.FormEvent) {
@@ -111,7 +96,8 @@ export default function RegisterPage() {
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/register")}`,
+          emailRedirectTo: `${window.location.origin}/register`,
+          shouldCreateUser: true,
         },
       });
       if (otpError) {
@@ -139,7 +125,8 @@ export default function RegisterPage() {
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/register")}`,
+          emailRedirectTo: `${window.location.origin}/register`,
+          shouldCreateUser: true,
         },
       });
       if (otpError) {
@@ -167,9 +154,16 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
     const supabase = createClient();
+    // 先刷新 session（跨标签页认证时，cookie 可能在另一个标签页设置）
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setError("Auth session missing! Please click the verification link in the email while this page stays open. Make sure you're using the same browser.");
+      setLoading(false);
+      return;
+    }
     const { error: updateError } = await supabase.auth.updateUser({ password });
     if (updateError) {
-      setError(updateError.message);
+      setError(getErrorMessage(updateError, "Failed to set password"));
       setLoading(false);
       return;
     }
