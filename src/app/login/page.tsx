@@ -1,189 +1,214 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Globe } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import TwoPanelLayout from "@/components/auth/TwoPanelLayout";
 import { createClient } from "@/lib/supabase/client";
-
-function WhatsAppIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-    </svg>
-  );
-}
-
-function FacebookIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-    </svg>
-  );
-}
-
-function InstagramIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
-    </svg>
-  );
-}
+import Link from "next/link";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
+  // 显示密码重置成功的消息
+  useEffect(() => {
+    if (searchParams.get("reset") === "success") {
+      setSuccess("Password updated. Please sign in with your new password.");
+    }
+  }, [searchParams]);
+
+  function getErrorMessage(err: unknown, fallback: string): string {
+    if (!err) return fallback;
+    if (err instanceof Error) return err.message || fallback;
+    if (typeof err === "string") {
+      if (!err || err === "{}") return fallback;
+      return err;
+    }
+    if (typeof err === "object" && err !== null) {
+      const obj = err as Record<string, unknown>;
+      if (typeof obj.message === "string" && obj.message && obj.message !== "{}") return obj.message;
+      if (typeof obj.error_description === "string") return obj.error_description;
+    }
+    return fallback;
+  }
+
+  // 邮箱+密码登录
+  async function handleEmailLogin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim() || !password) return;
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const supabase = createClient();
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (loginError) {
+        const msg = getErrorMessage(loginError, "Login failed");
+        if (msg.toLowerCase().includes("credentials")) {
+          setError("Invalid email or password. If you signed up with Google, use the Google button below.");
+        } else {
+          setError(msg);
+        }
+        setLoading(false);
+      }
+    } catch (err) {
+      setError(getErrorMessage(err, "Login failed"));
+      setLoading(false);
+    }
+  }
+
+  // Google OAuth 登录
   async function handleGoogleLogin() {
     setLoading(true);
+    setError("");
+    setSuccess("");
     try {
       const supabase = createClient();
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (oauthError) {
-        setError(oauthError.message);
+        setError(getErrorMessage(oauthError, "Google sign-in failed"));
         setLoading(false);
       }
-      // 成功时浏览器跳转到 Google OAuth，无需 setLoading(false)
     } catch {
-      setError("Google 登录服务暂不可用");
+      setError("Google sign-in is temporarily unavailable");
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex min-h-screen flex-col overflow-x-clip lg:flex-row">
-      {/* ===== 左侧背景区 (40%) ===== */}
-      <div
-        className="relative hidden w-full flex-col justify-between bg-cover bg-center px-5 py-6 lg:flex lg:w-[40%]"
-        style={{ backgroundImage: "url('/car-paint.jpg')" }}
-      >
-        <div className="absolute inset-0 bg-black/20" />
-
-        <div className="relative z-10 text-left">
-          <h1 className="text-[70px] font-extrabold uppercase leading-[1.1] tracking-[2px] text-white xl:text-[82px] font-heading">
-            Welcome to
-          </h1>
-          <h1 className="text-[70px] font-extrabold uppercase leading-[1.1] tracking-[2px] text-white xl:text-[82px] font-heading">
-            HIWEMIX
-          </h1>
-        </div>
-
-        <div className="relative z-10 flex items-center gap-1">
-          <a
-            href="https://www.hiwe.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Website"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white transition-colors hover:text-white/75"
-          >
-            <Globe className="size-5" />
-          </a>
-          <a
-            href="https://api.whatsapp.com/send?phone=8615819205996"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="WhatsApp"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white transition-colors hover:text-white/75"
-          >
-            <WhatsAppIcon className="size-5" />
-          </a>
-          <a
-            href="https://www.facebook.com/profile.php?id=61550592422623"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Facebook"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white transition-colors hover:text-white/75"
-          >
-            <FacebookIcon className="size-5" />
-          </a>
-          <a
-            href="https://www.instagram.com/haiwenduan?igsh=eGd2c2Fkbnplazl1"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Instagram"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white transition-colors hover:text-white/75"
-          >
-            <InstagramIcon className="size-5" />
-          </a>
-        </div>
-      </div>
-
-      {/* ===== 右侧表单区 (60%) ===== */}
-      <div className="relative flex flex-1 items-center justify-center bg-white px-6 py-10 lg:px-5">
-        <div className="w-full max-w-[360px]">
-          {/* Logo */}
-          <div className="mb-6 flex justify-center lg:-mt-[30px]">
-            <Image
-              src="/hiwe.png"
-              alt="HIWE"
-              width={1206}
-              height={334}
-              className="h-10 w-auto object-contain lg:h-14"
-            />
+    <TwoPanelLayout>
+      <Card className="border-border/60 shadow-sm">
+        <CardContent className="flex flex-col gap-5 pt-6">
+          <div className="text-center">
+            <h2 className="text-xl font-bold text-foreground">Sign in</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Sign in to access the formula search and admin management dashboard.
+            </p>
           </div>
 
-          {/* 卡片：仅 Google 登录 */}
-          <Card className="border-border/60 shadow-sm">
-            <CardContent className="flex flex-col gap-5 pt-6">
-              <div className="text-center">
-                <h2 className="text-xl font-bold text-foreground">Sign in</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Use your Google account to continue
-                </p>
-              </div>
-
-              {/* Google 登录按钮 */}
-              <Button
-                type="button"
-                variant="outline"
-                disabled={loading}
-                onClick={handleGoogleLogin}
-                className="h-11 w-full rounded-xl text-sm font-medium text-foreground transition-all hover:scale-[1.01] hover:bg-muted/50"
-              >
-                <svg className="mr-2 size-5" viewBox="0 0 24 24">
-                  <path
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-                    fill="#4285F4"
-                  />
-                  <path
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    fill="#34A853"
-                  />
-                  <path
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    fill="#FBBC05"
-                  />
-                  <path
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    fill="#EA4335"
-                  />
-                </svg>
-                {loading ? "Redirecting…" : "Continue with Google"}
-              </Button>
-
-              {/* 错误提示 */}
-              {error && (
-                <div
-                  role="alert"
-                  className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-2xs text-destructive"
+          {/* 邮箱+密码登录表单 */}
+          <form onSubmit={handleEmailLogin} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  href="/reset-password"
+                  className="text-2xs font-medium text-muted-foreground hover:text-foreground hover:underline"
                 >
-                  {error}
-                </div>
-              )}
+                  Forgot password?
+                </Link>
+              </div>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="h-11 w-full rounded-xl text-sm font-medium"
+            >
+              {loading ? "Signing in..." : "Sign in"}
+            </Button>
+          </form>
 
-              <p className="text-center text-xs text-muted-foreground">
-                Sign in to access the formula search and admin management dashboard.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+          {/* 分隔线 */}
+          <div className="flex items-center gap-3">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <Separator className="flex-1" />
+          </div>
+
+          {/* Google 登录按钮 */}
+          <Button
+            type="button"
+            variant="outline"
+            disabled={loading}
+            onClick={handleGoogleLogin}
+            className="h-11 w-full rounded-xl text-sm font-medium text-foreground transition-all hover:scale-[1.01] hover:bg-muted/50"
+          >
+            <svg className="mr-2 size-5" viewBox="0 0 24 24">
+              <path
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+                fill="#4285F4"
+              />
+              <path
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                fill="#34A853"
+              />
+              <path
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                fill="#FBBC05"
+              />
+              <path
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                fill="#EA4335"
+              />
+            </svg>
+            {loading ? "Redirecting..." : "Continue with Google"}
+          </Button>
+
+          {/* 成功提示 */}
+          {success && (
+            <div
+              role="alert"
+              className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-2xs text-primary"
+            >
+              {success}
+            </div>
+          )}
+
+          {/* 错误提示 */}
+          {error && (
+            <div
+              role="alert"
+              className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-2xs text-destructive"
+            >
+              {error}
+            </div>
+          )}
+
+          {/* 注册链接 */}
+          <p className="text-center text-xs text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link href="/register" className="font-medium text-primary hover:underline">
+              Sign up
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
+    </TwoPanelLayout>
   );
 }
