@@ -15,15 +15,25 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get("error");
   const type = searchParams.get("type"); // signup | recovery | implicit | null
   const next = searchParams.get("next") ?? "/";
+  // 仅允许同源相对路径，防止开放重定向（拒绝 //evil.com、/\evil.com 等）——AUTH-5
+  const safeNext =
+    next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\")
+      ? next
+      : "/";
 
   // Supabase 返回错误（如链接过期）。
   // 密码重置链接（next 指向 /reset-password）出错 → 回重置页提示重新申请；
-  // 其他 → 回登录页带 error。
+  // 其他 → 回登录页带通用错误（不透传原始 error，防信息泄露——AUTH-3）。
   if (error) {
+    console.error("[auth/callback] Supabase error param:", error);
     if (next.startsWith("/reset-password")) {
       return NextResponse.redirect(`${origin}/reset-password?error=expired`);
     }
-    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error)}`);
+    return NextResponse.redirect(
+      `${origin}/login?error=${encodeURIComponent(
+        "This link is invalid or has expired. Please try signing in again."
+      )}`
+    );
   }
 
   if (code) {
@@ -35,8 +45,8 @@ export async function GET(request: NextRequest) {
       // 邮箱确认后已建立 session，自动登录跳首页
       destination = `${origin}/?verified=1`;
     } else {
-      // OAuth 或未指定 type：跳 next（默认 /）
-      destination = `${origin}${next}`;
+      // OAuth 或未指定 type：跳 next（默认 /，已校验同源）
+      destination = `${origin}${safeNext}`;
     }
 
     // 先构造响应，再把 supabase client 绑定到它上面：
@@ -67,8 +77,11 @@ export async function GET(request: NextRequest) {
       if (type === "recovery") {
         return NextResponse.redirect(`${origin}/reset-password?error=expired`);
       }
+      // 不透传原始错误消息（AUTH-3），仅服务端日志
       return NextResponse.redirect(
-        `${origin}/login?error=${encodeURIComponent(exchangeError.message)}`
+        `${origin}/login?error=${encodeURIComponent(
+          "Sign-in link is invalid or expired. Please try signing in or request a new link."
+        )}`
       );
     }
 

@@ -61,3 +61,18 @@ ON CONFLICT (id) DO NOTHING;
 
 -- 8. 将第一个注册用户设为管理员（可选：后续在 Dashboard 中手动改 role）
 -- UPDATE public.profiles SET role = 'admin' WHERE id = '替换为你的用户UUID';
+
+-- 9. role 字段值域约束（防止写入任意字符串）——AUTH-8
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'profiles_role_check'
+  ) THEN
+    ALTER TABLE public.profiles
+      ADD CONSTRAINT profiles_role_check CHECK (role IN ('user', 'admin'));
+  END IF;
+END $$;
+
+-- 10. 注意：上方「Admin can read all profiles」策略子查询 profiles 表自身，可能触发 RLS 递归。
+--     服务端读取 role 走 service_role（BYPASSRLS），无需该策略。
+--     请确认已在 Dashboard 执行 supabase/fix-rls-recursion.sql 删除该递归策略。

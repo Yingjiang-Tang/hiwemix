@@ -45,6 +45,15 @@ function LoginForm() {
     }
   }, [searchParams]);
 
+  // OAuth 跳转后若用户点浏览器「返回」，bfcache 恢复页面时重置 loading，避免按钮卡死（AUTH-9）
+  useEffect(() => {
+    function onPageshow(e: PageTransitionEvent) {
+      if (e.persisted) setLoading(false);
+    }
+    window.addEventListener("pageshow", onPageshow);
+    return () => window.removeEventListener("pageshow", onPageshow);
+  }, []);
+
 
   // 邮箱+密码登录
   async function handleEmailLogin(e: React.FormEvent) {

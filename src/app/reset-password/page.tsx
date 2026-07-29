@@ -9,13 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import TwoPanelLayout from "@/components/auth/TwoPanelLayout";
 import { createClient } from "@/lib/supabase/client";
-import { getErrorMessage } from "@/lib/error-utils";
 import { getEmailRedirectTo } from "@/lib/auth-redirect";
 import Link from "next/link";
 
 type Step = "email" | "check-email" | "new-password";
 
-const RESET_KEY = "reset_pending";
+const COOLDOWN_KEY = "reset_cooldown_at";
+const COOLDOWN_SECONDS = 60;
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -27,22 +27,34 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [cooldown, setCooldown] = useState(0);
+  // 重发冷却持久化到 localStorage：刷新页面后仍生效，避免绕过 60s 冷却（AUTH-10）
+  const [cooldown, setCooldown] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    const at = Number(localStorage.getItem(COOLDOWN_KEY) || 0);
+    if (!at) return 0;
+    return Math.max(0, Math.ceil((at - Date.now()) / 1000));
+  });
 
-  // 监听 session 变化：用户点击邮件链接后 /auth/callback 服务端已设置 cookie session，
-  // 页面打开时直接 getSession() 即可拿到。无需依赖 localStorage。
+  // 只有从重置邮件回调（?from=email，recovery 流程）才进入「设新密码」步骤。
+  // 已登录用户直接访问本页不应进入第3步，否则会误改当前登录账号的密码（AUTH-2）。
   useEffect(() => {
     const supabase = createClient();
-    // 先检查当前是否已有 session（处理 ?from=email 从 callback 跳转来的情况）
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setEmail(session.user.email ?? "");
-        setStep("new-password");
-      }
-    });
-    // 实时监听后续 session 变化
+    const params = new URLSearchParams(window.location.search);
+    const fromEmail = params.get("from") === "email";
+
+    if (fromEmail) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setEmail(session.user.email ?? "");
+          setStep("new-password");
+        }
+      });
+    }
+
+    // PKCE 回调在服务端已建立 recovery session；若在本页打开期间才建立会话，
+    // 仅对 PASSWORD_RECOVERY 事件进入第3步——普通登录 session 不进入。
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session?.user) {
+      if (event === "PASSWORD_RECOVERY" && session?.user) {
         setEmail(session.user.email ?? "");
         setStep("new-password");
       }
@@ -60,36 +72,20 @@ export default function ResetPasswordPage() {
     }
   }, []);
 
-  // 轮询检查 session + 页面可见性检测
+  // 重发倒计时（每秒递减，归零后清理 localStorage）
   useEffect(() => {
-    function checkSession() {
-      if (step !== "check-email") return;
-      const supabase = createClient();
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user && localStorage.getItem(RESET_KEY)) {
-          setEmail(session.user.email ?? "");
-          setStep("new-password");
-        }
-      });
+    if (cooldown <= 0) {
+      localStorage.removeItem(COOLDOWN_KEY);
+      return;
     }
-    const onVisible = () => {
-      if (document.visibilityState === "visible") checkSession();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    const interval = setInterval(checkSession, 2000);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      clearInterval(interval);
-    };
-  }, [step]);
-
-  // 重发倒计时
-  useEffect(() => {
-    if (cooldown <= 0) return;
     const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
   }, [cooldown]);
 
+  function startCooldown(seconds: number) {
+    setCooldown(seconds);
+    localStorage.setItem(COOLDOWN_KEY, String(Date.now() + seconds * 1000));
+  }
 
   // Step 1: 发送重置邮件
   async function handleSendResetEmail(e: React.FormEvent) {
@@ -97,23 +93,23 @@ export default function ResetPasswordPage() {
     if (!email.trim()) return;
     setLoading(true);
     setError("");
-    localStorage.setItem(RESET_KEY, email.trim());
     try {
       const supabase = createClient();
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: getEmailRedirectTo("/reset-password"),
       });
       if (resetError) {
-        localStorage.removeItem(RESET_KEY);
-        setError(getErrorMessage(resetError, "Failed to send reset email"));
+        // 不向用户透传 Supabase 原始错误（防信息泄露/枚举）；统一中性提示（AUTH-3/AUTH-4）
+        console.error("[reset-password] resetPasswordForEmail failed:", resetError.message);
+        setError("Failed to send reset email. Please try again later.");
         setLoading(false);
         return;
       }
       setStep("check-email");
-      setCooldown(60);
+      startCooldown(COOLDOWN_SECONDS);
     } catch (err) {
-      localStorage.removeItem(RESET_KEY);
-      setError(getErrorMessage(err, "Failed to send reset email"));
+      console.error("[reset-password] resetPasswordForEmail threw:", err);
+      setError("Failed to send reset email. Please try again later.");
     }
     setLoading(false);
   }
@@ -129,12 +125,14 @@ export default function ResetPasswordPage() {
         redirectTo: getEmailRedirectTo("/reset-password"),
       });
       if (resetError) {
-        setError(getErrorMessage(resetError, "Failed to send reset email"));
+        console.error("[reset-password] resend failed:", resetError.message);
+        setError("Failed to send reset email. Please try again later.");
       } else {
-        setCooldown(60);
+        startCooldown(COOLDOWN_SECONDS);
       }
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to send reset email"));
+      console.error("[reset-password] resend threw:", err);
+      setError("Failed to send reset email. Please try again later.");
     }
     setLoading(false);
   }
@@ -162,12 +160,13 @@ export default function ResetPasswordPage() {
     }
     const { error: updateError } = await supabase.auth.updateUser({ password });
     if (updateError) {
-      setError(updateError.message);
+      // 不透传原始错误（AUTH-3），仅服务端日志
+      console.error("[reset-password] updateUser failed:", updateError.message);
+      setError("Failed to update password. Please try again.");
       setLoading(false);
       return;
     }
     // 密码更新成功，登出并跳转到登录页
-    localStorage.removeItem(RESET_KEY);
     await supabase.auth.signOut();
     router.push("/login?reset=success");
   }
@@ -215,8 +214,9 @@ export default function ResetPasswordPage() {
               <div className="text-center">
                 <h2 className="text-xl font-bold text-foreground">Check your email</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  We sent a password reset link to{" "}
-                  <span className="font-medium text-foreground">{email}</span>
+                  If an account exists for{" "}
+                  <span className="font-medium text-foreground">{email}</span>, we&apos;ve sent a
+                  password reset link.
                 </p>
               </div>
               <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
@@ -238,7 +238,6 @@ export default function ResetPasswordPage() {
                   onClick={() => {
                     setStep("email");
                     setError("");
-                    localStorage.removeItem(RESET_KEY);
                   }}
                   className="text-muted-foreground hover:text-foreground hover:underline"
                 >
