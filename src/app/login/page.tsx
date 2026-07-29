@@ -31,13 +31,17 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // 显示密码重置成功 / 邮箱确认成功的消息
+  // 显示密码重置成功 / 邮箱确认成功 / 回调错误的消息
   useEffect(() => {
     if (searchParams.get("reset") === "success") {
       setSuccess("Password updated. Please sign in with your new password.");
     }
     if (searchParams.get("confirmed") === "1") {
-      setSuccess("Email confirmed. Please sign in with your password.");
+      setSuccess("Email confirmed. Please sign in.");
+    }
+    const errParam = searchParams.get("error");
+    if (errParam) {
+      setError(errParam);
     }
   }, [searchParams]);
 

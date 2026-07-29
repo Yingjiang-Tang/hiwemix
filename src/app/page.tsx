@@ -6,6 +6,7 @@ import SearchResults from "@/components/SearchResults";
 import FormulaDrawer from "@/components/FormulaDrawer";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
+import VerifiedBanner from "@/components/VerifiedBanner";
 import { useLang } from "@/components/LanguageContext";
 import { yearEntryContains } from "@/lib/db-formula";
 import type { CarMake, Color, Formula, SearchParams, SearchResult, FormulaTableRow, YearEntry } from "@/types";
@@ -113,6 +114,8 @@ export default function Home() {
       <div className="flex flex-col flex-1">
         <SiteHeader />
         <section className="flex-1 flex flex-col pt-20 md:pt-24 px-6 sm:px-8 md:px-[60px]">
+            {/* 邮箱确认成功提示（来自 /auth/callback 的 ?verified=1） */}
+            <VerifiedBanner />
             {/* 搜索卡片容器（标题 + 表单一并由 SearchPanel 渲染） */}
             <div className="mb-6 md:mb-8 mt-2 md:mt-3">
               <SearchPanel onSearch={handleSearch} isLoading={isLoading} />

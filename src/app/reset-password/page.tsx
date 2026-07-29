@@ -26,6 +26,7 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [cooldown, setCooldown] = useState(0);
 
   // 监听 session 变化：用户点击邮件链接后 /auth/callback 服务端已设置 cookie session，
@@ -47,6 +48,16 @@ export default function ResetPasswordPage() {
       }
     });
     return () => subscription.unsubscribe();
+  }, []);
+
+  // 读取 URL 参数：?from=email（回调成功跳来）/ ?error=expired（链接过期/已用）
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") === "expired") {
+      setError("This password reset link has expired or has already been used. Please request a new link below.");
+    } else if (params.get("from") === "email") {
+      setSuccess("Email verified. Set your new password.");
+    }
   }, []);
 
   // 轮询检查 session + 页面可见性检测
@@ -281,6 +292,16 @@ export default function ResetPasswordPage() {
                 </Button>
               </form>
             </>
+          )}
+
+          {/* 成功提示 */}
+          {success && (
+            <div
+              role="status"
+              className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-2xs text-primary"
+            >
+              {success}
+            </div>
           )}
 
           {/* 错误提示 */}

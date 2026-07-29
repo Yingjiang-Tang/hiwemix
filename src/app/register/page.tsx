@@ -44,7 +44,8 @@ export default function RegisterPage() {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: getEmailRedirectTo("/login"),
+          // signup 确认成功后回调路由会自动登录并跳 /?verified=1，next 仅用于 OAuth 等其他场景
+          emailRedirectTo: getEmailRedirectTo("/"),
         },
       });
 
