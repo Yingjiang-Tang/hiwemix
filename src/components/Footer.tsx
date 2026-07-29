@@ -1,8 +1,8 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import Image from "next/image";
+import Link from "next/link";
 import { Globe } from "lucide-react";
+import { useLang } from "@/components/LanguageContext";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -30,33 +30,32 @@ function InstagramIcon({ className }: { className?: string }) {
 
 /* Footer — 3 种模式的 CSS 变量驱动 */
 export default function Footer({ isLightBackground = false }: { isLightBackground?: boolean }) {
-  const pathname = usePathname();
-  const isHome = pathname === "/";
 
-  // 计算 footer 主题变量（首页白底，用深色图标）
-  const footerIconColor = "#2487ca";
-  const footerIconHover = "#1d6fb0";
-  const footerLogoFilter = "none";
+  const { t } = useLang();
+
+  // 导航链接（与 Header 保持一致）
+  const navItems: { label: string; href: string }[] = [
+    { label: t.navFormulaSearch, href: "/" },
+    { label: t.navColorLibrary, href: "/color-library" },
+    { label: t.navAppGuide, href: "/application-guide" },
+  ];
 
   return (
     <footer
-      className="relative z-10 border-t py-3 md:py-2 mt-[50px] transition-all duration-[1.5s] ease-in-out"
+      className="relative z-10 mt-[50px] h-[175px] transition-all duration-[1.5s] ease-in-out"
       style={{
         backgroundColor: "#ffffff",
-        borderColor: "var(--border)",
       }}
     >
-      <div className="flex items-center justify-center gap-8 md:gap-10">
-        <Image
-          src="/hiwe.png"
-          alt="HIWE"
-          width={1206}
-          height={334}
-          className="h-4 w-auto object-contain transition-all duration-[1.5s] ease-in-out"
-          style={{ filter: footerLogoFilter }}
-        />
+      {/* 三排内容：版权声明 → 图标 → 导航链接，各间距 35px */}
+      <div className="absolute bottom-[30px] left-0 right-0 flex flex-col-reverse items-center gap-[10px]">
+        {/* 版权声明 */}
+        <p className="text-center text-2xs text-muted-foreground">
+          Copyright © 2026 HIWE All Rights Reserved
+        </p>
 
-        <div className="flex items-center gap-1">
+        {/* 图标（flex-col-reverse 下排在版权上方） */}
+        <div className="flex items-center justify-center">
           {[
             { href: "https://www.hiwe.com", label: "Website", Icon: Globe },
             { href: "https://api.whatsapp.com/send?phone=8615819205996", label: "WhatsApp", Icon: WhatsAppIcon },
@@ -69,15 +68,27 @@ export default function Footer({ isLightBackground = false }: { isLightBackgroun
               target="_blank"
               rel="noopener noreferrer"
               aria-label={label}
-              className="footer-icon-link inline-flex size-9 items-center justify-center rounded-full transition-colors duration-[1.5s] ease-in-out"
-              style={{ color: footerIconColor }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = footerIconHover)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = footerIconColor)}
+              className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
             >
               <Icon className="size-5" />
             </a>
           ))}
         </div>
+
+        {/* 导航链接（flex-col-reverse 下排在图标上方） */}
+        <nav className="flex items-center justify-center gap-4 text-2xs">
+          {navItems.map((item, i) => (
+            <span key={item.label} className="flex items-center gap-4">
+              {i > 0 && <span className="text-muted-foreground/40">|</span>}
+              <Link
+                href={item.href}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {item.label}
+              </Link>
+            </span>
+          ))}
+        </nav>
       </div>
     </footer>
   );
