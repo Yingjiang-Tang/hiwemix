@@ -42,19 +42,14 @@ export default function Footer({ isLightBackground = false }: { isLightBackgroun
 
   return (
     <footer
-      className="relative z-10 mt-[50px] h-[175px] transition-all duration-[1.5s] ease-in-out"
+      className="relative h-[150px] w-full transition-all duration-[1.5s] ease-in-out"
       style={{
-        backgroundColor: "#ffffff",
+        backgroundColor: "#2487ca",
       }}
     >
-      {/* 三排内容：版权声明 → 图标 → 导航链接，各间距 35px */}
-      <div className="absolute bottom-[30px] left-0 right-0 flex flex-col-reverse items-center gap-[10px]">
-        {/* 版权声明 */}
-        <p className="text-center text-2xs text-muted-foreground">
-          Copyright © 2026 HIWE All Rights Reserved
-        </p>
-
-        {/* 图标（flex-col-reverse 下排在版权上方） */}
+      {/* 三排内容：图标 → 导航链接 → 版权声明 */}
+      <div className="absolute bottom-[30px] left-0 right-0 flex flex-col items-center gap-[10px]">
+        {/* 图标 */}
         <div className="flex items-center justify-center">
           {[
             { href: "https://www.hiwe.com", label: "Website", Icon: Globe },
@@ -68,27 +63,32 @@ export default function Footer({ isLightBackground = false }: { isLightBackgroun
               target="_blank"
               rel="noopener noreferrer"
               aria-label={label}
-              className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex size-9 items-center justify-center rounded-full text-white/70 transition-colors hover:text-white"
             >
               <Icon className="size-5" />
             </a>
           ))}
         </div>
 
-        {/* 导航链接（flex-col-reverse 下排在图标上方） */}
+        {/* 导航链接 */}
         <nav className="flex items-center justify-center gap-4 text-2xs">
           {navItems.map((item, i) => (
             <span key={item.label} className="flex items-center gap-4">
-              {i > 0 && <span className="text-muted-foreground/40">|</span>}
+              {i > 0 && <span className="text-white/30">|</span>}
               <Link
                 href={item.href}
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-white/70 hover:text-white transition-colors"
               >
                 {item.label}
               </Link>
             </span>
           ))}
         </nav>
+
+        {/* 版权声明 */}
+        <p className="text-center text-2xs text-white/70">
+          Copyright © 2026 HIWE All Rights Reserved
+        </p>
       </div>
     </footer>
   );

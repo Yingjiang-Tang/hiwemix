@@ -227,12 +227,11 @@ export default function SearchPanel({
       <section className="bg-card rounded-xl p-6 ring-1 ring-border shadow-[var(--shadow-level-1)]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-8">
 
-          {/* LEFT — 标题栏（桌面端两行，移动端单列堆叠） */}
+          {/* LEFT — 区域标签 */}
           <div className="lg:w-5/12 xl:w-2/5 lg:shrink-0">
-            <h1 className="font-heading font-extrabold leading-tight tracking-tight text-primary text-3xl lg:text-4xl">
-              <span className="block">{t.heroTitlePrefix}</span>
-              <span className="block">{t.heroTitleHighlight}</span>
-            </h1>
+            <h2 className="font-heading font-bold leading-tight tracking-tight text-muted-foreground text-xl lg:text-2xl">
+              {t.panelTitle}
+            </h2>
           </div>
 
           {/* RIGHT — 表单网格（3 列 × 2 行） */}

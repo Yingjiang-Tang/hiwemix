@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import SearchPanel from "@/components/SearchPanel";
 import SearchResults from "@/components/SearchResults";
 import FormulaDrawer from "@/components/FormulaDrawer";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
+import HeroSection from "@/components/HeroSection";
 import VerifiedBanner from "@/components/VerifiedBanner";
 import { useLang } from "@/components/LanguageContext";
 import { yearEntryContains } from "@/lib/db-formula";
@@ -20,6 +22,10 @@ export default function Home() {
   const [drawerResult, setDrawerResult] = useState<SearchResult | null>(null);
   const [drawerFormulaId, setDrawerFormulaId] = useState<string | undefined>();
   const [drawerYear, setDrawerYear] = useState<YearEntry | undefined>();
+  // Hero 三段式落地页：默认显示，点击 Explore Now 后隐藏；滚回顶部或点 Logo 可恢复
+  const [heroVisible, setHeroVisible] = useState(true);
+  const [heroExplored, setHeroExplored] = useState(false);
+  const searchPanelRef = useRef<HTMLDivElement>(null);
 
   const dataPromiseRef = useRef<Promise<{ colors: Color[]; formulas: Formula[]; brands: CarMake[] }> | null>(null);
 
@@ -108,27 +114,72 @@ export default function Home() {
     setDrawerYear(row.yearEntry);
   }
 
+  // Explore Now 触发：Hero 退出 + SearchPanel 滑入视口
+  const handleExplore = useCallback(() => {
+    setHeroVisible(false);
+    setHeroExplored(true);
+  }, []);
+
+  // Logo 点击恢复 Hero
+  const handleRestoreHero = useCallback(() => {
+    setHeroVisible(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   return (
     <div className="flex min-h-screen flex-col">
-      {/* 页面内容 */}
-      <div className="flex flex-col flex-1">
-        <SiteHeader />
-        <section className="flex-1 flex flex-col pt-20 md:pt-24 px-6 sm:px-8 md:px-[60px]">
-            {/* 邮箱确认成功提示（来自 /auth/callback 的 ?verified=1） */}
-            <VerifiedBanner />
-            {/* 搜索卡片容器（标题 + 表单一并由 SearchPanel 渲染） */}
-            <div className="mb-6 md:mb-8 mt-2 md:mt-3">
-              <SearchPanel onSearch={handleSearch} isLoading={isLoading} />
+      <SiteHeader
+        onHomeLogoClick={!heroVisible ? handleRestoreHero : undefined}
+        useHomeTheme={heroVisible}
+      />
+      <main className="flex min-h-screen flex-col">
+        {/* Hero：普通文档流，占100svh，Header 固定在其上方 */}
+        <AnimatePresence>
+          {heroVisible && (
+            <motion.div
+              key="hero"
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0, y: "-30vh", transition: { duration: 0.3, ease: "easeIn" } }}
+            >
+              <HeroSection onExplore={handleExplore} animateEntrance={!heroExplored} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* 搜索区域：白色背景，Hero 可见时 grid 收起不占空间 */}
+        <section className="flex flex-1 flex-col bg-background px-6 sm:px-8 md:px-[60px]">
+          <VerifiedBanner />
+
+          <div
+            className={`grid transition-[grid-template-rows] duration-[0.6s] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              heroVisible ? "grid-rows-[0fr]" : "grid-rows-[1fr]"
+            }`}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <motion.div
+                ref={searchPanelRef}
+                initial={{ opacity: 0, y: 40 }}
+                animate={heroVisible ? { opacity: 0, y: 40 } : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: heroVisible ? 0 : 0.15 }}
+                className="pt-20 md:pt-24"
+              >
+                <SearchPanel onSearch={handleSearch} isLoading={isLoading} />
+              </motion.div>
             </div>
+          </div>
+
           {hasSearched && (
             <div className="mt-4 md:mt-5">
               <SearchResults rows={tableRows} isLoading={isLoading} hasSearched={hasSearched} onOpenFormula={handleOpenFormula} />
             </div>
           )}
+
+          <div className="pb-10" />
         </section>
-        <Footer isLightBackground={false} />
-        <FormulaDrawer result={drawerResult} formulaId={drawerFormulaId} initialYear={drawerYear} onClose={() => setDrawerResult(null)} />
-      </div>
+
+        {!heroVisible && <Footer />}
+      </main>
+      <FormulaDrawer result={drawerResult} formulaId={drawerFormulaId} initialYear={drawerYear} onClose={() => setDrawerResult(null)} />
     </div>
   );
 }

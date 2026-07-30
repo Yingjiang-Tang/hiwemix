@@ -6,6 +6,12 @@ export interface I18nDict {
   brandNameShort: string;
   heroTitlePrefix: string;
   heroTitleHighlight: string;
+  heroBadge: string;
+  heroSubtitle: string;
+  heroTrust1: string;
+  heroTrust2: string;
+  heroTrust3: string;
+  heroCta: string;
   navSearch: string;
   navProducts: string;
   navAbout: string;

@@ -11,7 +11,12 @@ import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
 
-export default function SiteHeader() {
+interface SiteHeaderProps {
+  onHomeLogoClick?: () => void;
+  useHomeTheme?: boolean;
+}
+
+export default function SiteHeader({ onHomeLogoClick, useHomeTheme }: SiteHeaderProps) {
   const { user: authUser, logout } = useAuth();
   const { t } = useLang();
   const pathname = usePathname();
@@ -20,6 +25,7 @@ export default function SiteHeader() {
   const prevPathRef = useRef<string | null>(null);
 
   const isHome = pathname === "/";
+  const showHomeTheme = useHomeTheme ?? isHome;
   const prevIsHome = prevPathRef.current === "/";
 
   const isCrossHomeNav =
@@ -32,6 +38,13 @@ export default function SiteHeader() {
   const transitionStyle = isCrossHomeNav
     ? "all 1.5s ease-in-out"
     : "none";
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    if (onHomeLogoClick) {
+      e.preventDefault();
+      onHomeLogoClick();
+    }
+  };
 
   const navItems: { label: string; href: string }[] = [
     { label: t.navFormulaSearch, href: "/" },
@@ -46,7 +59,7 @@ export default function SiteHeader() {
   return (
     <>
       <header
-        data-header-theme={isHome ? "home" : "default"}
+        data-header-theme={showHomeTheme ? "home" : "default"}
         className="top-0 left-0 z-[1100] w-full border-b transition-all duration-[1.5s] ease-in-out"
         style={{
           position: "var(--header-position)" as React.CSSProperties["position"],
@@ -60,7 +73,7 @@ export default function SiteHeader() {
         <div className="mx-auto flex h-[79px] items-center justify-between px-6 sm:px-8 md:px-[60px]">
           {/* Logo + 导航 左侧容器 */}
           <div className="flex items-center gap-6 shrink-0">
-          <Link href="/" className="flex shrink-0">
+          <Link href="/" onClick={handleLogoClick} className="flex shrink-0">
             <img
               src="/hiwemix2-01.png"
               alt="HIWE MIX"
@@ -98,12 +111,12 @@ export default function SiteHeader() {
                   <div className="hidden md:flex items-center gap-2">
                     <Link
                       href="/admin/data"
-                      className="header-action-btn inline-flex h-8 items-center rounded-lg border border-border bg-background px-3 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
+                      className="header-action-btn inline-flex h-8 items-center rounded-lg border border-border px-3 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
                       style={{ transition: transitionStyle }}
                     >
                       {t.navAdmin}
                     </Link>
-                    <span className="inline-flex h-8 items-center rounded-lg border border-border bg-background px-3 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
+                    <span className="header-action-btn inline-flex h-8 items-center rounded-lg border border-border px-3 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
                       style={{ transition: transitionStyle }}
                     >
                       {authUser.email}
@@ -112,7 +125,7 @@ export default function SiteHeader() {
                 )}
                 <button
                   onClick={logout}
-                  className="header-action-btn hidden md:inline-flex h-8 items-center rounded-lg border border-border bg-background px-3 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
+                  className="header-action-btn hidden md:inline-flex h-8 items-center rounded-lg border border-border px-3 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
                   style={{ transition: transitionStyle }}
                 >
                   {t.logout}

@@ -87,15 +87,15 @@
 }
 
 [data-header-theme="home"] {
-  /* 首页：白底深字 */
-  --header-bg: #ffffff;
-  --header-text: #1f2937;
-  --header-text-muted: #6b7280;
-  --header-border: #e5e7eb;
-  --header-hover-bg: rgba(0, 0, 0, 0.04);
-  --header-logo-filter: none;
+  /* 首页：透明背景 + 白字，悬浮在 Hero 背景图上 */
+  --header-bg: transparent;
+  --header-text: #ffffff;
+  --header-text-muted: rgba(255, 255, 255, 0.7);
+  --header-border: transparent;
+  --header-hover-bg: rgba(255, 255, 255, 0.1);
+  --header-logo-filter: brightness(0) invert(1);
   --header-position: fixed;
-  --header-bottom-border: #e5e7eb;
+  --header-bottom-border: transparent;
 }
 
 /* 导航链接 hover/激活 */
@@ -112,6 +112,20 @@
   color: var(--header-text);
   border-color: var(--header-text);
   background-color: var(--header-hover-bg);
+}
+
+/* 首页 Header：右侧按钮统一白色线框风格 */
+[data-header-theme="home"] header a[href="/login"],
+[data-header-theme="home"] header .header-action-btn {
+  background: transparent !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+[data-header-theme="home"] header a[href="/login"]:hover,
+[data-header-theme="home"] header .header-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
 }
 
 /* ===== shadcn/ui semantic tokens ===== */
