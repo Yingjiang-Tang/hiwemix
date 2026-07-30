@@ -70,7 +70,7 @@ export default function ColorsPanel() {
   useEffect(() => {
     const ctrl = new AbortController();
     fetchColors();
-    fetch("/api/admin/brands", { signal: ctrl.signal }).then((r) => r.ok ? r.json() : []).then(setBrands).catch(() => {});
+    fetch("/api/brands", { signal: ctrl.signal }).then((r) => r.ok ? r.json() : []).then(setBrands).catch(() => {});
     fetch("/api/admin/variants", { signal: ctrl.signal }).then((r) => r.ok ? r.json() : []).then(setAllVariants).catch(() => {});
     return () => ctrl.abort();
   }, [fetchColors]);
