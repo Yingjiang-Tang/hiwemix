@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import SearchPanel from "@/components/SearchPanel";
 import SearchResults from "@/components/SearchResults";
 import FormulaDrawer from "@/components/FormulaDrawer";
@@ -134,17 +133,7 @@ export default function Home() {
       />
       <main className="flex min-h-screen flex-col">
         {/* Hero：普通文档流，占100svh，Header 固定在其上方 */}
-        <AnimatePresence>
-          {heroVisible && (
-            <motion.div
-              key="hero"
-              initial={{ opacity: 1 }}
-              exit={{ opacity: 0, y: "-30vh", transition: { duration: 0.3, ease: "easeIn" } }}
-            >
-              <HeroSection onExplore={handleExplore} animateEntrance={!heroExplored} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {heroVisible && <HeroSection onExplore={handleExplore} animateEntrance={!heroExplored} />}
 
         {/* 搜索区域：白色背景，Hero 可见时 grid 收起不占空间 */}
         <section className="flex flex-1 flex-col bg-background px-6 sm:px-8 md:px-[60px]">
@@ -156,15 +145,9 @@ export default function Home() {
             }`}
           >
             <div className="min-h-0 overflow-hidden">
-              <motion.div
-                ref={searchPanelRef}
-                initial={{ opacity: 0, y: 40 }}
-                animate={heroVisible ? { opacity: 0, y: 40 } : { opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: heroVisible ? 0 : 0.15 }}
-                className="pt-20 md:pt-24"
-              >
+              <div ref={searchPanelRef} className="pt-20 md:pt-24">
                 <SearchPanel onSearch={handleSearch} isLoading={isLoading} />
-              </motion.div>
+              </div>
             </div>
           </div>
 
