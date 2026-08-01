@@ -18,6 +18,14 @@ export async function getToners(): Promise<Toner[]> {
 
 // ====== 写（getSupabaseAdmin()，BYPASSRLS，仅服务端 API 调用） ======
 
+// 色母目录变更后调用，使 db-formula 侧的内存缓存失效（见 db-formula.ts getTonerMap）
+export function invalidateTonerCache(): void {
+  const g = globalThis as Record<string, unknown>;
+  if (typeof g.__TONER_CACHE_VERSION === "number") {
+    g.__TONER_CACHE_VERSION = (g.__TONER_CACHE_VERSION as number) + 1;
+  }
+}
+
 export async function saveToner(toner: Toner): Promise<Toner> {
   const row = toTonerRow(toner);
   const { data, error } = await getSupabaseAdmin()
@@ -26,12 +34,14 @@ export async function saveToner(toner: Toner): Promise<Toner> {
     .select()
     .single();
   if (error) throw error;
+  invalidateTonerCache();
   return mapTonerRow(data as Record<string, unknown>);
 }
 
 export async function deleteToner(code: string): Promise<void> {
   const { error } = await getSupabaseAdmin().from("toners").delete().eq("code", code);
   if (error) throw error;
+  invalidateTonerCache();
 }
 
 /** 批量种子数据 — 首次导入使用（幂等：ON CONFLICT DO NOTHING 需在 SQL 中配合） */

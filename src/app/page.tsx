@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
 import SearchPanel from "@/components/SearchPanel";
 import SearchResults from "@/components/SearchResults";
-import FormulaDrawer from "@/components/FormulaDrawer";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import HeroSection from "@/components/HeroSection";
@@ -11,6 +11,13 @@ import VerifiedBanner from "@/components/VerifiedBanner";
 import { useLang } from "@/components/LanguageContext";
 import { yearEntryContains } from "@/lib/db-formula";
 import type { CarMake, Color, ColorType, Formula, SearchParams, SearchResult, FormulaTableRow, YearEntry } from "@/types";
+
+// FormulaDrawer（Sheet + Tabs + KapciFormulaTable + framer-motion 依赖较重）
+// 只在用户真正打开配方抽屉时才加载 JS，首屏不打包
+const FormulaDrawer = dynamic(() => import("@/components/FormulaDrawer"), {
+  ssr: false,
+  loading: () => null,
+});
 
 export default function Home() {
   const { t } = useLang();

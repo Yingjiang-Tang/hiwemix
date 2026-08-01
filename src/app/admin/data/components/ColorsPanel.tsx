@@ -58,6 +58,11 @@ export default function ColorsPanel() {
   const colorTypeScrollRef = useRef<HTMLDivElement>(null);
   const colorTypeDrag = useRef<{ startX: number; scrollLeft: number; moved: boolean; pointerId: number } | null>(null);
   const suppressChipClick = useRef(false);
+  // 删除确认弹窗：先查该颜色下的配方清单，确认后带 force=true 真正删除
+  const [deleteTarget, setDeleteTarget] = useState<Color | null>(null);
+  const [deleteFormulaList, setDeleteFormulaList] = useState<{ id: string; version: string; updated_at: string }[]>([]);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     if (!editing && !idManuallyEdited.current && form.make_id && form.color_code) {
@@ -110,11 +115,37 @@ export default function ColorsPanel() {
     } catch { setError("网络错误，请重试"); }
   }
   async function handleDelete(c: Color) {
-    if (!confirm(`确定删除颜色「${c.color_name}」吗？`)) return;
+    setDeleteError("");
+    // 第一步：请求配方清单（不删除）。有配方则弹窗列出，无配方直接进入删除确认。
     try {
       const res = await fetch("/api/admin/colors", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: c.id }) });
-      if (res.ok) { fetchColors(); } else { const d = await res.json(); alert(d.error || "删除失败"); }
+      if (res.ok) { fetchColors(); return; }
+      const d = await res.json();
+      if (d.needsConfirm) {
+        setDeleteTarget(c);
+        setDeleteFormulaList(d.formulas ?? []);
+        return;
+      }
+      alert(d.error || "删除失败");
     } catch { alert("网络错误，请重试"); }
+  }
+  // 用户在弹窗里确认后，带 force=true 真正删除
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    setDeleteError("");
+    try {
+      const res = await fetch("/api/admin/colors", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: deleteTarget.id, force: true }) });
+      if (res.ok) {
+        setDeleteTarget(null);
+        setDeleteFormulaList([]);
+        fetchColors();
+      } else {
+        const d = await res.json();
+        setDeleteError(d.error || "删除失败");
+      }
+    } catch { setDeleteError("网络错误，请重试"); }
+    finally { setDeleteLoading(false); }
   }
   function toggleVariant(id: string) { setVariantIds((prev) => prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]); }
   // 切换颜色类型（多选，数组去重）
@@ -447,6 +478,45 @@ export default function ColorsPanel() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowModal(false)} className="rounded-lg text-2xs">取消</Button>
             <Button onClick={handleSave} className="rounded-lg bg-primary hover:bg-primary/80">保存</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 删除确认弹窗：列出该颜色下会级联删除的配方 */}
+      <Dialog open={deleteTarget != null} onOpenChange={(v) => { if (!v && !deleteLoading) { setDeleteTarget(null); setDeleteFormulaList([]); } }}>
+        <DialogContent className="max-w-lg bg-white">
+          <DialogHeader>
+            <DialogTitle>删除颜色「{deleteTarget?.color_name}」</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {deleteFormulaList.length === 0 ? (
+              <p className="text-2xs text-muted-foreground">该颜色下没有配方，删除后不可恢复。</p>
+            ) : (
+              <>
+                <p className="text-2xs font-medium text-destructive">
+                  该颜色下有 <span className="font-bold">{deleteFormulaList.length}</span> 条配方，删除颜色将一并删除以下配方及其色母配比明细（不可恢复）：
+                </p>
+                <div className="max-h-48 overflow-y-auto rounded-lg border border-border bg-muted/30 p-2 space-y-1">
+                  {deleteFormulaList.map((f) => (
+                    <div key={f.id} className="flex items-center justify-between rounded px-2 py-1 text-2xs">
+                      <span className="font-medium text-foreground">{f.version || f.id}</span>
+                      <span className="text-muted-foreground">{f.updated_at || "—"}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            {deleteError && <p className="text-2xs font-medium text-destructive">{deleteError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleteLoading} className="rounded-lg text-2xs">取消</Button>
+            <Button
+              onClick={confirmDelete}
+              disabled={deleteLoading}
+              className="rounded-lg bg-destructive text-white hover:bg-destructive/80"
+            >
+              {deleteLoading ? "删除中..." : deleteFormulaList.length === 0 ? "确认删除" : `确认删除（连带 ${deleteFormulaList.length} 条配方）`}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

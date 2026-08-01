@@ -228,17 +228,22 @@ CREATE POLICY guides_select_all ON public.guides FOR SELECT TO public USING (tru
 
 -- ---------------------------------------------------------------------
 -- 12. color_years: 颜色-年份多对多关联（新增）
+--     与代码模型一致：year 为起始年，year_end 为可选结束年（NULL=单年）。
+--     单一年份存 (year, year_end NULL)；区间存 (year, year_end)。
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.color_years (
   color_id TEXT NOT NULL REFERENCES public.colors(id) ON DELETE CASCADE,
   year INTEGER NOT NULL,
+  year_end INTEGER,
   PRIMARY KEY (color_id, year),
-  CHECK (year >= 1900 AND year <= 2100)
+  CHECK (year >= 1900 AND year <= 2100),
+  CHECK (year_end IS NULL OR (year_end >= year AND year_end <= 2100))
 );
 
 COMMENT ON TABLE public.color_years IS '颜色-年份多对多关联表';
 COMMENT ON COLUMN public.color_years.color_id IS '关联颜色 ID';
-COMMENT ON COLUMN public.color_years.year IS '年份值';
+COMMENT ON COLUMN public.color_years.year IS '起始年份值';
+COMMENT ON COLUMN public.color_years.year_end IS '结束年份（NULL 表示单一年份）';
 
 -- 为 formulas 表添加 year 和 color_name 字段（可选，用于反规范化搜索）
 ALTER TABLE public.formulas ADD COLUMN IF NOT EXISTS year INTEGER;

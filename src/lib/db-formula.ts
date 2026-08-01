@@ -159,10 +159,18 @@ export async function getSettings(): Promise<AppSettings> {
 
 // ====== 内部辅助 ======
 
-// 色母目录缓存：缺失 rgb 时按 toner_code 从 toners 表回退派生 Mass Tone 颜色
+// 色母目录缓存：缺失 rgb 时按 toner_code 从 toners 表回退派生 Mass Tone 颜色。
+// 缓存带版本号：db-toner.ts 的 saveToner/deleteToner 会递增版本，
+// 使本模块在新增/删除色母后自动重取，避免长期进程（dev/本地）读到过期目录。
 let _tonerMapPromise: Promise<Map<string, Toner>> | null = null;
+let _tonerMapVersion = -1;
 function getTonerMap(): Promise<Map<string, Toner>> {
-  if (!_tonerMapPromise) {
+  const version =
+    typeof (globalThis as Record<string, unknown>).__TONER_CACHE_VERSION === "number"
+      ? ((globalThis as Record<string, unknown>).__TONER_CACHE_VERSION as number)
+      : 0;
+  if (!_tonerMapPromise || version !== _tonerMapVersion) {
+    _tonerMapVersion = version;
     _tonerMapPromise = getToners()
       .then((ts) => new Map(ts.map((t) => [t.code, t])))
       .catch(() => new Map());
@@ -371,15 +379,32 @@ export async function saveColor(
   // 2. 同步 color_variant_map：始终保持双向同步
   //    color_variant_map 的外键指向 color_variants，但
   //    saveFormulaType 写入 formula_types 表（同一个变体概念）
-  //    所以要先确保 formula_types 中的 ID 也存在于 color_variants 中
+  //    所以要先确保 formula_types 中的 ID 也存在于 color_variants 中。
+  //    注意：必须从 formula_types 查真名再同步，不能写死 name=id，
+  //    否则会把共享变体的名字覆盖成 ID（历史 bug，已由回填 SQL 修复存量数据）。
   if (variantIds.length > 0) {
-    // 将 formula_types 中新增的 ID 同步到 color_variants（幂等 upsert）
-    for (const vid of variantIds) {
-      const { error: syncErr } = await getSupabaseAdmin()
-        .from("color_variants")
-        .upsert({ id: vid, name: vid, year_range: "" });
-      if (syncErr) throw new Error("sync color_variants failed: " + syncErr.message);
-    }
+    // 先从 formula_types 批量查出对应变体的真名和年份范围
+    const { data: ftRows, error: ftErr } = await getSupabaseAdmin()
+      .from("formula_types")
+      .select("id, name, year_range")
+      .in("id", variantIds);
+    if (ftErr) throw new Error("query formula_types failed: " + ftErr.message);
+    const ftMap = new Map(
+      (ftRows ?? []).map((r) => [String(r.id), r as { name?: string; year_range?: string | null }]),
+    );
+    // 批量幂等 upsert：真名缺失时回退到 ID，避免空名
+    const syncRows = variantIds.map((vid) => {
+      const ft = ftMap.get(vid);
+      return {
+        id: vid,
+        name: ft?.name && String(ft.name).trim() !== "" ? String(ft.name) : vid,
+        year_range: ft?.year_range ?? "",
+      };
+    });
+    const { error: syncErr } = await getSupabaseAdmin()
+      .from("color_variants")
+      .upsert(syncRows);
+    if (syncErr) throw new Error("sync color_variants failed: " + syncErr.message);
   }
 
   // 清理旧映射

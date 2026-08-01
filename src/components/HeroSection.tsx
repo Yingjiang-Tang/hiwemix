@@ -16,10 +16,17 @@ type SplitMode = "none" | "left" | "right";
 const MASK_W = 1920;
 const MASK_H = 919;
 
+// Hero CTA 按钮呼吸动画周期（4 秒一个完整循环：缩小→恢复→缩小→恢复）
+const HERO_CTA_BREATHE_S = 4;
+
 export default function HeroSection({ onExplore }: HeroSectionProps) {
   const { t } = useLang();
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
+  // 是否已发生首次指针交互：控制 SHY/pink 两张被裁剪图层是否挂载。
+  // 首屏只下载可见的 BULE（LCP），另外两张合计 2.8MB 等第一次鼠标移入才加载。
+  const [interacted, setInteracted] = useState(false);
+  const interactedRef = useRef(false);
 
   // DOM 引用
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -169,9 +176,14 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
     }
   }, [getCoords, isInMask, applyClip, animateExit]);
 
-  // 指针移动：缓存坐标 + RAF 节流
+  // 指针移动：缓存坐标 + RAF 节流；同时触发被裁剪图层的按需加载
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     coordsRef.current = { x: e.clientX, y: e.clientY };
+    // 首次指针移入：挂载 SHY/pink（它们的 applyClip 已给出零面积 clip-path，交互开始时才真正可见）
+    if (!interactedRef.current) {
+      interactedRef.current = true;
+      setInteracted(true);
+    }
     if (!rafIdRef.current && !animatingRef.current) {
       rafIdRef.current = requestAnimationFrame(tick);
     }
@@ -181,6 +193,11 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (e.touches.length > 0) {
       coordsRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      // 触摸交互同样按需加载被裁剪图层
+      if (!interactedRef.current) {
+        interactedRef.current = true;
+        setInteracted(true);
+      }
       if (!rafIdRef.current && !animatingRef.current) {
         rafIdRef.current = requestAnimationFrame(tick);
       }
@@ -210,36 +227,50 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
       className="relative h-full min-h-[640px] w-full overflow-hidden"
       style={{ touchAction: "pan-y" }} // 允许纵向滚动，横向拖拽留给交互
     >
+      {/* 内联 keyframes 配合上方 HERO_CTA_BREATHE_S 常量一起调整时长。
+          放在 globals.css 时被 Turbopack 漏掉打包；改成内联 <style> 后每次渲染随组件输出。
+          未来 Turbopack 修复后可以移回 globals.css。 */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes heroCtaBreathe {
+          0%, 50%, 100% { transform: scale(1); }
+          25%, 75%      { transform: scale(0.95); }
+        }
+      ` }} />
       {/* 隐藏 Canvas：遮罩像素查询 */}
       <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
 
       {/* ---- 三层背景（从底到顶） ---- */}
 
-      {/* Layer 1: pink — 右侧进入时出现在光标右侧 */}
-      <img
-        ref={pinkRef}
-        src="/pink.jpg"
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
-        style={{ zIndex: 0, clipPath: "polygon(0 0, 0 0, 0 0, 0 0)" }}
-        draggable={false}
-      />
+      {/* Layer 1: pink — 右侧进入时出现在光标右侧（首屏不加载，鼠标移入后按需下载） */}
+      {interacted && (
+        <img
+          ref={pinkRef}
+          src="/pink.jpg"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+          style={{ zIndex: 0, clipPath: "polygon(0 0, 0 0, 0 0, 0 0)" }}
+          draggable={false}
+        />
+      )}
 
-      {/* Layer 2: SHY — 左侧进入时出现在光标左侧 */}
-      <img
-        ref={shyRef}
-        src="/SHY.jpg"
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
-        style={{ zIndex: 1, clipPath: "polygon(0 0, 0 0, 0 0, 0 0)" }}
-        draggable={false}
-      />
+      {/* Layer 2: SHY — 左侧进入时出现在光标左侧（首屏不加载，鼠标移入后按需下载） */}
+      {interacted && (
+        <img
+          ref={shyRef}
+          src="/SHY.jpg"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+          style={{ zIndex: 1, clipPath: "polygon(0 0, 0 0, 0 0, 0 0)" }}
+          draggable={false}
+        />
+      )}
 
-      {/* Layer 3: BULE — 默认全屏显示 */}
+      {/* Layer 3: BULE — 默认全屏显示（LCP，立即加载） */}
       <img
         ref={buleRef}
         src="/BULE.jpg"
         alt=""
+        fetchPriority="high"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
         style={{ zIndex: 2 }}
         draggable={false}
@@ -263,23 +294,30 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
         <p className="mx-auto mt-5 max-w-[820px] text-center font-[family-name:var(--font-outfit)] text-[14px] font-light leading-relaxed text-white/85 md:mt-6 md:text-[16px]">
           {t.heroSubtitle}
         </p>
-        <button
-          onClick={onExplore}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => { setIsHovered(false); setIsPressed(false); }}
-          onMouseDown={() => setIsPressed(true)}
-          onMouseUp={() => setIsPressed(false)}
-          type="button"
-          className="pointer-events-auto group mt-10 inline-flex items-center gap-2 rounded-full bg-primary px-9 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-white shadow-xl shadow-primary/30 ring-1 ring-white/20"
+        <span
+          className="pointer-events-auto inline-block mt-10"
           style={{
-            transform: isHovered ? "scale(0.91)" : "scale(1)",
-            filter: (isHovered || isPressed) ? "saturate(1.5)" : "saturate(1)",
-            transition: "transform 0.3s cubic-bezier(0,0,0.2,1), filter 0.3s cubic-bezier(0,0,0.2,1)",
+            animation: `heroCtaBreathe ${HERO_CTA_BREATHE_S}s ease-in-out infinite`,
           }}
         >
-          {t.heroCta}
-          <ArrowRight className="size-4" />
-        </button>
+          <button
+            onClick={onExplore}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => { setIsHovered(false); setIsPressed(false); }}
+            onMouseDown={() => setIsPressed(true)}
+            onMouseUp={() => setIsPressed(false)}
+            type="button"
+            className="group inline-flex items-center gap-2 rounded-full bg-primary px-9 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-white shadow-xl shadow-primary/30 ring-1 ring-white/20"
+            style={{
+              transform: isHovered ? "scale(0.91)" : "scale(1)",
+              filter: (isHovered || isPressed) ? "saturate(1.5)" : "saturate(1)",
+              transition: "transform 0.3s cubic-bezier(0,0,0.2,1), filter 0.3s cubic-bezier(0,0,0.2,1)",
+            }}
+          >
+            {t.heroCta}
+            <ArrowRight className="size-4" />
+          </button>
+        </span>
       </div>
     </section>
   );

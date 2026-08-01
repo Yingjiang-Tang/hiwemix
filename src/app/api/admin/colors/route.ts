@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkSupabaseAdmin } from "@/lib/auth";
 import { applyRateLimit, ADMIN_LIMIT } from "@/lib/rate-limit";
 import { getColors, saveColor, deleteColor, saveColorYears } from "@/lib/db-formula";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 import type { Color, YearEntry } from "@/types";
 
 export async function GET(req: NextRequest) {
@@ -81,10 +82,35 @@ export async function DELETE(req: NextRequest) {
   if (limitRes_DELETE) return limitRes_DELETE;
   const { error } = await checkSupabaseAdmin();
   if (error) return error;
-  let body: { id?: string };
+  let body: { id?: string; force?: boolean };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "请求格式错误" }, { status: 400 }); }
   const { id } = body;
   if (!id) return NextResponse.json({ error: "缺少 ID" }, { status: 400 });
+
+  // 删除颜色会通过 ON DELETE CASCADE 级联删除其下所有配方和色母组件。
+  // 删除前先查配方清单，返回给前端弹窗提醒（见 ColorsPanel handleDelete）。
+  const { data: formulaRows, error: countErr } = await getSupabaseAdmin()
+    .from("formulas")
+    .select("id, version, updated_at")
+    .eq("color_id", id);
+  if (countErr) return NextResponse.json({ error: "查询配方失败: " + countErr.message }, { status: 500 });
+
+  const formulas = (formulaRows ?? []).map((r) => ({
+    id: String(r.id),
+    version: String(r.version ?? ""),
+    updated_at: String(r.updated_at ?? ""),
+  }));
+
+  // 前端已确认（带 force=true）才真正删除；否则返回清单供弹窗展示
+  if (!body.force) {
+    return NextResponse.json({
+      success: false,
+      needsConfirm: true,
+      formulaCount: formulas.length,
+      formulas,
+    });
+  }
+
   await deleteColor(id);
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, deletedFormulas: formulas.length });
 }

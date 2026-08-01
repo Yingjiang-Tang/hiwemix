@@ -93,7 +93,7 @@ export default function VariantsPanel() {
           </TableBody>
         </Table>
         <div className="flex items-center justify-between border-t border-border px-4 py-3">
-          <p className="text-sm font-semibold text-primary">Found {variants.length} variants</p>
+          <p className="text-sm font-semibold text-primary">Found {variants.length} 配方类型</p>
           <div className="flex items-center gap-2">
             <span className="text-2xs text-muted-foreground">{page + 1} / {totalPages}</span>
             <Button size="icon" variant="ghost" disabled={page === 0} onClick={() => setPage(page - 1)} className="size-8 rounded-lg">‹</Button>

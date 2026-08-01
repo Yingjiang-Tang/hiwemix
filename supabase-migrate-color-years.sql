@@ -9,13 +9,23 @@
 CREATE TABLE IF NOT EXISTS public.color_years (
   color_id TEXT NOT NULL REFERENCES public.colors(id) ON DELETE CASCADE,
   year INTEGER NOT NULL,
+  year_end INTEGER,
   PRIMARY KEY (color_id, year),
-  CHECK (year >= 1900 AND year <= 2100)
+  CHECK (year >= 1900 AND year <= 2100),
+  CHECK (year_end IS NULL OR (year_end >= year AND year_end <= 2100))
 );
+
+-- Step0b: 兼容已存在的库 —— 若表已存在但缺 year_end 列（旧版离散单年模型），补列；
+--         已有数据按单一年份处理（year_end = NULL），与代码的区间模型对齐
+ALTER TABLE public.color_years ADD COLUMN IF NOT EXISTS year_end INTEGER;
+ALTER TABLE public.color_years DROP CONSTRAINT IF EXISTS color_years_year_end_check;
+ALTER TABLE public.color_years ADD CONSTRAINT color_years_year_end_check
+  CHECK (year_end IS NULL OR (year_end >= year AND year_end <= 2100));
 
 COMMENT ON TABLE public.color_years IS '颜色-年份多对多关联表';
 COMMENT ON COLUMN public.color_years.color_id IS '关联颜色 ID';
-COMMENT ON COLUMN public.color_years.year IS '年份值';
+COMMENT ON COLUMN public.color_years.year IS '起始年份值';
+COMMENT ON COLUMN public.color_years.year_end IS '结束年份（NULL 表示单一年份）';
 
 -- 添加索引
 CREATE INDEX IF NOT EXISTS idx_color_years_color_id ON public.color_years (color_id);
