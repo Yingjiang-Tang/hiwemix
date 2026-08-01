@@ -23,13 +23,16 @@ export interface ColorVariant {
   year_range: string     // 例如 "2018-2022"
 }
 
+// 颜色类型（一个颜色可有多个类型）
+export type ColorType = "solid" | "metallic" | "pearl" | "matte" | "candy" | "special";
+
 // 颜色（每个车厂的 OEM 颜色）
 export interface Color {
   id: string
   make_id: string
   color_code: string      // 官方颜色代码，例如 "040" "NH731P"
   color_name: string      // 中英文颜色名，例如 "Super White / 超白"
-  color_type: "solid" | "metallic" | "pearl" | "matte" | "candy" | "special"
+  color_type: ColorType[]
   hex_preview: string     // 颜色预览 hex，例如 "#F5F5F0"
   car_model?: string      // 车型，例如 "Camry" "Corolla"
   variants: ColorVariant[]

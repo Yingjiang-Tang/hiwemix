@@ -17,6 +17,19 @@ export interface SearchResultsProps {
   onOpenFormula: (row: FormulaTableRow) => void;
 }
 
+// 段落固定顺序：实色 → 金属漆 → 珠光漆 → 哑光 → 糖果漆 → 特殊漆
+const SECTION_ORDER = ["solid", "metallic", "pearl", "matte", "candy", "special"] as const;
+
+// 段落标题英文标签
+const SECTION_LABELS: Record<string, string> = {
+  solid: "Solid",
+  metallic: "Metallic",
+  pearl: "Pearl",
+  matte: "Matte",
+  candy: "Candy",
+  special: "Special",
+};
+
 function SkeletonGrid() {
   return (
     <div className="grid grid-cols-6 gap-x-0 gap-y-[30px] px-0 pb-4">
@@ -187,7 +200,7 @@ function GroupedColorCard({
           {parent.color.color_name}
         </p>
         <p className="text-center text-xs capitalize text-white/80">
-          {parent.color.color_type}
+          {parent.color.color_type.join(", ")}
         </p>
       </div>
 
@@ -309,6 +322,17 @@ export default function SearchResults({
   }
   const groupedEntries = Array.from(groups.entries());
 
+  // 段内卡片按颜色代码升序
+  groupedEntries.sort((a, b) => a[0].localeCompare(b[0]));
+
+  // 按漆面类型分桶：多类型颜色整张母卡片重复进入每个所属段落
+  const sections = SECTION_ORDER.map((type) => ({
+    type,
+    cards: groupedEntries.filter(([, groupRows]) =>
+      groupRows[0].color.color_type.includes(type)
+    ),
+  }));
+
   return (
     <div>
       {/* 结果计数栏 */}
@@ -318,16 +342,39 @@ export default function SearchResults({
         </p>
       </div>
 
-      {/* 色块网格：每行 6 列，全量展示，滚轮滑动 */}
-      <div className="grid grid-cols-6 gap-x-0 gap-y-[30px] px-0 pb-4">
-        {groupedEntries.map(([colorCode, groupRows]) => (
-          <GroupedColorCard
-            key={colorCode}
-            rows={groupRows}
-            onSelect={(row) => onOpenFormula(row)}
-          />
-        ))}
-      </div>
+      {/* 按漆面类型分段落展示 */}
+      {sections.map(({ type, cards }) =>
+        cards.length === 0 ? null : (
+          <section
+            key={type}
+            aria-labelledby={`section-${type}`}
+            className="mb-[80px]"
+          >
+            {/* 段落标题：英文类型名居中，外框药丸圆角浅灰边框（shadcn 风格） */}
+            <div className="flex items-center justify-center px-4 py-2">
+              <h2
+                id={`section-${type}`}
+                className="rounded-full border-[0.5px] border-[#a8a8a8] px-4 py-1.5 font-heading text-[27px] font-normal tracking-wide text-ink"
+              >
+                {SECTION_LABELS[type] ?? type}
+              </h2>
+            </div>
+            {/* 段内 6 列网格：距标题条 40px，--card-delay 从 0 重置交错入场动画 */}
+            <div
+              className="grid grid-cols-6 gap-x-0 gap-y-[30px] px-0 pb-4 mt-10"
+              style={{ ["--card-delay" as string]: "0s" }}
+            >
+              {cards.map(([colorCode, groupRows]) => (
+                <GroupedColorCard
+                  key={colorCode}
+                  rows={groupRows}
+                  onSelect={(row) => onOpenFormula(row)}
+                />
+              ))}
+            </div>
+          </section>
+        )
+      )}
     </div>
   );
 }

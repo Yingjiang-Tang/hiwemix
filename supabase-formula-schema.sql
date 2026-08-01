@@ -59,14 +59,14 @@ CREATE TABLE IF NOT EXISTS public.colors (
   make_id TEXT NOT NULL REFERENCES public.brands(id) ON DELETE CASCADE,
   color_code TEXT NOT NULL,
   color_name TEXT NOT NULL,
-  color_type TEXT NOT NULL
-    CHECK (color_type IN ('solid', 'metallic', 'pearl', 'matte', 'candy', 'special')),
+  color_type TEXT[] NOT NULL DEFAULT '{}'
+    CHECK (color_type <@ ARRAY['solid', 'metallic', 'pearl', 'matte', 'candy', 'special']::text[]),
   hex_preview TEXT
 );
 
 COMMENT ON TABLE public.colors IS '颜色表';
 COMMENT ON COLUMN public.colors.make_id IS '所属品牌 ID';
-COMMENT ON COLUMN public.colors.color_type IS '颜色类型枚举';
+COMMENT ON COLUMN public.colors.color_type IS '颜色类型数组（可多选）';
 COMMENT ON COLUMN public.colors.hex_preview IS '预览色 hex，如 #F8F8F5';
 
 -- ---------------------------------------------------------------------
@@ -144,7 +144,7 @@ COMMENT ON TABLE public.settings IS '系统设置表（单行，id 固定为 1�
 -- 9. 索引（筛选常用列，支撑服务端多条件组合筛选）
 -- ---------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_colors_make_id    ON public.colors (make_id);
-CREATE INDEX IF NOT EXISTS idx_colors_color_type  ON public.colors (color_type);
+CREATE INDEX IF NOT EXISTS idx_colors_color_type  ON public.colors USING GIN (color_type);
 CREATE INDEX IF NOT EXISTS idx_colors_color_code  ON public.colors (color_code);
 CREATE INDEX IF NOT EXISTS idx_formulas_color_id  ON public.formulas (color_id);
 CREATE INDEX IF NOT EXISTS idx_formulas_variant_id ON public.formulas (variant_id);

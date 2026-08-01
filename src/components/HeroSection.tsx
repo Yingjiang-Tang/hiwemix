@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useState } from "react";
 import { useLang } from "@/components/LanguageContext";
 import { CheckCircle, ArrowRight } from "lucide-react";
+import ShinyText from "@/components/ShinyText";
 
 interface HeroSectionProps {
   onExplore: () => void;
@@ -17,6 +18,8 @@ const MASK_H = 919;
 
 export default function HeroSection({ onExplore }: HeroSectionProps) {
   const { t } = useLang();
+  const [isHovered, setIsHovered] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
 
   // DOM 引用
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -204,7 +207,7 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
       onPointerLeave={handlePointerLeave}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative h-[100svh] min-h-[640px] w-full overflow-hidden"
+      className="relative h-full min-h-[640px] w-full overflow-hidden"
       style={{ touchAction: "pan-y" }} // 允许纵向滚动，横向拖拽留给交互
     >
       {/* 隐藏 Canvas：遮罩像素查询 */}
@@ -243,22 +246,36 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
       />
 
       {/* ---- 内容层 (z-10) ---- */}
-      <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-center justify-center px-6 text-white -translate-y-[200px] pointer-events-none">
+      <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-center justify-center px-6 text-white -translate-y-[220px] pointer-events-none">
         <span className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-xs font-semibold tracking-wide backdrop-blur-sm">
           <CheckCircle className="size-3.5" />
           {t.heroBadge}
         </span>
         <h1 className="font-heading mt-6 text-center font-extrabold leading-[1.05] tracking-tight text-[clamp(2.5rem,5vw,4rem)]">
-          <span>{t.heroTitlePrefix} </span>
-          <span className="text-white">{t.heroTitleHighlight}</span>
+          <ShinyText
+            text={`${t.heroTitlePrefix} ${t.heroTitleHighlight}`}
+            color="#ffffff"
+            shineColor="#79a5ff"
+            speed={2.5}
+            spread={120}
+          />
         </h1>
         <p className="mx-auto mt-5 max-w-[820px] text-center font-[family-name:var(--font-outfit)] text-[14px] font-light leading-relaxed text-white/85 md:mt-6 md:text-[16px]">
           {t.heroSubtitle}
         </p>
         <button
           onClick={onExplore}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => { setIsHovered(false); setIsPressed(false); }}
+          onMouseDown={() => setIsPressed(true)}
+          onMouseUp={() => setIsPressed(false)}
           type="button"
           className="pointer-events-auto group mt-10 inline-flex items-center gap-2 rounded-full bg-primary px-9 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-white shadow-xl shadow-primary/30 ring-1 ring-white/20"
+          style={{
+            transform: isHovered ? "scale(0.91)" : "scale(1)",
+            filter: (isHovered || isPressed) ? "saturate(1.5)" : "saturate(1)",
+            transition: "transform 0.3s cubic-bezier(0,0,0.2,1), filter 0.3s cubic-bezier(0,0,0.2,1)",
+          }}
         >
           {t.heroCta}
           <ArrowRight className="size-4" />

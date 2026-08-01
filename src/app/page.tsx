@@ -10,7 +10,7 @@ import HeroSection from "@/components/HeroSection";
 import VerifiedBanner from "@/components/VerifiedBanner";
 import { useLang } from "@/components/LanguageContext";
 import { yearEntryContains } from "@/lib/db-formula";
-import type { CarMake, Color, Formula, SearchParams, SearchResult, FormulaTableRow, YearEntry } from "@/types";
+import type { CarMake, Color, ColorType, Formula, SearchParams, SearchResult, FormulaTableRow, YearEntry } from "@/types";
 
 export default function Home() {
   const { t } = useLang();
@@ -66,7 +66,7 @@ export default function Home() {
         filtered = filtered.filter((c) => c.color_name.toLowerCase().includes(name));
       }
 
-      if (params.color_type) filtered = filtered.filter((c) => c.color_type.toLowerCase() === params.color_type);
+      if (params.color_type) filtered = filtered.filter((c) => c.color_type.includes(params.color_type as ColorType));
 
       if (params.year) {
         const searchYear = parseInt(params.year, 10);
@@ -119,36 +119,20 @@ export default function Home() {
     setHeroExplored(true);
   }, []);
 
-  // Logo 点击恢复 Hero
-  const handleRestoreHero = useCallback(() => {
-    setHeroVisible(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
-
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader
-        onHomeLogoClick={!heroVisible ? handleRestoreHero : undefined}
-        useHomeTheme={heroVisible}
-      />
-      <main className="flex min-h-screen flex-col">
-        {/* Hero：普通文档流，占100svh，Header 固定在其上方 */}
+    <div className={heroVisible ? "flex h-screen flex-col overflow-hidden" : "flex min-h-screen flex-col"}>
+      <SiteHeader useHomeTheme={heroVisible} />
+      <main className={heroVisible ? "relative flex-1 overflow-hidden" : "flex min-h-screen flex-col"}>
+        {/* Hero：占满 main 区域，Header 固定在其上方 */}
         {heroVisible && <HeroSection onExplore={handleExplore} animateEntrance={!heroExplored} />}
 
-        {/* 搜索区域：白色背景，Hero 可见时 grid 收起不占空间 */}
+        {/* 搜索区域：白色背景，Hero 可见时完全隐藏（heroVisible=true 时不渲染下方 DOM） */}
+        {!heroVisible && (
         <section className="flex flex-1 flex-col bg-background px-6 sm:px-8 md:px-[60px]">
           <VerifiedBanner />
 
-          <div
-            className={`grid transition-[grid-template-rows] duration-[0.6s] ease-[cubic-bezier(0.16,1,0.3,1)] ${
-              heroVisible ? "grid-rows-[0fr]" : "grid-rows-[1fr]"
-            }`}
-          >
-            <div className="min-h-0 overflow-hidden">
-              <div ref={searchPanelRef} className="pt-20 md:pt-24">
-                <SearchPanel onSearch={handleSearch} isLoading={isLoading} />
-              </div>
-            </div>
+          <div className="pt-20 md:pt-24">
+            <SearchPanel onSearch={handleSearch} isLoading={isLoading} />
           </div>
 
           {hasSearched && (
@@ -159,6 +143,7 @@ export default function Home() {
 
           <div className="pb-10" />
         </section>
+        )}
 
         {!heroVisible && <Footer />}
       </main>

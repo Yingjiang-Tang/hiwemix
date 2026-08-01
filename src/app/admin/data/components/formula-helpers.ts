@@ -35,7 +35,7 @@ export function matchingColors(query: string, colors: Color[], brands: CarMake[]
   return colors.filter((c) => {
     if (c.color_code.toLowerCase().includes(q)) return true;
     if (c.color_name.toLowerCase().includes(q)) return true;
-    if (c.color_type.toLowerCase().includes(q)) return true;
+    if (c.color_type.join(" ").toLowerCase().includes(q)) return true;
     const brandName = brandMap.get(c.make_id) ?? "";
     if (brandName.toLowerCase().includes(q)) return true;
     return false;

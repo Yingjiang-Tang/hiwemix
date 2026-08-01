@@ -12,11 +12,10 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
 
 interface SiteHeaderProps {
-  onHomeLogoClick?: () => void;
   useHomeTheme?: boolean;
 }
 
-export default function SiteHeader({ onHomeLogoClick, useHomeTheme }: SiteHeaderProps) {
+export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
   const { user: authUser, logout } = useAuth();
   const { t } = useLang();
   const pathname = usePathname();
@@ -38,13 +37,6 @@ export default function SiteHeader({ onHomeLogoClick, useHomeTheme }: SiteHeader
   const transitionStyle = isCrossHomeNav
     ? "all 1.5s ease-in-out"
     : "none";
-
-  const handleLogoClick = (e: React.MouseEvent) => {
-    if (onHomeLogoClick) {
-      e.preventDefault();
-      onHomeLogoClick();
-    }
-  };
 
   const navItems: { label: string; href: string }[] = [
     { label: t.navFormulaSearch, href: "/" },
@@ -73,14 +65,19 @@ export default function SiteHeader({ onHomeLogoClick, useHomeTheme }: SiteHeader
         <div className="mx-auto flex h-[79px] items-center justify-between px-6 sm:px-8 md:px-[60px]">
           {/* Logo + 导航 左侧容器 */}
           <div className="flex items-center gap-6 shrink-0">
-          <Link href="/" onClick={handleLogoClick} className="flex shrink-0">
+          <a
+            href="https://www.hiwe.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex shrink-0"
+          >
             <img
               src="/hiwemix2-01.png"
               alt="HIWE MIX"
               className="h-5 w-auto object-contain block md:h-8 transition-all duration-[1.5s] ease-in-out"
               style={{ filter: "var(--header-logo-filter)" }}
             />
-          </Link>
+          </a>
 
           {/* 导航链接 左对齐紧随Logo */}
           <div className="hidden md:flex">

@@ -93,7 +93,8 @@
   --header-text-muted: rgba(255, 255, 255, 0.7);
   --header-border: transparent;
   --header-hover-bg: rgba(255, 255, 255, 0.1);
-  --header-logo-filter: brightness(0) invert(1);
+  /* 把白色 logo 染成品牌蓝 (#2487ca) */
+  --header-logo-filter: brightness(0) saturate(100%) invert(43%) sepia(95%) saturate(405%) hue-rotate(176deg) brightness(94%) contrast(92%);
   --header-position: fixed;
   --header-bottom-border: transparent;
 }
@@ -275,6 +276,31 @@ html[dir="ltr"] .rtl-only { display: none; }
 .animate-card-row:nth-child(n+19):nth-child(6n+4) { animation-delay: 0.78s; }
 .animate-card-row:nth-child(n+19):nth-child(6n+5) { animation-delay: 0.84s; }
 .animate-card-row:nth-child(n+19):nth-child(6n+6) { animation-delay: 0.90s; }
+
+/* 按段重置卡片入场动画延迟：每个段落网格通过 --card-delay 从 0 重新计数 */
+.animate-card-row {
+  animation-delay: calc(var(--card-delay, 0s) + 0s);
+}
+.animate-card-row:nth-child(1) { animation-delay: calc(var(--card-delay, 0s) + 0s); }
+.animate-card-row:nth-child(2) { animation-delay: calc(var(--card-delay, 0s) + 0.06s); }
+.animate-card-row:nth-child(3) { animation-delay: calc(var(--card-delay, 0s) + 0.12s); }
+.animate-card-row:nth-child(4) { animation-delay: calc(var(--card-delay, 0s) + 0.18s); }
+.animate-card-row:nth-child(5) { animation-delay: calc(var(--card-delay, 0s) + 0.24s); }
+.animate-card-row:nth-child(6) { animation-delay: calc(var(--card-delay, 0s) + 0.30s); }
+.animate-card-row:nth-child(n+7) { animation-delay: calc(var(--card-delay, 0s) + 0.20s); }
+.animate-card-row:nth-child(n+7):nth-child(6n+1) { animation-delay: calc(var(--card-delay, 0s) + 0.20s); }
+.animate-card-row:nth-child(n+7):nth-child(6n+2) { animation-delay: calc(var(--card-delay, 0s) + 0.26s); }
+.animate-card-row:nth-child(n+7):nth-child(6n+3) { animation-delay: calc(var(--card-delay, 0s) + 0.32s); }
+.animate-card-row:nth-child(n+7):nth-child(6n+4) { animation-delay: calc(var(--card-delay, 0s) + 0.38s); }
+.animate-card-row:nth-child(n+7):nth-child(6n+5) { animation-delay: calc(var(--card-delay, 0s) + 0.44s); }
+.animate-card-row:nth-child(n+7):nth-child(6n+6) { animation-delay: calc(var(--card-delay, 0s) + 0.50s); }
+.animate-card-row:nth-child(n+13) { animation-delay: calc(var(--card-delay, 0s) + 0.40s); }
+.animate-card-row:nth-child(n+13):nth-child(6n+1) { animation-delay: calc(var(--card-delay, 0s) + 0.40s); }
+.animate-card-row:nth-child(n+13):nth-child(6n+2) { animation-delay: calc(var(--card-delay, 0s) + 0.46s); }
+.animate-card-row:nth-child(n+13):nth-child(6n+3) { animation-delay: calc(var(--card-delay, 0s) + 0.52s); }
+.animate-card-row:nth-child(n+13):nth-child(6n+4) { animation-delay: calc(var(--card-delay, 0s) + 0.58s); }
+.animate-card-row:nth-child(n+13):nth-child(6n+5) { animation-delay: calc(var(--card-delay, 0s) + 0.64s); }
+.animate-card-row:nth-child(n+13):nth-child(6n+6) { animation-delay: calc(var(--card-delay, 0s) + 0.70s); }
 
 @media print {
   header, aside, footer, nav, button, [aria-hidden="true"], .mobile-fab, script, style {

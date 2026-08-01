@@ -24,64 +24,64 @@ INSERT INTO public.color_variants (id, name, year_range) VALUES ('v_stage2', 'St
 
 -- 2. 插入 20 个颜色 + 变体映射
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('bmw_101', 'bmw', 'W381', 'Crystal White', 'solid', '#F8F8F5') ON CONFLICT (id) DO NOTHING;
+  ('bmw_101', 'bmw', 'W381', 'Crystal White', ARRAY['solid'], '#F8F8F5') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('bmw_101', 'v_std') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('volkswagen_102', 'volkswagen', '0559', 'Phantom Black', 'solid', '#0D0D0D') ON CONFLICT (id) DO NOTHING;
+  ('volkswagen_102', 'volkswagen', '0559', 'Phantom Black', ARRAY['solid'], '#0D0D0D') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('volkswagen_102', 'v_stage1') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('nissan_103', 'nissan', 'NH847', 'Cosmos Silver', 'metallic', '#C0C0C8') ON CONFLICT (id) DO NOTHING;
+  ('nissan_103', 'nissan', 'NH847', 'Cosmos Silver', ARRAY['metallic'], '#C0C0C8') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('nissan_103', 'v_matte') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('honda_104', 'honda', '0987', 'Ocean Blue', 'metallic', '#1A3A6B') ON CONFLICT (id) DO NOTHING;
+  ('honda_104', 'honda', '0987', 'Ocean Blue', ARRAY['metallic'], '#1A3A6B') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('honda_104', 'v_std') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('nissan_105', 'nissan', 'R846', 'Sunset Red', 'solid', '#B8281A') ON CONFLICT (id) DO NOTHING;
+  ('nissan_105', 'nissan', 'R846', 'Sunset Red', ARRAY['solid'], '#B8281A') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('nissan_105', 'v_pearl') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('ford_106', 'ford', 'B167', 'Emerald Green', 'metallic', '#1A6B3A') ON CONFLICT (id) DO NOTHING;
+  ('ford_106', 'ford', 'B167', 'Emerald Green', ARRAY['metallic'], '#1A6B3A') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('ford_106', 'v_stage1') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('volkswagen_107', 'volkswagen', 'W698', 'Royal Purple', 'pearl', '#4A2050') ON CONFLICT (id) DO NOTHING;
+  ('volkswagen_107', 'volkswagen', 'W698', 'Royal Purple', ARRAY['pearl'], '#4A2050') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('volkswagen_107', 'v_matte') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('hyundai_108', 'hyundai', 'NH494', 'Desert Beige', 'solid', '#D4C5A0') ON CONFLICT (id) DO NOTHING;
+  ('hyundai_108', 'hyundai', 'NH494', 'Desert Beige', ARRAY['solid'], '#D4C5A0') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('hyundai_108', 'v_stage2') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('honda_109', 'honda', '0619', 'Midnight Blue', 'solid', '#0A1A3A') ON CONFLICT (id) DO NOTHING;
+  ('honda_109', 'honda', '0619', 'Midnight Blue', ARRAY['solid'], '#0A1A3A') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('honda_109', 'v_stage2') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('toyota_110', 'toyota', 'B999', 'Champagne Gold', 'metallic', '#C5A35A') ON CONFLICT (id) DO NOTHING;
+  ('toyota_110', 'toyota', 'B999', 'Champagne Gold', ARRAY['metallic'], '#C5A35A') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('toyota_110', 'v_std') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('volkswagen_111', 'volkswagen', '0775', 'Pearl White', 'pearl', '#FFF5EE') ON CONFLICT (id) DO NOTHING;
+  ('volkswagen_111', 'volkswagen', '0775', 'Pearl White', ARRAY['pearl'], '#FFF5EE') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('volkswagen_111', 'v_pearl') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('volkswagen_112', 'volkswagen', 'NH353', 'Graphite Grey', 'matte', '#3A3A3E') ON CONFLICT (id) DO NOTHING;
+  ('volkswagen_112', 'volkswagen', 'NH353', 'Graphite Grey', ARRAY['matte'], '#3A3A3E') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('volkswagen_112', 'v_stage1') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('toyota_113', 'toyota', 'NH132', 'Fire Orange', 'solid', '#E04A00') ON CONFLICT (id) DO NOTHING;
+  ('toyota_113', 'toyota', 'NH132', 'Fire Orange', ARRAY['solid'], '#E04A00') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('toyota_113', 'v_pearl') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('kia_114', 'kia', '0196', 'Sky Blue', 'pearl', '#87CEEB') ON CONFLICT (id) DO NOTHING;
+  ('kia_114', 'kia', '0196', 'Sky Blue', ARRAY['pearl'], '#87CEEB') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('kia_114', 'v_stage1') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('ford_115', 'ford', '0296', 'Bronze Brown', 'metallic', '#8B4513') ON CONFLICT (id) DO NOTHING;
+  ('ford_115', 'ford', '0296', 'Bronze Brown', ARRAY['metallic'], '#8B4513') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('ford_115', 'v_std') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('volkswagen_116', 'volkswagen', 'NH767', 'Crimson Red', 'candy', '#DC143C') ON CONFLICT (id) DO NOTHING;
+  ('volkswagen_116', 'volkswagen', 'NH767', 'Crimson Red', ARRAY['candy'], '#DC143C') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('volkswagen_116', 'v_std') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('hyundai_117', 'hyundai', 'G371', 'Ice Silver', 'metallic', '#E8E8E8') ON CONFLICT (id) DO NOTHING;
+  ('hyundai_117', 'hyundai', 'G371', 'Ice Silver', ARRAY['metallic'], '#E8E8E8') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('hyundai_117', 'v_std') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('toyota_118', 'toyota', 'G614', 'Volcanic Grey', 'matte', '#2A2A2E') ON CONFLICT (id) DO NOTHING;
+  ('toyota_118', 'toyota', 'G614', 'Volcanic Grey', ARRAY['matte'], '#2A2A2E') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('toyota_118', 'v_stage2') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('nissan_119', 'nissan', 'NH734', 'Tropical Green', 'candy', '#00A86B') ON CONFLICT (id) DO NOTHING;
+  ('nissan_119', 'nissan', 'NH734', 'Tropical Green', ARRAY['candy'], '#00A86B') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('nissan_119', 'v_stage2') ON CONFLICT DO NOTHING;
 INSERT INTO public.colors (id, make_id, color_code, color_name, color_type, hex_preview) VALUES
-  ('bmw_120', 'bmw', 'G736', 'Arctic White', 'pearl', '#FFFAF0') ON CONFLICT (id) DO NOTHING;
+  ('bmw_120', 'bmw', 'G736', 'Arctic White', ARRAY['pearl'], '#FFFAF0') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.color_variant_map (color_id, variant_id) VALUES ('bmw_120', 'v_std') ON CONFLICT DO NOTHING;
 
 -- 3. 插入配方

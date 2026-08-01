@@ -36,7 +36,7 @@ function formatFormulaAsText(result: SearchResult, activeFormula: Formula, makeN
   lines.push(`HIWE Formula - ${result.color.color_name}`);
   lines.push(`Color Code: ${result.color.color_code}`);
   lines.push(`Make: ${makeName}`);
-  lines.push(`Type: ${result.color.color_type}`);
+  lines.push(`Type: ${result.color.color_type.join(", ")}`);
   lines.push(`Process: ${activeFormula.formula_type}`);
   lines.push(`Paint System: ${activeFormula.paint_system}`);
   lines.push(`Version: ${activeFormula.version}`);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import type { CarMake, Color, ColorVariant, YearEntry } from "@/types";
+import type { CarMake, Color, ColorType, ColorVariant, YearEntry } from "@/types";
 import { colorSwatchStyle } from "@/lib/utils";
 import { formatYearEntry } from "@/lib/db-formula";
 import { generateUniqueColorId } from "@/lib/id-generator";
@@ -44,7 +44,7 @@ export default function ColorsPanel() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Color | null>(null);
-  const [form, setForm] = useState({ id: "", make_id: "", color_code: "", color_name: "", color_type: "solid" as Color["color_type"], hex_preview: "#FFFFFF", car_model: "" });
+  const [form, setForm] = useState({ id: "", make_id: "", color_code: "", color_name: "", color_type: [] as ColorType[], hex_preview: "#FFFFFF", car_model: "" });
   const [variantIds, setVariantIds] = useState<string[]>([]);
   const [yearEntries, setYearEntries] = useState<YearEntry[]>([]);
   const [yearMode, setYearMode] = useState<"single" | "range">("single");
@@ -55,13 +55,16 @@ export default function ColorsPanel() {
   const [rowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const idManuallyEdited = useRef(false);
+  const colorTypeScrollRef = useRef<HTMLDivElement>(null);
+  const colorTypeDrag = useRef<{ startX: number; scrollLeft: number; moved: boolean; pointerId: number } | null>(null);
+  const suppressChipClick = useRef(false);
 
   useEffect(() => {
     if (!editing && !idManuallyEdited.current && form.make_id && form.color_code) {
       const existingIds = colors.map((c) => c.id);
-      setForm((prev) => ({ ...prev, id: generateUniqueColorId(form.make_id, form.color_code, form.color_type, existingIds) }));
+      setForm((prev) => ({ ...prev, id: generateUniqueColorId(form.make_id, form.color_code, existingIds) }));
     }
-  }, [form.make_id, form.color_code, form.color_type, editing, colors]);
+  }, [form.make_id, form.color_code, editing, colors]);
 
   const fetchColors = useCallback(async () => {
     try { const res = await fetch("/api/admin/colors"); if (res.ok) setColors(await res.json()); } catch {}
@@ -78,7 +81,7 @@ export default function ColorsPanel() {
   useEffect(() => { setPage(0); }, [colors, searchQuery]);
 
   function openCreate() {
-    setEditing(null); setForm({ id: "", make_id: "", color_code: "", color_name: "", color_type: "solid", hex_preview: "#FFFFFF", car_model: "" });
+    setEditing(null); setForm({ id: "", make_id: "", color_code: "", color_name: "", color_type: [], hex_preview: "#FFFFFF", car_model: "" });
     setVariantIds([]); setYearEntries([]); setYearMode("single"); setYearInput(""); setYearEndInput("");
     setError(""); idManuallyEdited.current = false; setShowModal(true);
   }
@@ -95,7 +98,7 @@ export default function ColorsPanel() {
       const dup = colors.filter((c) => c.make_id === form.make_id && c.color_code.trim().toUpperCase() === code);
       if (dup.length > 0) {
         const brandName = brandMap.get(form.make_id) ?? form.make_id;
-        const existing = dup.map((c) => `· ${c.color_name}（${c.color_type}）`).join("\n");
+        const existing = dup.map((c) => `· ${c.color_name}（${c.color_type.join(", ")}）`).join("\n");
         if (!confirm(`已存在 ${dup.length} 条相同代码「${form.color_code}」的颜色（${brandName}）：\n${existing}\n\n是否将当前录入作为独立记录新增？`)) return;
       }
     }
@@ -114,6 +117,36 @@ export default function ColorsPanel() {
     } catch { alert("网络错误，请重试"); }
   }
   function toggleVariant(id: string) { setVariantIds((prev) => prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]); }
+  // 切换颜色类型（多选，数组去重）
+  function toggleColorType(t: ColorType) { setForm((prev) => ({ ...prev, color_type: prev.color_type.includes(t) ? prev.color_type.filter((x) => x !== t) : [...prev.color_type, t] })); }
+
+  // 按住标签拖动 = 横向滚动；移动超阈值则不算点击，避免拖动时误删标签。
+  // 仅在超过阈值开始拖动时才捕获指针：普通点击（含 ×）不捕获，onClick 正常触发。
+  function handleChipPointerDown(e: React.PointerEvent) {
+    const el = colorTypeScrollRef.current;
+    if (!el) return;
+    colorTypeDrag.current = { startX: e.clientX, scrollLeft: el.scrollLeft, moved: false, pointerId: e.pointerId };
+    suppressChipClick.current = false;
+  }
+  function handleChipPointerMove(e: React.PointerEvent) {
+    const d = colorTypeDrag.current;
+    const el = colorTypeScrollRef.current;
+    if (!d || !el || d.pointerId !== e.pointerId) return;
+    const dx = e.clientX - d.startX;
+    if (!d.moved && Math.abs(dx) > 4) {
+      d.moved = true;
+      try { el.setPointerCapture(e.pointerId); } catch { /* 指针可能已释放 */ }
+    }
+    el.scrollLeft = d.scrollLeft - dx;
+    if (d.moved) suppressChipClick.current = true;
+  }
+  function endChipDrag(e: React.PointerEvent) {
+    if (colorTypeDrag.current?.pointerId === e.pointerId) {
+      colorTypeDrag.current = null;
+      const el = colorTypeScrollRef.current;
+      if (el?.hasPointerCapture?.(e.pointerId)) { try { el.releasePointerCapture(e.pointerId); } catch { /* 已释放 */ } }
+    }
+  }
 
   // 添加 YearEntry（单年或区间）
   function addYearEntry() {
@@ -146,7 +179,7 @@ export default function ColorsPanel() {
   const allExpandedRows = useMemo(() => colors.flatMap((c): {
     colorId: string; groupIndex: number; groupSize: number;
     yearEntry: YearEntry | undefined; brandName: string; entryCount: number; originalColor: Color;
-    color_code: string; color_name: string; color_type: Color["color_type"];
+    color_code: string; color_name: string; color_type: ColorType[];
     hex_preview: string; car_model?: string;
   }[] => {
     const brandName = brandMap.get(c.make_id) ?? c.make_id;
@@ -163,7 +196,7 @@ export default function ColorsPanel() {
       if (row.color_name.toLowerCase().includes(q)) return true;
       if (row.car_model?.toLowerCase().includes(q)) return true;
       if (row.brandName.toLowerCase().includes(q)) return true;
-      if (row.color_type.toLowerCase().includes(q)) return true;
+      if (row.color_type.join(" ").toLowerCase().includes(q)) return true;
       if (row.yearEntry && formatYearEntry(row.yearEntry).toLowerCase().includes(q)) return true;
       return false;
     });
@@ -217,7 +250,11 @@ export default function ColorsPanel() {
                   <span className="block truncate text-2xs text-muted-foreground">{row.car_model || "—"}</span>
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <span className="text-2xs text-muted-foreground">{row.color_type}</span>
+                  <div className="flex flex-wrap items-center justify-center gap-1">
+                    {row.color_type.map((t) => (
+                      <span key={t} className="rounded-md border border-muted bg-muted/50 px-1.5 py-0.5 text-2xs text-muted-foreground">{t}</span>
+                    ))}
+                  </div>
                 </TableCell>
                 <TableCell className="py-3 text-center">
                   <span className="text-2xs text-muted-foreground">{row.yearEntry ? formatYearEntry(row.yearEntry) : ""}</span>
@@ -275,9 +312,42 @@ export default function ColorsPanel() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
                     <Label className="text-sm font-medium text-foreground/80">类型</Label>
-                    <Select value={form.color_type} onValueChange={(v) => setForm({ ...form, color_type: (v || "solid") as Color["color_type"] })}>
-                      <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue /></SelectTrigger>
-                      <SelectContent className="z-[130] max-h-[200px]">{COLOR_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                    <Select multiple value={form.color_type} onValueChange={(v) => setForm((prev) => ({ ...prev, color_type: (v ?? []) as ColorType[] }))}>
+                      <SelectTrigger className="h-9 w-full rounded-lg px-2 py-1.5">
+                        <div
+                          ref={colorTypeScrollRef}
+                          className="flex flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                          style={{ touchAction: "pan-y" }}
+                          onPointerDown={handleChipPointerDown}
+                          onPointerMove={handleChipPointerMove}
+                          onPointerUp={endChipDrag}
+                          onPointerCancel={endChipDrag}
+                        >
+                          {form.color_type.map((t) => (
+                            <span
+                              key={t}
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (!suppressChipClick.current) toggleColorType(t); }}
+                              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                              className="inline-flex shrink-0 cursor-grab touch-none select-none items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-2xs text-blue-700 active:cursor-grabbing hover:border-blue-300"
+                            >
+                              {t}
+                              <X className="size-3 text-blue-400 hover:text-blue-600" />
+                            </span>
+                          ))}
+                          {form.color_type.length === 0 && <span className="text-2xs leading-none text-muted-foreground">请选择类型</span>}
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[200px]">
+                        {COLOR_TYPES.map((t) => (
+                          <SelectItem
+                            key={t}
+                            value={t}
+                            className={form.color_type.includes(t) ? "bg-accent text-accent-foreground" : ""}
+                          >
+                            {t}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
                   </div>
                   <div className="flex flex-col gap-1.5">
