@@ -108,8 +108,11 @@ function GroupedColorCard({
   const parent = rows[0];
   const hex = parent.color.hex_preview;
   const hasVariants = rows.length > 1;
-  // LP4020 配方使用真实车漆照片替代纯色块
-  const usePhoto = parent.color.color_code.toUpperCase() === "LP4020";
+  // 颜色卡片照片：public/images/colors/<CODE>.jpg 存在则显示真实车漆照片，否则回退纯色块
+  // 文件名不允许含 "/"，故将 color_code 中的 "/" 去除后匹配（如 C2/45U -> C245U.jpg）
+  const photoSrc = `/images/colors/${parent.color.color_code.replace(/\//g, "").toUpperCase()}.jpg`;
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const usePhoto = !photoFailed;
   const [open, setOpen] = useState(false);
   const openTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -183,15 +186,16 @@ function GroupedColorCard({
       }}
       aria-label={`${parent.color.color_code} ${parent.color.color_name}`}
     >
-      {/* 颜色底色 + 金属漆渐变光泽；LP4020 使用真实车漆照片 */}
+      {/* 颜色照片（存在则显示）或纯色块 + 金属漆渐变光泽；无照片代码回退纯色块 */}
       {usePhoto ? (
         <Image
-          src="/LP4020.jpg"
+          src={photoSrc}
           alt={`${parent.color.color_code} ${parent.color.color_name}`}
           fill
           sizes="300px"
           className="absolute inset-0 object-cover"
           priority={false}
+          onError={() => setPhotoFailed(true)}
         />
       ) : (
         <div
