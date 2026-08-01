@@ -312,7 +312,7 @@ export default function ColorsPanel() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
                     <Label className="text-sm font-medium text-foreground/80">类型</Label>
-                    <Select multiple value={form.color_type} onValueChange={(v) => setForm((prev) => ({ ...prev, color_type: (v ?? []) as ColorType[] }))}>
+                    <Select multiple value={form.color_type} onValueChange={(v) => setForm((prev) => ({ ...prev, color_type: (Array.isArray(v) ? v : (v ? [v] : [])) as ColorType[] }))}>
                       <SelectTrigger className="h-9 w-full rounded-lg px-2 py-1.5">
                         <div
                           ref={colorTypeScrollRef}

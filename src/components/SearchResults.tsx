@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { useLang } from "@/components/LanguageContext";
 import { colorSwatchStyle } from "@/lib/utils";
 import type { FormulaTableRow } from "@/types";
@@ -32,9 +33,9 @@ const SECTION_LABELS: Record<string, string> = {
 
 function SkeletonGrid() {
   return (
-    <div className="grid grid-cols-6 gap-x-0 gap-y-[30px] px-0 pb-4">
+    <div className="grid grid-cols-5 justify-items-center gap-x-0 gap-y-0 px-0 pb-4">
       {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => (
-        <Skeleton key={i} className="aspect-square w-full rounded-none" />
+        <Skeleton key={i} className="mb-[70px] aspect-square w-[87.5%] rounded-none" />
       ))}
     </div>
   );
@@ -107,6 +108,8 @@ function GroupedColorCard({
   const parent = rows[0];
   const hex = parent.color.hex_preview;
   const hasVariants = rows.length > 1;
+  // LP4020 配方使用真实车漆照片替代纯色块
+  const usePhoto = parent.color.color_code.toUpperCase() === "LP4020";
   const [open, setOpen] = useState(false);
   const openTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -166,7 +169,7 @@ function GroupedColorCard({
   // 母卡片纯视觉内容（复用于 PopoverTrigger render 和单配方卡片）
   const cardBody = (
     <div
-      className="group relative aspect-square cursor-pointer overflow-hidden transition-all duration-300 ease-in-out active:scale-[0.98]"
+      className="group relative aspect-square w-full cursor-pointer overflow-hidden transition-all duration-300 ease-in-out hover:scale-[1.15]"
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -180,29 +183,24 @@ function GroupedColorCard({
       }}
       aria-label={`${parent.color.color_code} ${parent.color.color_name}`}
     >
-      {/* 颜色底色 + 金属漆渐变光泽 */}
-      <div
-        className="absolute inset-0"
-        style={
-          hex ? colorSwatchStyle(hex) : { backgroundColor: "#d1d5db" }
-        }
-      />
-
-      {/* 悬停时半透明黑色遮罩，平滑淡入 */}
-      <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-      {/* 悬停文字内容，与遮罩同步淡入 */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <p className="max-w-full truncate text-center font-mono text-3xl font-bold tracking-tight text-white">
-          {parent.color.color_code}
-        </p>
-        <p className="max-w-full truncate text-center text-sm font-medium text-white">
-          {parent.color.color_name}
-        </p>
-        <p className="text-center text-xs capitalize text-white/80">
-          {parent.color.color_type.join(", ")}
-        </p>
-      </div>
+      {/* 颜色底色 + 金属漆渐变光泽；LP4020 使用真实车漆照片 */}
+      {usePhoto ? (
+        <Image
+          src="/LP4020.jpg"
+          alt={`${parent.color.color_code} ${parent.color.color_name}`}
+          fill
+          sizes="300px"
+          className="absolute inset-0 object-cover"
+          priority={false}
+        />
+      ) : (
+        <div
+          className="absolute inset-0"
+          style={
+            hex ? colorSwatchStyle(hex) : { backgroundColor: "#d1d5db" }
+          }
+        />
+      )}
 
       {/* +N 变体徽标 */}
       {hasVariants && (
@@ -212,23 +210,37 @@ function GroupedColorCard({
           </Badge>
         </div>
       )}
-      {/* 配方型号标识（颜色代码） - 左下角 */}
-      <div className="pointer-events-none absolute bottom-2 left-2 z-10 flex items-center rounded-md bg-black/40 px-1.5 py-0.5 backdrop-blur-sm">
-        <span className="font-heading text-2xs text-white">
-          {parent.color.color_code}
-        </span>
-      </div>
+    </div>
+  );
+
+  // 卡片下方信息块：左对齐卡片，常显配方代码 / 颜色 / 漆面类型
+  const infoBlock = (
+    <div className="mt-[45px] text-left font-[family-name:var(--font-inter)]">
+      <p className="truncate text-[20px] font-normal leading-tight text-gray-700">
+        {parent.color.color_code}
+      </p>
+      <p className="mt-2 truncate text-[16px] font-normal leading-tight text-muted-foreground">
+        {parent.color.color_name}
+      </p>
+      <p className="truncate text-[16px] font-normal capitalize leading-tight text-muted-foreground">
+        {parent.color.color_type.join(", ")}
+      </p>
     </div>
   );
 
   // 单配方：直接返回卡片，无需 Popover
   if (!hasVariants) {
-    return <div className="animate-card-row">{cardBody}</div>;
+    return (
+      <div className="animate-card-row mb-[70px] w-[87.5%]">
+        {cardBody}
+        {infoBlock}
+      </div>
+    );
   }
 
   // 多变体：Popover 包裹，悬停弹出子卡片浮层
   return (
-    <div className="animate-card-row">
+    <div className="animate-card-row mb-[70px] w-[87.5%]">
       <Popover
         open={open}
         onOpenChange={(v) => {
@@ -261,6 +273,7 @@ function GroupedColorCard({
           </div>
         </PopoverContent>
       </Popover>
+      {infoBlock}
     </div>
   );
 }
@@ -361,7 +374,7 @@ export default function SearchResults({
             </div>
             {/* 段内 6 列网格：距标题条 40px，--card-delay 从 0 重置交错入场动画 */}
             <div
-              className="grid grid-cols-6 gap-x-0 gap-y-[30px] px-0 pb-4 mt-10"
+              className="grid grid-cols-5 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10"
               style={{ ["--card-delay" as string]: "0s" }}
             >
               {cards.map(([colorCode, groupRows]) => (

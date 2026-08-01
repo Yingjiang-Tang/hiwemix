@@ -329,8 +329,11 @@ export async function saveColor(
   //    - 编辑：按 id update 现有行。
   let data: unknown;
   let error: { code?: string; message?: string; details?: string } | null;
-  // 空选兜底为 ["solid"]，不依赖 DB 默认值
-  const types = color.color_type.length ? color.color_type : (["solid"] as ColorType[]);
+  // 空选兜底为 ["solid"]，不依赖 DB 默认值；先归一化为数组，
+  // 防止旧数据/异常传入字符串（如 "solid"）被 PostgREST 当作数组字面量解析报错
+  const types = typeColorType(color.color_type).length
+    ? typeColorType(color.color_type)
+    : (["solid"] as ColorType[]);
   if (isNew) {
     const row = {
       id: color.id,
