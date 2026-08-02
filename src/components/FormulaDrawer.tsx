@@ -10,7 +10,6 @@ import KapciFormulaTable from "./KapciFormulaTable";
 import Toast from "./Toast";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { X, Printer, Copy, Heart } from "lucide-react";
 
@@ -82,7 +81,6 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   const [brands, setBrands] = useState<{ id: string; name: string; region: string }[]>([]);
   const [hexInput, setHexInput] = useState("");
   const [activeGroup, setActiveGroup] = useState<ComponentGroup>("Pearl Paint");
-  const [infoTab, setInfoTab] = useState(0);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -99,7 +97,6 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
       }
       setHexInput(result.color.hex_preview);
       setActiveGroup("Pearl Paint");
-      setInfoTab(0);
     }
   }, [result, initialFormulaIdx, formulaId]);
 
@@ -253,35 +250,19 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
 
               <Separator />
 
-              {/* Tab Switcher: shadcn 胶囊式 Tabs */}
-              <Tabs value={infoTab} onValueChange={(v) => setInfoTab(Number(v))}>
-                <TabsList variant="default" className="mx-[60px] mt-3 w-[calc(100%-120px)] sm:mt-4">
-                  <TabsTrigger value={0} className="text-xs md:text-sm">{t.tabColorInfo}</TabsTrigger>
-                  <TabsTrigger value={1} className="text-xs md:text-sm">{t.tabColorDocs}</TabsTrigger>
-                  <TabsTrigger value={2} className="text-xs md:text-sm">{t.tabPlasticParts}</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value={0} className="p-[60px]">
-                  <div className="flex flex-col gap-2 md:gap-3">
-                    <InfoRow label={t.manufacturerLabel} value={make} />
-                    <InfoRow label={t.originLabel} value={origin} />
-                    <InfoRow label={t.codeLabel} value={color.color_code} />
-                    <InfoRow label={t.colorName} value={color.color_name} />
-                    <InfoRow label={t.carModelLabel} value={color.car_model || "-"} />
-                    <InfoRow label={t.yearsLabel} value={currentYear} />
-                    <InfoRow label={t.processLabel} value={activeFormula?.formula_type || "-"} />
-                    <InfoRow label={t.versionLabel} value={activeFormula?.version || "-"} />
-                  </div>
-                </TabsContent>
-
-                <TabsContent value={1} className="py-8 text-center">
-                  <p className="text-xs text-muted-foreground">{t.emptyState}</p>
-                </TabsContent>
-
-                <TabsContent value={2} className="py-8 text-center">
-                  <p className="text-xs text-muted-foreground">{t.emptyState}</p>
-                </TabsContent>
-              </Tabs>
+              {/* Color Information（只保留一个 Tab，直接展示内容） */}
+              <div className="p-[60px]">
+                <div className="flex flex-col gap-2 md:gap-3">
+                  <InfoRow label={t.manufacturerLabel} value={make} />
+                  <InfoRow label={t.originLabel} value={origin} />
+                  <InfoRow label={t.codeLabel} value={color.color_code} />
+                  <InfoRow label={t.colorName} value={color.color_name} />
+                  <InfoRow label={t.carModelLabel} value={color.car_model || "-"} />
+                  <InfoRow label={t.yearsLabel} value={currentYear} />
+                  <InfoRow label={t.processLabel} value={activeFormula?.formula_type || "-"} />
+                  <InfoRow label={t.versionLabel} value={activeFormula?.version || "-"} />
+                </div>
+              </div>
             </div>
           </div>
         </SheetContent>
