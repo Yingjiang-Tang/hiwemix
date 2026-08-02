@@ -22,19 +22,11 @@ import {
 } from "@/components/ui/table";
 import { blendedDensity, gramsToVolume, volumeToGrams } from "@/lib/units";
 
-const UNIT_OPTIONS = ["g", "kg", "ml", "liter"] as const;
+// 重量/体积单位：千克、毫升、克、升
+const UNIT_OPTIONS = ["kg", "ml", "g", "L"] as const;
 type Unit = (typeof UNIT_OPTIONS)[number];
 
 const GRAM_UNITS: Unit[] = ["g", "kg"];
-
-// 小量混合预设（对标 MIXIT 痛点：微小修补只需 30ml 以内）
-const SMALL_BATCH_PRESETS: { unit: Unit; value: number; label: string }[] = [
-  { unit: "ml", value: 30, label: "30ml" },
-  { unit: "ml", value: 50, label: "50ml" },
-  { unit: "ml", value: 100, label: "100ml" },
-  { unit: "g", value: 50, label: "50g" },
-  { unit: "g", value: 100, label: "100g" },
-];
 
 interface KapciFormulaTableProps {
   formula: Formula;
@@ -59,7 +51,8 @@ function massToneColor(comp: FormulaComponent): string {
   if (rgb_r != null && rgb_g != null && rgb_b != null) {
     return `rgb(${rgb_r}, ${rgb_g}, ${rgb_b})`;
   }
-  return "#E2E8F0";
+  // 无 RGB 数据时的占位色：跟随主题（浅色浅灰 / 深色深灰），避免暗色下刺眼的亮块
+  return "var(--muted)";
 }
 
 export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint", onGroupChange, showGroupToggle = false }: KapciFormulaTableProps) {
@@ -72,15 +65,15 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
   // 当前显示配方的混合密度（质量加权调和平均）；毫升换算用它，缺数据自动回退分类典型值/1.0
   const density = blendedDensity(formula.components);
 
-  // 单位 → 总克数：重量单位直接乘倍数；体积单位按混合密度换算
+  // 单位 → 总克数：重量单位直接乘倍数；体积单位按混合密度换算（UI 的 "L" 对应 units.ts 的 "liter"）
   function volumeToTotalGrams(v: number, u: Unit): number {
     if (GRAM_UNITS.includes(u)) return v * (u === "kg" ? 1000 : 1);
-    return volumeToGrams(v, density, u as "ml" | "liter");
+    return volumeToGrams(v, density, u === "L" ? "liter" : "ml");
   }
 
   function totalGramsToVolume(grams: number, u: Unit): number {
     if (GRAM_UNITS.includes(u)) return grams / (u === "kg" ? 1000 : 1);
-    return gramsToVolume(grams, density, u as "ml" | "liter");
+    return gramsToVolume(grams, density, u === "L" ? "liter" : "ml");
   }
 
   const totalGrams = volumeToTotalGrams(volume, unit);
@@ -122,13 +115,10 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
     setVolume(Math.round(newVolume * 1000) / 1000);
   }
 
-  function handlePreset(p: (typeof SMALL_BATCH_PRESETS)[number]) {
-    isManualEditRef.current = false;
-    setUnit(p.unit);
-    setVolume(p.value);
-  }
-
   const totalWeight = weights.reduce((a, b) => a + b, 0);
+  // 合计随所选单位换算显示（克 → 当前单位）；千克/升保留 3 位小数，避免小量配方显示成 0.0
+  const totalInUnit = totalGramsToVolume(totalWeight, unit);
+  const totalDisplay = totalInUnit.toFixed(unit === "kg" || unit === "L" ? 3 : 1);
 
   return (
     <div>
@@ -164,24 +154,6 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        {/* 小量混合预设：微小修补只需几十克/毫升，避免浪费漆 */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          {SMALL_BATCH_PRESETS.map((p) => (
-            <button
-              key={p.label}
-              type="button"
-              onClick={() => handlePreset(p)}
-              className={`inline-flex h-7 items-center rounded-full border px-3 text-xs font-medium transition-colors ${
-                unit === p.unit && volume === p.value
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-primary"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
         </div>
 
         {/* Pearl Paint/Ground Paint 切换按钮 */}
@@ -257,9 +229,14 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={4} className="py-[14px]" />
-              <TableCell className="w-1/5 py-[14px] text-center font-bold text-red-500">
-                {t.totalWeightLabel}&nbsp;&nbsp;&nbsp;{totalWeight.toFixed(1)} g
+              <TableCell colSpan={4} className="py-4" />
+              <TableCell className="w-1/5 py-4 text-center text-[18px]">
+                {/* Total 标签与单位：深灰 + 降一级字重；中间数字保持黑色加粗以突出 */}
+                <span className="font-semibold text-foreground/60">{t.totalWeightLabel}</span>
+                &nbsp;&nbsp;&nbsp;
+                <span className="font-bold text-foreground">{totalDisplay}</span>
+                &nbsp;
+                <span className="font-semibold text-foreground/60">{unit}</span>
               </TableCell>
             </TableRow>
           </TableFooter>

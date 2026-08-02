@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import type { SearchResult, Formula, FormulaComponent, ComponentGroup, YearEntry } from "@/types";
 import { colorSwatchStyle } from "@/lib/utils";
 import { formatYearEntry } from "@/lib/db-formula";
@@ -74,6 +75,8 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   const [hexInput, setHexInput] = useState("");
   const [activeGroup, setActiveGroup] = useState<ComponentGroup>("Pearl Paint");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  // 颜色照片加载失败时回退纯色块（与首页卡片同一套逻辑）
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   useEffect(() => {
     fetch("/api/brands").then((r) => r.ok ? r.json() : []).then((d) => setBrands(d)).catch(() => setBrands([]));
@@ -89,6 +92,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
       }
       setHexInput(result.color.hex_preview);
       setActiveGroup("Pearl Paint");
+      setPhotoFailed(false);
     }
   }, [result, initialFormulaIdx, formulaId]);
 
@@ -109,6 +113,8 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   const origin = brands.find((m) => m.id === color.make_id)?.region ?? "-";
   const activeFormula = formulas[activeFormulaIdx];
   const previewColor = parseHexInput(hexInput, color.hex_preview);
+  // 颜色照片路径：public/images/colors/<CODE>.jpg（去掉 color_code 中的 "/"，与首页卡片一致）
+  const photoSrc = `/images/colors/${color.color_code.replace(/\//g, "").toUpperCase()}.jpg`;
 
   let displayedFormula: Formula | null = activeFormula ?? null;
   const isGroupedType = activeFormula?.formula_type === "Three Stages";
@@ -153,8 +159,9 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
     <>
       <Sheet open onOpenChange={(v) => { if (!v) handleClose(); }}>
         <SheetContent side="right" className="!fixed !inset-0 !w-screen !max-w-full !translate-x-0 !rounded-none p-0 gap-0 overflow-y-auto bg-card z-[2000]">
-          {/* Header Bar: 品牌/颜色代码/名称/元数据 + 操作按钮 */}
-          <div className="sticky top-0 z-10 border-b border-border bg-card px-3 py-5 sm:px-5 sm:py-6">
+          {/* Header Bar: 品牌/颜色代码/名称/元数据 + 操作按钮
+              左内边距与下方配方栏 px-[60px] 对齐，标题左边缘与配方表格左边缘齐平 */}
+          <div className="sticky top-0 z-10 border-b border-border bg-card pl-[60px] pr-[60px] py-5 sm:py-6">
             <div className="flex items-start gap-3 sm:gap-4">
               {/* 标题：配方代码 | 颜色名称 */}
               <div className="min-w-0 flex-1">
@@ -165,8 +172,8 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
                 </h2>
               </div>
 
-              {/* 右侧操作按钮：圆形图标按钮（Favorite/打印/复制），整体左移 70px */}
-              <div className="relative left-[-70px] flex items-center gap-2.5 flex-shrink-0">
+              {/* 右侧操作按钮：圆形图标按钮（Favorite/打印/复制），整体左移 30px */}
+              <div className="relative left-[-30px] flex items-center gap-2.5 flex-shrink-0">
                 <Button
                   onClick={handleToggleFavorite}
                   variant="outline"
@@ -209,7 +216,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
           {/* Body: 两栏布局 */}
           <div className="flex flex-col md:flex-row flex-1">
             {/* 左侧：配方详情 (~62.5%) */}
-            <div className="flex-1 overflow-auto border-b border-border p-[60px] md:flex-[62.5%] md:border-b-0 md:border-r">
+            <div className="flex-1 overflow-auto border-b border-border px-[60px] pt-[30px] pb-[60px] md:flex-[62.5%] md:border-b-0 md:border-r">
               {activeFormula && displayedFormula && (
                 <div>
                   <KapciFormulaTable
@@ -221,9 +228,9 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
                   />
 
                   {activeFormula.notes && (
-                    <div className="mt-4 rounded-xl border border-amber-200/60 bg-amber-50/30 p-3">
-                      <span className="text-xs font-semibold text-amber-700">{t.notesLabel}</span>
-                      <p className="mt-1 text-xs text-amber-600">{activeFormula.notes}</p>
+                    <div className="mt-4 rounded-xl border border-amber-200/60 bg-amber-50/30 p-3 dark:border-amber-400/25 dark:bg-amber-400/10">
+                      <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">{t.notesLabel}</span>
+                      <p className="mt-1 text-xs text-amber-600 dark:text-amber-200/90">{activeFormula.notes}</p>
                     </div>
                   )}
                 </div>
@@ -232,53 +239,63 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
 
             {/* 右侧：颜色预览+信息 (~37.5%) */}
             <div className="flex-shrink-0 overflow-auto md:flex-[37.5%]">
-              {/* 颜色预览 */}
-              <div className="p-[60px]">
-                <div
-                  className="h-[50px] rounded-xl border border-border/60 sm:h-[80px]"
-                  style={colorSwatchStyle(previewColor)}
-                />
+              {/* 颜色预览：正方形，照片优先，加载失败回退纯色块（与首页卡片一致） */}
+              <div className="px-[60px] py-[30px]">
+                <div className="relative aspect-square w-full overflow-hidden rounded-[35px] border border-border/60">
+                  {!photoFailed ? (
+                    <Image
+                      src={photoSrc}
+                      alt={`${color.color_code} ${color.color_name}`}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 37vw"
+                      className="absolute inset-0 object-cover"
+                      onError={() => setPhotoFailed(true)}
+                    />
+                  ) : (
+                    <div className="absolute inset-0" style={colorSwatchStyle(previewColor)} />
+                  )}
+                </div>
               </div>
 
               <Separator />
 
               {/* Color Information（标题 + 斑马纹表格） */}
-              <div className="p-[60px]">
-                <h3 className="mb-4 font-heading text-base font-semibold text-foreground">{t.tabColorInfo}</h3>
+              <div className="px-[60px] pt-[30px] pb-[60px]">
+                <h3 className="mb-4 text-center font-heading text-xl font-bold leading-tight text-foreground sm:text-2xl">{t.tabColorInfo}</h3>
                 <div className="overflow-x-auto rounded-lg border border-border text-sm">
                   <Table className="w-full">
                     <tbody>
                       <TableRow className="bg-muted/50">
-                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.manufacturerLabel}</TableCell>
-                        <TableCell className="py-2.5 align-middle">{make}</TableCell>
+                        <TableCell className="w-32 px-[30px] py-2.5 align-middle font-medium text-foreground/70">{t.manufacturerLabel}</TableCell>
+                        <TableCell className="px-[30px] py-2.5 align-middle">{make}</TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.originLabel}</TableCell>
-                        <TableCell className="py-2.5 align-middle">{origin}</TableCell>
+                        <TableCell className="w-32 px-[30px] py-2.5 align-middle font-medium text-foreground/70">{t.originLabel}</TableCell>
+                        <TableCell className="px-[30px] py-2.5 align-middle">{origin}</TableCell>
                       </TableRow>
                       <TableRow className="bg-muted/50">
-                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.codeLabel}</TableCell>
-                        <TableCell className="py-2.5 align-middle">{color.color_code}</TableCell>
+                        <TableCell className="w-32 px-[30px] py-2.5 align-middle font-medium text-foreground/70">{t.codeLabel}</TableCell>
+                        <TableCell className="px-[30px] py-2.5 align-middle">{color.color_code}</TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.colorName}</TableCell>
-                        <TableCell className="py-2.5 align-middle">{color.color_name}</TableCell>
+                        <TableCell className="w-32 px-[30px] py-2.5 align-middle font-medium text-foreground/70">{t.colorName}</TableCell>
+                        <TableCell className="px-[30px] py-2.5 align-middle">{color.color_name}</TableCell>
                       </TableRow>
                       <TableRow className="bg-muted/50">
-                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.carModelLabel}</TableCell>
-                        <TableCell className="py-2.5 align-middle">{color.car_model || "-"}</TableCell>
+                        <TableCell className="w-32 px-[30px] py-2.5 align-middle font-medium text-foreground/70">{t.carModelLabel}</TableCell>
+                        <TableCell className="px-[30px] py-2.5 align-middle">{color.car_model || "-"}</TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.yearsLabel}</TableCell>
-                        <TableCell className="py-2.5 align-middle">{currentYear}</TableCell>
+                        <TableCell className="w-32 px-[30px] py-2.5 align-middle font-medium text-foreground/70">{t.yearsLabel}</TableCell>
+                        <TableCell className="px-[30px] py-2.5 align-middle">{currentYear}</TableCell>
                       </TableRow>
                       <TableRow className="bg-muted/50">
-                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.processLabel}</TableCell>
-                        <TableCell className="py-2.5 align-middle">{activeFormula?.formula_type || "-"}</TableCell>
+                        <TableCell className="w-32 px-[30px] py-2.5 align-middle font-medium text-foreground/70">{t.processLabel}</TableCell>
+                        <TableCell className="px-[30px] py-2.5 align-middle">{activeFormula?.formula_type || "-"}</TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.versionLabel}</TableCell>
-                        <TableCell className="py-2.5 align-middle">{activeFormula?.version || "-"}</TableCell>
+                        <TableCell className="w-32 px-[30px] py-2.5 align-middle font-medium text-foreground/70">{t.versionLabel}</TableCell>
+                        <TableCell className="px-[30px] py-2.5 align-middle">{activeFormula?.version || "-"}</TableCell>
                       </TableRow>
                     </tbody>
                   </Table>

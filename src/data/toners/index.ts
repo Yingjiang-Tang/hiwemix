@@ -22,5 +22,5 @@ export const TONER_CATEGORIES: { key: TonerCategory; label: string; count: numbe
   { key: '1K_BASECOAT',        label: '1K Basecoat',        count: toners1kBasecoat.length },
   { key: '1K_SILVER_BASECOAT', label: '1K Silver Basecoat', count: toners1kSilver.length },
   { key: '1K_PEARL_BASECOAT',  label: '1K Pearl Basecoat',  count: toners1kPearl.length },
-  { key: 'SUPPLEMENTARY',      label: '辅料',               count: tonersSupplementary.length },
+  { key: 'SUPPLEMENTARY',      label: 'Additives',          count: tonersSupplementary.length },
 ];

@@ -34,7 +34,7 @@ const TONER_CATEGORIES: { key: TonerCategory; label: string }[] = [
   { key: "1K_BASECOAT", label: "1K Basecoat" },
   { key: "1K_SILVER_BASECOAT", label: "1K Silver Basecoat" },
   { key: "1K_PEARL_BASECOAT", label: "1K Pearl Basecoat" },
-  { key: "SUPPLEMENTARY", label: "辅料" },
+  { key: "SUPPLEMENTARY", label: "Additives" },
 ];
 
 // All 选项（查看全部色母，按类别分组展示）
@@ -102,7 +102,7 @@ function generateTonerCode(category: TonerCategory, existingCodes: string[]): st
 
 // ==================== 色母卡片组件（首页搜索配方卡片风格） ====================
 
-function TonerCard({ code, tradeName, nameZh, hex }: { code: string; tradeName: string; nameZh: string; hex: string }) {
+function TonerCard({ code, tradeName, hex }: { code: string; tradeName: string; hex: string }) {
   return (
     <div className="animate-card-row mb-[70px] w-[87.5%]">
       {/* 色块：正方形，悬停轻微放大（与首页配色卡片一致） */}
@@ -122,7 +122,7 @@ function TonerCard({ code, tradeName, nameZh, hex }: { code: string; tradeName: 
         />
       </div>
 
-      {/* 卡片下方信息块：左对齐常显，产品代码 / 英文名 / 中文名 */}
+      {/* 卡片下方信息块：左对齐常显，产品代码 / 英文名 */}
       <div className="mt-[45px] text-left font-[family-name:var(--font-outfit)]">
         <p className="truncate text-[20px] font-normal leading-tight text-foreground">
           {code}
@@ -130,11 +130,6 @@ function TonerCard({ code, tradeName, nameZh, hex }: { code: string; tradeName: 
         <p className="mt-2 truncate text-[16px] font-normal leading-tight text-muted-foreground">
           {tradeName}
         </p>
-        {nameZh && (
-          <p className="truncate text-[16px] font-normal leading-tight text-muted-foreground">
-            {nameZh}
-          </p>
-        )}
       </div>
     </div>
   );
@@ -214,7 +209,7 @@ function TonerSection({
         style={{ ["--card-delay" as string]: "0s" }}
       >
         {visibleToners.map((toner) => (
-          <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} nameZh={toner.nameZh} hex={toner.hex} />
+          <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} hex={toner.hex} />
         ))}
 
         {/* 折叠且还有更多时：第 5 格显示「查看更多」占位卡片（车漆流动效果） */}
@@ -545,16 +540,16 @@ function ManagementModal({
               <div className="absolute inset-0 z-[1400] rounded-2xl bg-black/20 pointer-events-none" />
             )}
           {/* 固定置顶 Header */}
-          <div className="shrink-0 px-6 pt-3 mb-5">
+          <div className="shrink-0 px-6 pt-3 mb-3">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 pr-8 font-heading text-lg font-semibold text-foreground">
+              <DialogTitle className="flex items-center justify-center gap-2 font-heading text-lg font-semibold text-foreground">
                 <Settings className="size-5 text-foreground/70" />
                 色母管理中心
               </DialogTitle>
             </DialogHeader>
 
           {/* 搜索 + 添加按钮 */}
-          <div className="flex flex-col items-start justify-between gap-2 pt-2 sm:flex-row sm:items-center">
+          <div className="flex flex-col items-start justify-between gap-2 pt-5 sm:flex-row sm:items-center">
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -922,7 +917,7 @@ export default function TonerPage() {
                 className="inline-flex items-center justify-center h-9 shrink-0 rounded-lg gap-1.5 text-sm leading-none"
               >
                 <Settings className="size-4" />
-                管理材料
+                管理色母
               </Button>
             )}
           </div>
@@ -954,7 +949,7 @@ export default function TonerPage() {
             style={{ ["--card-delay" as string]: "0s" }}
           >
             {filteredToners.map((toner) => (
-              <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} nameZh={toner.nameZh} hex={toner.hex} />
+              <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} hex={toner.hex} />
             ))}
           </div>
         )}
