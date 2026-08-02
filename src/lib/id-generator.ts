@@ -70,13 +70,3 @@ export function generateFormulaId(
   parts.push(version);
   return parts.map((p) => slugify(p)).filter(Boolean).join("_");
 }
-
-/** 指南 ID：英文标题 slug */
-export function generateGuideId(title: string): string {
-  return slugify(title);
-}
-
-/** 指南分类 ID：英文名 slug */
-export function generateGuideCategoryId(name: string): string {
-  return slugify(name);
-}

@@ -44,7 +44,7 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
     { label: t.navFormulaSearch, href: "/" },
     { label: t.navColorLibrary, href: "/color-library" },
     { label: t.navFavorites, href: "/favorites" },
-    { label: t.navAppGuide, href: "/application-guide" },
+    { label: t.navTds, href: "/tds" },
   ];
 
   const isActive = (href: string) =>

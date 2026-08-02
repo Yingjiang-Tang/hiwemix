@@ -8,7 +8,7 @@ import BrandsPanel from "./components/BrandsPanel";
 import ColorsPanel from "./components/ColorsPanel";
 import VariantsPanel from "./components/VariantsPanel";
 import FormulasPanel from "./components/FormulasPanel";
-import GuidesPanel from "./components/GuidesPanel";
+import GuidesPanel from "./components/TdsPanel";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -20,7 +20,7 @@ const TABS = [
   { key: "colors", label: "颜色", icon: Droplet },
   { key: "variants", label: "配方类型", icon: Layers },
   { key: "formulas", label: "配方", icon: Beaker },
-  { key: "guides", label: "指南", icon: FileText },
+  { key: "tds", label: "TDS", icon: FileText },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -110,7 +110,7 @@ export default function DataManagementPage() {
           {activeTab === "colors" && <ColorsPanel />}
           {activeTab === "variants" && <VariantsPanel />}
           {activeTab === "formulas" && <FormulasPanel />}
-          {activeTab === "guides" && <GuidesPanel />}
+          {activeTab === "tds" && <GuidesPanel />}
         </main>
       </div>
     </div>

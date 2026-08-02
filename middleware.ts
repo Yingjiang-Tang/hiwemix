@@ -21,7 +21,7 @@ export async function middleware(req: NextRequest) {
 
   // 公开路由，不需要认证
   // 精确匹配的路由（页面）
-  const exactPublic = ["/", "/login", "/register", "/reset-password", "/color-library", "/application-guide", "/favorites"];
+  const exactPublic = ["/", "/login", "/register", "/reset-password", "/color-library", "/tds", "/favorites"];
   // 前缀匹配的路由（API + 静态资源）
   const prefixPublic = [
     "/auth/callback",
@@ -32,6 +32,7 @@ export async function middleware(req: NextRequest) {
     "/api/brands",
     "/api/settings",
     "/api/guides",
+    "/api/tds",
     "/api/toners",
     "/api/regions",
     "/_next",

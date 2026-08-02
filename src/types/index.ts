@@ -107,11 +107,14 @@ export interface AppSettings {
   yearMax: number
 }
 
-// 应用指南分类
+// TDS 产品族分类（汽车修补漆产品族）
 export interface GuideCategory {
-  id: string
-  name: string           // 英文分类名
-  nameZh: string         // 中文分类名
+  id: string                    // 'primer' / 'basecoat' / 'clearcoat' / ...
+  name: string                  // 英文
+  nameZh: string                // 中文
+  description?: string
+  descriptionZh?: string
+  icon?: string                 // lucide 图标名
   sortOrder: number
 }
 
@@ -130,14 +133,23 @@ export interface Toner {
   rgb_b?: number          // RGB Blue 分量 (0-255)
 }
 
-// 应用指南文章
+// TDS 文档主表
+export type DocType = 'tds' | 'msds' | 'sds' | 'manual'
+
 export interface Guide {
   id: string
   categoryId: string
-  title: string          // 英文标题
-  titleZh: string        // 中文标题
-  content: string        // 英文正文
-  contentZh: string      // 中文正文
+  productSku?: string           // 产品 SKU，如 'P-2K-001'
+  version: string               // 版本号
+  docType: DocType              // 文档类型
+  title: string                 // 英文标题
+  titleZh: string               // 中文标题
+  summary?: string              // 英文摘要
+  summaryZh?: string            // 中文摘要
+  coverImage?: string           // Supabase Storage URL
+  content: string               // 英文 Markdown
+  contentZh: string             // 中文 Markdown
   sortOrder: number
+  isPublished: boolean          // 草稿/发布
   updatedAt: string
 }

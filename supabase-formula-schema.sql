@@ -187,28 +187,39 @@ DROP POLICY IF EXISTS settings_select_all ON public.settings;
 CREATE POLICY settings_select_all ON public.settings FOR SELECT TO public USING (true);
 
 -- ---------------------------------------------------------------------
--- 10.5 guide_categories + guides: 应用指南（原硬编码在 guide-data.ts，迁移到 DB）
+-- 10.5 guide_categories + guides: TDS 产品手册（重新设计：产品族分类）
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.guide_categories (
   id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,        -- 英文分类名
-  name_zh TEXT NOT NULL,     -- 中文分类名
-  sort_order INTEGER NOT NULL DEFAULT 0
+  name TEXT NOT NULL,              -- 英文分类名
+  name_zh TEXT NOT NULL,           -- 中文分类名
+  description TEXT,                -- 英文简介
+  description_zh TEXT,             -- 中文简介
+  icon TEXT,                       -- lucide 图标名
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS public.guides (
   id TEXT PRIMARY KEY,
-  category_id TEXT NOT NULL REFERENCES public.guide_categories(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,       -- 英文标题
-  title_zh TEXT NOT NULL,    -- 中文标题
-  content TEXT NOT NULL DEFAULT '',    -- 英文正文
-  content_zh TEXT NOT NULL DEFAULT '', -- 中文正文
+  category_id TEXT NOT NULL REFERENCES public.guide_categories(id) ON DELETE RESTRICT,
+  product_sku TEXT,                -- 产品 SKU（可选）
+  version TEXT NOT NULL DEFAULT 'v1.0',
+  doc_type TEXT NOT NULL DEFAULT 'tds',  -- 'tds' | 'msds' | 'sds' | 'manual'
+  title TEXT NOT NULL,
+  title_zh TEXT NOT NULL,
+  summary TEXT,                    -- 英文摘要
+  summary_zh TEXT,                 -- 中文摘要
+  cover_image TEXT,                -- Supabase Storage 公开 URL
+  content TEXT NOT NULL DEFAULT '',     -- 英文 Markdown
+  content_zh TEXT NOT NULL DEFAULT '',  -- 中文 Markdown
   sort_order INTEGER NOT NULL DEFAULT 0,
+  is_published BOOLEAN NOT NULL DEFAULT false,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-COMMENT ON TABLE public.guide_categories IS '应用指南分类表';
-COMMENT ON TABLE public.guides IS '应用指南文章表';
+COMMENT ON TABLE public.guide_categories IS 'TDS 产品族分类表';
+COMMENT ON TABLE public.guides IS 'TDS 文档主表';
 
 DROP TRIGGER IF EXISTS update_guides_updated_at ON public.guides;
 CREATE TRIGGER update_guides_updated_at
@@ -216,6 +227,8 @@ CREATE TRIGGER update_guides_updated_at
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE INDEX IF NOT EXISTS idx_guides_category_id ON public.guides (category_id);
+CREATE INDEX IF NOT EXISTS idx_guides_doc_type ON public.guides (doc_type);
+CREATE INDEX IF NOT EXISTS idx_guides_published ON public.guides (is_published);
 
 ALTER TABLE public.guide_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.guides ENABLE ROW LEVEL SECURITY;

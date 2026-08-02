@@ -17,7 +17,7 @@ export interface I18nDict {
   navAbout: string;
   navFormulaSearch: string;
   navColorLibrary: string;
-  navAppGuide: string;
+  navTds: string;
   navFavorites: string;
   navAdmin: string;
   userManagement: string;
@@ -150,11 +150,13 @@ export interface I18nDict {
   pageOf: (current: number, total: number) => string;
   foundFormulas: (n: number) => string;
   carModelLabel: string;
-  guideSearchPlaceholder: string;
-  guideCategories: string;
-  guideAllCategories: string;
-  guideListLabel: string;
-  guideSelectHint: string;
+  tdsSearchPlaceholder: string;
+  tdsCategories: string;
+  tdsAllCategories: string;
+  tdsListLabel: string;
+  tdsSelectHint: string;
+  tdsBackToList: string;
+  tdsTableOfContents: string;
   adminTitle: string;
   adminNewUser: string;
   adminNoPermission: string;
@@ -311,6 +313,7 @@ export const dict = (d: Omit<I18nDict,
   carModelLabel: d.carModelLabel ?? "Car model",
   originLabel: d.originLabel ?? "Origin",
   processLabel: d.processLabel ?? "Process",
+  // tds* 字段直接通过末尾的 ...d 透传，由各语言文件显式提供
   navFavorites: d.navFavorites ?? "Favorites",
   searchHistory: d.searchHistory ?? "Search History",
   clearHistory: d.clearHistory ?? "Clear",
