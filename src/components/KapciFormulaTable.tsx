@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import type { Formula, FormulaComponent, ComponentGroup } from "@/types";
 import { useLang } from "@/components/LanguageContext";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -21,11 +20,21 @@ import {
   TableRow,
   TableFooter,
 } from "@/components/ui/table";
+import { blendedDensity, gramsToVolume, volumeToGrams } from "@/lib/units";
 
 const UNIT_OPTIONS = ["g", "kg", "ml", "liter"] as const;
 type Unit = (typeof UNIT_OPTIONS)[number];
 
-const UNIT_MULTIPLIER: Record<Unit, number> = { g: 1, kg: 1000, ml: 1, liter: 1000 };
+const GRAM_UNITS: Unit[] = ["g", "kg"];
+
+// 小量混合预设（对标 MIXIT 痛点：微小修补只需 30ml 以内）
+const SMALL_BATCH_PRESETS: { unit: Unit; value: number; label: string }[] = [
+  { unit: "ml", value: 30, label: "30ml" },
+  { unit: "ml", value: 50, label: "50ml" },
+  { unit: "ml", value: 100, label: "100ml" },
+  { unit: "g", value: 50, label: "50g" },
+  { unit: "g", value: 100, label: "100g" },
+];
 
 interface KapciFormulaTableProps {
   formula: Formula;
@@ -60,7 +69,21 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
   const [weights, setWeights] = useState<number[]>([]);
   const isManualEditRef = useRef(false);
 
-  const totalGrams = volume * UNIT_MULTIPLIER[unit];
+  // 当前显示配方的混合密度（质量加权调和平均）；毫升换算用它，缺数据自动回退分类典型值/1.0
+  const density = blendedDensity(formula.components);
+
+  // 单位 → 总克数：重量单位直接乘倍数；体积单位按混合密度换算
+  function volumeToTotalGrams(v: number, u: Unit): number {
+    if (GRAM_UNITS.includes(u)) return v * (u === "kg" ? 1000 : 1);
+    return volumeToGrams(v, density, u as "ml" | "liter");
+  }
+
+  function totalGramsToVolume(grams: number, u: Unit): number {
+    if (GRAM_UNITS.includes(u)) return grams / (u === "kg" ? 1000 : 1);
+    return gramsToVolume(grams, density, u as "ml" | "liter");
+  }
+
+  const totalGrams = volumeToTotalGrams(volume, unit);
 
   useEffect(() => {
     if (isManualEditRef.current) {
@@ -75,7 +98,8 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
     const num = parsePositiveNumber(raw);
     if (num === null) return;
     isManualEditRef.current = false;
-    setVolume(Math.max(0.1, Math.round(num * 10) / 10));
+    // 放开小量下限：允许 5g / 5ml 级别，微小修补场景不浪费漆
+    setVolume(Math.max(0.005, Math.round(num * 1000) / 1000));
   }
 
   function handleWeightChange(idx: number, raw: string) {
@@ -94,8 +118,14 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
     isManualEditRef.current = true;
     setWeights(next);
 
-    const newVolume = newTotalGrams / UNIT_MULTIPLIER[unit];
-    setVolume(Math.round(newVolume * 10) / 10);
+    const newVolume = totalGramsToVolume(newTotalGrams, unit);
+    setVolume(Math.round(newVolume * 1000) / 1000);
+  }
+
+  function handlePreset(p: (typeof SMALL_BATCH_PRESETS)[number]) {
+    isManualEditRef.current = false;
+    setUnit(p.unit);
+    setVolume(p.value);
   }
 
   const totalWeight = weights.reduce((a, b) => a + b, 0);
@@ -105,7 +135,7 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
       {/* 总量控制栏 */}
       <div className="mb-4 flex flex-col flex-wrap items-stretch gap-2 rounded-xl border border-border/60 bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
         {/* 左侧：配方属性 */}
-        <span className="flex items-center gap-2 text-[15px] font-semibold text-foreground">
+        <span className="flex items-center gap-2 text-[15px] font-semibold text-foreground -ml-3">
           <span>{t.version} {formula.version}</span>
           <span aria-hidden="true">|</span>
           <span>{formula.paint_system}</span>
@@ -120,8 +150,8 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
             value={volume}
             onChange={(e) => handleVolumeChange(e.target.value)}
             className="h-8 w-[72px] rounded-md text-center text-[16px] font-semibold md:w-[90px]"
-            min={0.1}
-            step={0.1}
+            min={0.005}
+            step={0.01}
           />
           <span className="text-[16px] font-semibold text-muted-foreground">×</span>
           <Select value={unit} onValueChange={(v) => setUnit((v as Unit) || "kg")}>
@@ -134,6 +164,24 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* 小量混合预设：微小修补只需几十克/毫升，避免浪费漆 */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {SMALL_BATCH_PRESETS.map((p) => (
+            <button
+              key={p.label}
+              type="button"
+              onClick={() => handlePreset(p)}
+              className={`inline-flex h-7 items-center rounded-full border px-3 text-xs font-medium transition-colors ${
+                unit === p.unit && volume === p.value
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-primary"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
         </div>
 
         {/* Pearl Paint/Ground Paint 切换按钮 */}

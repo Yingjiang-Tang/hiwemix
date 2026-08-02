@@ -8,7 +8,37 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
-import { Search, RotateCcw, ChevronDown } from "lucide-react";
+import { Search, RotateCcw, ChevronDown, Clock, X } from "lucide-react";
+
+// ===== 搜索历史（localStorage，最多 10 条，最近优先） =====
+
+interface SearchHistoryEntry {
+  params: SearchParams;
+  label: string;
+  ts: number;
+}
+
+const HISTORY_KEY = "hiwe-search-history";
+const HISTORY_MAX = 10;
+
+function loadHistory(): SearchHistoryEntry[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const list = JSON.parse(raw) as SearchHistoryEntry[];
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(list: SearchHistoryEntry[]) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, HISTORY_MAX)));
+  } catch {
+    // localStorage 不可用（隐私模式等）时静默忽略
+  }
+}
 
 export interface SearchPanelProps {
   onSearch: (params: SearchParams) => void;
@@ -139,12 +169,18 @@ export default function SearchPanel({
     { value: string; label: string }[]
   >(COLOR_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label })));
   const [allYears, setAllYears] = useState<number[]>([]);
+  const [history, setHistory] = useState<SearchHistoryEntry[]>([]);
 
   // 构建品牌选项列表（id -> name）
   const makeOptions = [
     { value: "", label: t.make },
     ...carMakes.map((m) => ({ value: m.id, label: m.name })),
   ];
+
+  // 加载搜索历史
+  useEffect(() => {
+    setHistory(loadHistory());
+  }, []);
 
   // 构建年份选项列表
   const yearOptions = allYears.map((y) => ({
@@ -188,6 +224,54 @@ export default function SearchPanel({
 
   const isCodeTooLong = colorCode.replace(/\s/g, "").length > 10;
 
+  // 由 params 生成可读的展示标签（如 "BMW · 040 · 2020"）
+  const buildLabel = useCallback(
+    (params: SearchParams): string => {
+      const parts: string[] = [];
+      if (params.make_id) {
+        const mk = carMakes.find((m) => m.id === params.make_id);
+        if (mk) parts.push(mk.name);
+      }
+      if (params.color_code) parts.push(params.color_code);
+      if (params.color_name) parts.push(params.color_name);
+      if (params.year) parts.push(params.year);
+      return parts.join(" · ") || t.search;
+    },
+    [carMakes, t.search]
+  );
+
+  // 将一次搜索写入历史（去重相同 params，最近优先）
+  const pushHistory = useCallback(
+    (params: SearchParams) => {
+      const entry: SearchHistoryEntry = { params, label: buildLabel(params), ts: Date.now() };
+      setHistory((prev) => {
+        const next = [entry, ...prev.filter((h) => JSON.stringify(h.params) !== JSON.stringify(params))];
+        saveHistory(next);
+        return next;
+      });
+    },
+    [buildLabel]
+  );
+
+  function handleClearHistory() {
+    setHistory([]);
+    try {
+      localStorage.removeItem(HISTORY_KEY);
+    } catch {
+      // ignore
+    }
+  }
+
+  // 点击历史条目：填充表单并触发搜索
+  function handleHistoryClick(entry: SearchHistoryEntry) {
+    setMakeId(entry.params.make_id ?? "");
+    setColorCode(entry.params.color_code ?? "");
+    setColorName(entry.params.color_name ?? "");
+    setColorType(entry.params.color_type ?? "");
+    setYear(entry.params.year ?? "");
+    onSearch(entry.params);
+  }
+
   const handleSubmit = useCallback(
     (e?: FormEvent) => {
       if (e) e.preventDefault();
@@ -197,9 +281,10 @@ export default function SearchPanel({
       if (colorName.trim()) params.color_name = colorName.trim();
       if (colorType) params.color_type = colorType;
       if (year.trim()) params.year = year.trim();
+      pushHistory(params);
       onSearch(params);
     },
-    [makeId, colorCode, colorName, colorType, year, onSearch]
+    [makeId, colorCode, colorName, colorType, year, onSearch, pushHistory]
   );
 
   useEffect(() => {
@@ -321,6 +406,35 @@ export default function SearchPanel({
           </div>
         </div>
       </section>
+
+      {/* 搜索历史：localStorage 存储，点击直接复搜 */}
+      {history.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+            <Clock className="size-3.5" />
+            {t.searchHistory}
+          </span>
+          {history.map((h) => (
+            <button
+              key={h.ts}
+              type="button"
+              onClick={() => handleHistoryClick(h)}
+              className="inline-flex h-7 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs text-foreground/80 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+            >
+              {h.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={handleClearHistory}
+            className="inline-flex h-7 items-center gap-1 rounded-full px-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label={t.clearHistory}
+          >
+            <X className="size-3.5" />
+            {t.clearHistory}
+          </button>
+        </div>
+      )}
     </form>
   );
 }
