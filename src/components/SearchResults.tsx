@@ -3,13 +3,18 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { useLang } from "@/components/LanguageContext";
+import { useFavorites } from "@/components/FavoritesContext";
 import { colorSwatchStyle } from "@/lib/utils";
 import type { FormulaTableRow } from "@/types";
 import { formatYearEntry } from "@/lib/db-formula";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { SearchSlash, ChevronUp, Eye } from "lucide-react";
+import { SearchSlash, ChevronUp, Eye, Heart } from "lucide-react";
+
+// 品牌筛选「全部品牌」选项的值
+const ALL_MAKES = "all";
 
 export interface SearchResultsProps {
   rows: FormulaTableRow[];
@@ -21,7 +26,7 @@ export interface SearchResultsProps {
 // 段标题样式：品牌名居中，外框药丸圆角浅灰边框（与原来类型分段标题一致）
 function SectionTitle({ label, id }: { label: string; id: string }) {
   return (
-    <div className="flex items-center justify-start px-4 py-2">
+    <div className="mt-8 flex items-center justify-start px-4 py-2">
       <h2 id={id} className="rounded-full border-[0.5px] border-[#a8a8a8] px-4 py-1.5 font-heading text-[27px] font-normal tracking-wide text-ink">
         {label}
       </h2>
@@ -93,9 +98,14 @@ function GroupedColorCard({
   rows: FormulaTableRow[];
   onSelect: (row: FormulaTableRow) => void;
 }) {
+  const { t } = useLang();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const parent = rows[0];
   const hex = parent.color.hex_preview;
   const hasVariants = rows.length > 1;
+  // 收藏以该颜色下的第一个配方为对象（与抽屉内收藏同一粒度）
+  const favFormula = parent.formula;
+  const isFav = isFavorite(favFormula.id);
   // 颜色卡片照片：public/images/colors/<CODE>.jpg 存在则显示真实车漆照片，否则回退纯色块
   // 文件名不允许含 "/"，故将 color_code 中的 "/" 去除后匹配（如 C2/45U -> C245U.jpg）
   const photoSrc = `/images/colors/${parent.color.color_code.replace(/\//g, "").toUpperCase()}.jpg`;
@@ -205,18 +215,42 @@ function GroupedColorCard({
     </div>
   );
 
-  // 卡片下方信息块：左对齐卡片，常显配方代码 / 颜色 / 漆面类型
+  // 卡片下方信息块：左对齐卡片，常显配方代码 / 颜色 / 漆面类型；右侧线框收藏按钮
   const infoBlock = (
-    <div className="mt-[45px] text-left font-[family-name:var(--font-outfit)]">
-      <p className="truncate text-[20px] font-normal leading-tight text-foreground">
-        {parent.color.color_code}
-      </p>
-      <p className="mt-2 truncate text-[16px] font-normal leading-tight text-muted-foreground">
-        {parent.color.color_name}
-      </p>
-      <p className="truncate text-[16px] font-normal capitalize leading-tight text-muted-foreground">
-        {parent.color.color_type.join(", ")}
-      </p>
+    <div className="mt-[45px] flex items-start justify-between gap-2 text-left font-[family-name:var(--font-outfit)]">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[20px] font-normal leading-tight text-foreground">
+          {parent.color.color_code}
+        </p>
+        <p className="mt-2 truncate text-[16px] font-normal leading-tight text-muted-foreground">
+          {parent.color.color_name}
+        </p>
+        <p className="truncate text-[16px] font-normal capitalize leading-tight text-muted-foreground">
+          {parent.color.color_type.join(", ")}
+        </p>
+      </div>
+      {/* 线框收藏按钮：未收藏空心，已收藏实心高亮 */}
+      <button
+        type="button"
+        onClick={() => toggleFavorite({
+          formula_id: favFormula.id,
+          color_code: parent.color.color_code,
+          color_name: parent.color.color_name,
+          make_name: parent.makeName,
+          formula_type: favFormula.formula_type,
+          paint_system: favFormula.paint_system,
+          version: favFormula.version,
+        })}
+        aria-pressed={isFav}
+        aria-label={isFav ? t.favorited : t.favorite}
+        className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border transition-colors ${
+          isFav
+            ? "border-muted-foreground/30 bg-muted text-foreground"
+            : "border-border text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground"
+        }`}
+      >
+        <Heart className={`size-4 ${isFav ? "fill-current" : ""}`} />
+      </button>
     </div>
   );
 
@@ -303,7 +337,7 @@ function BrandSection({
     <section
       ref={sectionRef}
       aria-labelledby={`make-${makeName}`}
-      className="mb-0 scroll-mt-[84px]"
+      className="mb-0 scroll-mt-[175px]"
     >
       {/* 车漆流动动画：内联 <style> 避免 Turbopack 漏掉 globals.css 中的 @keyframes（见 HeroSection 同款注释） */}
       <style dangerouslySetInnerHTML={{ __html: `
@@ -406,6 +440,13 @@ export default function SearchResults({
   onOpenFormula,
 }: SearchResultsProps) {
   const { t } = useLang();
+  // 品牌筛选：默认「全部品牌」，选中某个品牌后只显示该品牌的分段
+  const [activeMake, setActiveMake] = useState<string>(ALL_MAKES);
+
+  // 新搜索产生新的 rows 时，重置品牌筛选为「全部品牌」（新结果里不一定还有之前选中的品牌）
+  useEffect(() => {
+    setActiveMake(ALL_MAKES);
+  }, [rows]);
 
   if (isLoading) {
     return (
@@ -466,17 +507,47 @@ export default function SearchResults({
     return { makeName, colorCards };
   });
 
+  // 品牌筛选栏选项：全部品牌 + 每个品牌（按当前结果中出现的品牌排序）
+  const makeTabs = brandSections.map((s) => ({
+    value: s.makeName,
+    label: s.makeName,
+    count: s.colorCards.length,
+  }));
+
+  // 选中的品牌分段（「全部品牌」时展示所有）
+  const visibleSections =
+    activeMake === ALL_MAKES
+      ? brandSections
+      : brandSections.filter((s) => s.makeName === activeMake);
+
   return (
     <div>
-      {/* 结果计数栏 */}
-      <div className="flex items-center pl-0 pr-4 py-3">
-        <p className="text-sm font-semibold text-primary">
-          Found {brandSections.length} brands ({rows.length} formulas)
-        </p>
+      {/* 品牌筛选栏：All + 各品牌（与 Toner 分类 Tabs 同款样式），滚动时吸附在 Header 下方；负 margin 抵消外层 section 内边距以贴边 */}
+      <div className="sticky top-[79px] z-30 -mx-6 border-b border-border bg-card px-6 py-5 sm:-mx-8 sm:px-8 md:-mx-[60px] md:px-[60px]">
+        <div className="flex min-w-0 flex-1">
+          <Tabs value={activeMake} onValueChange={(v) => setActiveMake(v)}>
+            <TabsList variant="default" className="group-data-horizontal/tabs:h-fit h-auto gap-1 rounded-none bg-transparent p-0">
+              <TabsTrigger value={ALL_MAKES} className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted">
+                {t.allMakes}
+                <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
+                  {rows.length}
+                </Badge>
+              </TabsTrigger>
+              {makeTabs.map((mk) => (
+                <TabsTrigger key={mk.value} value={mk.value} className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted">
+                  {mk.label}
+                  <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
+                    {mk.count}
+                  </Badge>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       {/* 按品牌分段展示，品牌名 A→Z */}
-      {brandSections.map(({ makeName, colorCards }) => (
+      {visibleSections.map(({ makeName, colorCards }) => (
         <BrandSection
           key={makeName}
           makeName={makeName}

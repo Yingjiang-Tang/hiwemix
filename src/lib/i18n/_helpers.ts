@@ -18,6 +18,7 @@ export interface I18nDict {
   navFormulaSearch: string;
   navColorLibrary: string;
   navAppGuide: string;
+  navFavorites: string;
   navAdmin: string;
   userManagement: string;
   logout: string;
@@ -69,6 +70,8 @@ export interface I18nDict {
   search: string;
   searching: string;
   reset: string;
+  searchHistory: string;
+  clearHistory: string;
   codeTooLong: string;
   colorCodePlaceholder: string;
   colorNamePlaceholder: string;
@@ -107,6 +110,16 @@ export interface I18nDict {
   colorTypeSpecialLabel: string;
   copySuccess: string;
   copyFail: string;
+  favorite: string;
+  favorited: string;
+  favoriteAdded: string;
+  favoriteRemoved: string;
+  favoriteFail: string;
+  removeFavorite: string;
+  favoritesTitle: string;
+  favoritesEmpty: string;
+  favoritesEmptyHint: string;
+  favoritesSearchPlaceholder: string;
   weight: string;
   accum: string;
   massTone: string;
@@ -185,6 +198,10 @@ export const dict = (d: Omit<I18nDict,
   | "pearlPaintLabel" | "groundPaintLabel"
   | "versionLabel" | "pageSizeLabel" | "previousPage" | "nextPage" | "pageOf" | "foundFormulas"
   | "carModelLabel" | "originLabel" | "processLabel"
+  | "navFavorites" | "searchHistory" | "clearHistory"
+  | "favorite" | "favorited" | "favoriteAdded" | "favoriteRemoved" | "favoriteFail"
+  | "removeFavorite" | "favoritesTitle" | "favoritesEmpty" | "favoritesEmptyHint"
+  | "favoritesSearchPlaceholder"
 > & {
   formulasCount?: (n: number) => string;
   foundCount?: (n: number) => string;
@@ -233,6 +250,19 @@ export const dict = (d: Omit<I18nDict,
   carModelLabel?: string;
   originLabel?: string;
   processLabel?: string;
+  navFavorites?: string;
+  searchHistory?: string;
+  clearHistory?: string;
+  favorite?: string;
+  favorited?: string;
+  favoriteAdded?: string;
+  favoriteRemoved?: string;
+  favoriteFail?: string;
+  removeFavorite?: string;
+  favoritesTitle?: string;
+  favoritesEmpty?: string;
+  favoritesEmptyHint?: string;
+  favoritesSearchPlaceholder?: string;
 }): I18nDict => ({
   formulasCount: d.formulasCount ?? ((n) => plural(n, "formula", "formulas")),
   foundCount: d.foundCount ?? ((n) => `Found ${n} color${n > 1 ? "s" : ""}`),
@@ -281,5 +311,18 @@ export const dict = (d: Omit<I18nDict,
   carModelLabel: d.carModelLabel ?? "Car model",
   originLabel: d.originLabel ?? "Origin",
   processLabel: d.processLabel ?? "Process",
+  navFavorites: d.navFavorites ?? "Favorites",
+  searchHistory: d.searchHistory ?? "Search History",
+  clearHistory: d.clearHistory ?? "Clear",
+  favorite: d.favorite ?? "Favorite",
+  favorited: d.favorited ?? "Favorited",
+  favoriteAdded: d.favoriteAdded ?? "Added to favorites",
+  favoriteRemoved: d.favoriteRemoved ?? "Removed from favorites",
+  favoriteFail: d.favoriteFail ?? "Failed to update favorites",
+  removeFavorite: d.removeFavorite ?? "Remove",
+  favoritesTitle: d.favoritesTitle ?? "My Favorites",
+  favoritesEmpty: d.favoritesEmpty ?? "No favorites yet",
+  favoritesEmptyHint: d.favoritesEmptyHint ?? "Tap the heart on any formula to save it here",
+  favoritesSearchPlaceholder: d.favoritesSearchPlaceholder ?? "Search color code, name or brand...",
   ...d,
 });

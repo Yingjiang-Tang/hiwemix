@@ -7,7 +7,6 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/components/LanguageContext";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
@@ -26,14 +25,16 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
 
   const isHome = pathname === "/";
   const showHomeTheme = useHomeTheme ?? isHome;
-  const prevIsHome = prevPathRef.current === "/";
+  const [isCrossHomeNav, setIsCrossHomeNav] = useState(false);
 
-  const isCrossHomeNav =
-    prevPathRef.current !== null && prevIsHome !== isHome;
-
+  // 记录路径是否发生「首页 ↔ 内页」跳转，用于驱动过渡动画
   useEffect(() => {
+    const prev = prevPathRef.current;
+    const prevIsHome = prev === "/";
+    const isCross = prev !== null && prevIsHome !== isHome;
     prevPathRef.current = pathname;
-  }, [pathname]);
+    setIsCrossHomeNav(isCross);
+  }, [pathname, isHome]);
 
   const transitionStyle = isCrossHomeNav
     ? "all 1.5s ease-in-out"
@@ -42,6 +43,7 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
   const navItems: { label: string; href: string }[] = [
     { label: t.navFormulaSearch, href: "/" },
     { label: t.navColorLibrary, href: "/color-library" },
+    { label: t.navFavorites, href: "/favorites" },
     { label: t.navAppGuide, href: "/application-guide" },
   ];
 

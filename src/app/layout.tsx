@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LanguageProvider } from "@/components/LanguageContext";
 import { AuthProvider } from "@/components/AuthContext";
+import { FavoritesProvider } from "@/components/FavoritesContext";
 import Providers from "@/components/Providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Inter, Noto_Sans_SC, Noto_Sans_Arabic, Noto_Sans_Hebrew, Outfit, Geist } from "next/font/google";
@@ -48,7 +49,9 @@ export default function RootLayout({
           <Providers>
           <LanguageProvider>
             <AuthProvider>
-              {children}
+              <FavoritesProvider>
+                {children}
+              </FavoritesProvider>
             </AuthProvider>
           </LanguageProvider>
         </Providers>
