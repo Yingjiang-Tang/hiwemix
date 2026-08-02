@@ -11,6 +11,7 @@ import Toast from "./Toast";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Table, TableCell, TableRow } from "@/components/ui/table";
 import { X, Printer, Copy, Heart } from "lucide-react";
 
 interface FormulaDrawerProps {
@@ -63,15 +64,6 @@ function parseHexInput(raw: string, fallback: string): string {
   const t = raw.trim();
   if (!HEX_RE.test(t)) return fallback;
   return t.startsWith("#") ? t : `#${t}`;
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline border-b border-border/40 py-1.5 last:border-b-0">
-      <span className="w-28 flex-shrink-0 text-xs font-medium text-foreground/70 md:text-sm">{label}</span>
-      <span className="min-w-0 flex-1 break-words text-sm md:text-base">{value}</span>
-    </div>
-  );
 }
 
 export default function FormulaDrawer({ result, onClose, initialFormulaIdx, formulaId, initialYear }: FormulaDrawerProps) {
@@ -250,17 +242,46 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
 
               <Separator />
 
-              {/* Color Information（只保留一个 Tab，直接展示内容） */}
+              {/* Color Information（标题 + 斑马纹表格） */}
               <div className="p-[60px]">
-                <div className="flex flex-col gap-2 md:gap-3">
-                  <InfoRow label={t.manufacturerLabel} value={make} />
-                  <InfoRow label={t.originLabel} value={origin} />
-                  <InfoRow label={t.codeLabel} value={color.color_code} />
-                  <InfoRow label={t.colorName} value={color.color_name} />
-                  <InfoRow label={t.carModelLabel} value={color.car_model || "-"} />
-                  <InfoRow label={t.yearsLabel} value={currentYear} />
-                  <InfoRow label={t.processLabel} value={activeFormula?.formula_type || "-"} />
-                  <InfoRow label={t.versionLabel} value={activeFormula?.version || "-"} />
+                <h3 className="mb-4 font-heading text-base font-semibold text-foreground">{t.tabColorInfo}</h3>
+                <div className="overflow-x-auto rounded-lg border border-border text-sm">
+                  <Table className="w-full">
+                    <tbody>
+                      <TableRow className="bg-muted/50">
+                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.manufacturerLabel}</TableCell>
+                        <TableCell className="py-2.5 align-middle">{make}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.originLabel}</TableCell>
+                        <TableCell className="py-2.5 align-middle">{origin}</TableCell>
+                      </TableRow>
+                      <TableRow className="bg-muted/50">
+                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.codeLabel}</TableCell>
+                        <TableCell className="py-2.5 align-middle">{color.color_code}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.colorName}</TableCell>
+                        <TableCell className="py-2.5 align-middle">{color.color_name}</TableCell>
+                      </TableRow>
+                      <TableRow className="bg-muted/50">
+                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.carModelLabel}</TableCell>
+                        <TableCell className="py-2.5 align-middle">{color.car_model || "-"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.yearsLabel}</TableCell>
+                        <TableCell className="py-2.5 align-middle">{currentYear}</TableCell>
+                      </TableRow>
+                      <TableRow className="bg-muted/50">
+                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.processLabel}</TableCell>
+                        <TableCell className="py-2.5 align-middle">{activeFormula?.formula_type || "-"}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="w-32 py-2.5 align-middle font-medium text-foreground/70">{t.versionLabel}</TableCell>
+                        <TableCell className="py-2.5 align-middle">{activeFormula?.version || "-"}</TableCell>
+                      </TableRow>
+                    </tbody>
+                  </Table>
                 </div>
               </div>
             </div>
