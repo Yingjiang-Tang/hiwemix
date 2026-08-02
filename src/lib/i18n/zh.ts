@@ -71,7 +71,7 @@ const dict_zh = dict({
     year: "年份", yearPlaceholder: "例如 2020 或 2018-2022",
     yearSingle: "单年", yearRange: "区间",
 
-    detail: "详情", expand: "展开", collapse: "收起",
+    detail: "详情", expand: "展开", collapse: "收起", viewMore: "查看更多",
     version: "版本", paintSystemNotes: "备注",
 
     volume: "用量", tonerCode: "色母编号", tonerName: "色母名称",

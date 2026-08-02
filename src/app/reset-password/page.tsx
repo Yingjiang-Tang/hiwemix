@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import TwoPanelLayout from "@/components/auth/TwoPanelLayout";
 import { createClient } from "@/lib/supabase/client";
 import { getEmailRedirectTo } from "@/lib/auth-redirect";
@@ -202,7 +203,7 @@ export default function ResetPasswordPage() {
                   disabled={loading}
                   className="h-11 w-full rounded-xl text-sm font-medium"
                 >
-                  {loading ? "Sending..." : "Send reset link"}
+                  {loading ? <Spinner className="size-4" /> : "Send reset link"}
                 </Button>
               </form>
             </>
@@ -287,7 +288,7 @@ export default function ResetPasswordPage() {
                   disabled={loading}
                   className="h-11 w-full rounded-xl text-sm font-medium"
                 >
-                  {loading ? "Updating..." : "Reset password"}
+                  {loading ? <Spinner className="size-4" /> : "Reset password"}
                 </Button>
               </form>
             </>

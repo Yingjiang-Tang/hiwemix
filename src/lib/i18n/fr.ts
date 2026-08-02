@@ -49,7 +49,7 @@ const dict_fr = dict({
     colorNamePlaceholder: "ex. Super White",
     year: "Année", yearPlaceholder: "ex. 2020 ou 2018-2022",
     yearSingle: "Simple", yearRange: "Plage",
-    detail: "Détail", expand: "Développer", collapse: "Réduire",
+    detail: "Détail", expand: "Développer", collapse: "Réduire", viewMore: "Voir plus",
     version: "Version", paintSystemNotes: "Notes",
     volume: "Volume", tonerCode: "Code du toner", tonerName: "Nom du toner",
     percentage: "Pourcentage(%)", actualAmount: "Quantité réelle(g)",

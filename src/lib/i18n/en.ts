@@ -72,7 +72,7 @@ const dict_en = dict({
     year: "Year", yearPlaceholder: "e.g. 2020 or 2018-2022",
     yearSingle: "Single", yearRange: "Range",
 
-    detail: "Detail", expand: "Expand", collapse: "Collapse",
+    detail: "Detail", expand: "Expand", collapse: "Collapse", viewMore: "View More",
     version: "Version", paintSystemNotes: "Notes",
 
     volume: "Volume", tonerCode: "Toner Code", tonerName: "Toner Name",

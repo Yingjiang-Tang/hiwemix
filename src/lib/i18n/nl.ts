@@ -49,7 +49,7 @@ const dict_nl = dict({
     colorNamePlaceholder: "bijv. Super White",
     year: "Jaar", yearPlaceholder: "bijv. 2020 of 2018-2022",
     yearSingle: "Enkel", yearRange: "Bereik",
-    detail: "Detail", expand: "Uitklappen", collapse: "Inklappen",
+    detail: "Detail", expand: "Uitklappen", collapse: "Inklappen", viewMore: "Meer weergeven",
     version: "Versie", paintSystemNotes: "Notities",
     volume: "Volume", tonerCode: "Tonercode", tonerName: "Toner naam",
     percentage: "Percentage(%)", actualAmount: "Werkelijke hoeveelheid(g)",

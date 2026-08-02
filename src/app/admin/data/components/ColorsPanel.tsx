@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/table";
 import { Search, Edit, Trash2, Plus, X } from "lucide-react";
 import ColorPickerField from "@/components/ColorPickerField";
+import { Spinner } from "@/components/ui/spinner";
 
 import { useLang } from "@/components/LanguageContext";
 
@@ -249,16 +250,16 @@ export default function ColorsPanel() {
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
   const pageRows = filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
-  if (loading) return <p className="text-center py-4 text-sm text-muted-foreground">加载中...</p>;
+  if (loading) return <div className="flex justify-center py-4 text-muted-foreground"><Spinner /></div>;
 
   return (
     <div>
       <div className="flex justify-start items-center mb-4 gap-3">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="搜索颜色、车型、品牌..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-9 rounded-lg pl-9 text-2xs" />
+          <Input placeholder="搜索颜色、车型、品牌..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-9 rounded-lg pl-9 text-sm" />
         </div>
-        <Button onClick={openCreate} className="rounded-lg bg-primary text-2xs hover:bg-primary/80"><Plus className="size-4" /> 新增颜色</Button>
+        <Button onClick={openCreate} variant="outline-primary" className="rounded-lg text-sm"><Plus className="size-4" /> 新增颜色</Button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -282,26 +283,26 @@ export default function ColorsPanel() {
                   <div className="mx-auto w-10 h-6 rounded border border-border" style={colorSwatchStyle(row.hex_preview)} />
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <span className="block truncate text-2xs font-medium text-foreground">{row.brandName}</span>
+                  <span className="block truncate text-sm font-medium text-foreground">{row.brandName}</span>
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <span className="text-2xs font-medium text-muted-foreground">{row.color_code}</span>
+                  <span className="text-sm font-medium text-muted-foreground">{row.color_code}</span>
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <span className="block truncate text-2xs text-foreground">{row.color_name}</span>
+                  <span className="block truncate text-sm text-foreground">{row.color_name}</span>
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <span className="block truncate text-2xs text-muted-foreground">{row.car_model || "—"}</span>
+                  <span className="block truncate text-sm text-muted-foreground">{row.car_model || "—"}</span>
                 </TableCell>
                 <TableCell className="py-3 text-center">
                   <div className="flex flex-wrap items-center justify-center gap-1">
                     {row.color_type.map((t) => (
-                      <span key={t} className="rounded-md border border-muted bg-muted/50 px-1.5 py-0.5 text-2xs text-muted-foreground">{t}</span>
+                      <span key={t} className="rounded-md border border-muted bg-muted/50 px-1.5 py-0.5 text-sm text-muted-foreground">{t}</span>
                     ))}
                   </div>
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <span className="text-2xs text-muted-foreground">{row.yearEntry ? formatYearEntry(row.yearEntry) : ""}</span>
+                  <span className="text-sm text-muted-foreground">{row.yearEntry ? formatYearEntry(row.yearEntry) : ""}</span>
                 </TableCell>
                 <TableCell className="py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
@@ -330,7 +331,7 @@ export default function ColorsPanel() {
           <div className="flex flex-col gap-5 py-2 max-h-[70vh] overflow-y-auto">
             {/* 基本信息卡片 */}
             <div className="rounded-xl border border-border p-5">
-              <h3 className="mb-4 text-sm font-semibold text-foreground/80 border-b border-border/50 pb-3">基本信息</h3>
+              <h3 className="mb-4 text-base font-semibold text-foreground/80 border-b border-border/50 pb-3">基本信息</h3>
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-sm font-medium text-foreground/80">ID</Label>
@@ -372,13 +373,13 @@ export default function ColorsPanel() {
                               key={t}
                               onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (!suppressChipClick.current) toggleColorType(t); }}
                               onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                              className="inline-flex shrink-0 cursor-grab touch-none select-none items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-2xs text-blue-700 active:cursor-grabbing hover:border-blue-300"
+                              className="inline-flex shrink-0 cursor-grab touch-none select-none items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-sm text-blue-700 active:cursor-grabbing hover:border-blue-300"
                             >
                               {t}
                               <X className="size-3 text-blue-400 hover:text-blue-600" />
                             </span>
                           ))}
-                          {form.color_type.length === 0 && <span className="text-2xs leading-none text-muted-foreground">请选择类型</span>}
+                          {form.color_type.length === 0 && <span className="text-sm leading-none text-muted-foreground">请选择类型</span>}
                         </div>
                       </SelectTrigger>
                       <SelectContent className="max-h-[200px]">
@@ -411,7 +412,7 @@ export default function ColorsPanel() {
 
             {/* 适用年份卡片 */}
             <div className="rounded-xl border border-border p-5">
-              <h3 className="mb-4 text-sm font-semibold text-foreground/80 border-b border-border/50 pb-3">适用年份</h3>
+              <h3 className="mb-4 text-base font-semibold text-foreground/80 border-b border-border/50 pb-3">适用年份</h3>
 
               {/* 第一排：模式切换 + 输入 + 添加（全部一行） */}
               <div className="flex flex-wrap items-center gap-2">
@@ -419,7 +420,7 @@ export default function ColorsPanel() {
                 <div className="inline-flex rounded-lg border border-border p-0.5">
                   <button
                     onClick={() => setYearMode("single")}
-                    className={`text-2xs px-3 py-1.5 rounded-md transition-colors ${
+                    className={`text-sm px-3 py-1.5 rounded-md transition-colors ${
                       yearMode === "single"
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -429,7 +430,7 @@ export default function ColorsPanel() {
                   </button>
                   <button
                     onClick={() => setYearMode("range")}
-                    className={`text-2xs px-3 py-1.5 rounded-md transition-colors ${
+                    className={`text-sm px-3 py-1.5 rounded-md transition-colors ${
                       yearMode === "range"
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -464,20 +465,20 @@ export default function ColorsPanel() {
                     onKeyDown={(e) => { if (e.key === "Enter") addYearEntry(); }}
                   />
                 )}
-                <Button variant="outline" size="sm" className="h-9 rounded-lg text-2xs" onClick={addYearEntry}>添加</Button>
+                <Button variant="outline" size="sm" className="h-9 rounded-lg text-sm" onClick={addYearEntry}>添加</Button>
               </div>
 
               {/* 已添加年份列表 */}
               <div className="mt-4">
-                <p className="mb-2 text-2xs font-medium text-muted-foreground">已添加年份</p>
+                <p className="mb-2 text-sm font-medium text-muted-foreground">已添加年份</p>
                 {yearEntries.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-2xs text-muted-foreground">
+                  <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-sm text-muted-foreground">
                     暂无年份，请在上方添加
                   </p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {yearEntries.map((entry) => (
-                      <span key={`${entry.year}-${entry.year_end ?? 's'}`} className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-2xs text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+                      <span key={`${entry.year}-${entry.year_end ?? 's'}`} className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
                         {formatYearEntry(entry)}
                         <button onClick={() => removeYearEntry(entry)} className="size-4 text-blue-400 hover:text-blue-600"><X className="size-3" /></button>
                       </span>
@@ -489,10 +490,10 @@ export default function ColorsPanel() {
 
             {/* 关联配方类型卡片 */}
             <div className="rounded-xl border border-border p-5">
-              <h3 className="mb-4 text-sm font-semibold text-foreground/80 border-b border-border/50 pb-3">关联配方类型</h3>
+              <h3 className="mb-4 text-base font-semibold text-foreground/80 border-b border-border/50 pb-3">关联配方类型</h3>
               <div className="max-h-[220px] overflow-auto rounded-lg border border-border">
                 {allVariants.length === 0 ? (
-                  <p className="px-4 py-6 text-center text-2xs text-muted-foreground">暂无配方类型</p>
+                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">暂无配方类型</p>
                 ) : (
                   <div className="flex flex-col">
                     {allVariants.map((v) => {
@@ -525,8 +526,8 @@ export default function ColorsPanel() {
                             className="sr-only"
                           />
                           <span className="flex flex-1 items-baseline justify-between gap-2">
-                            <span className="text-2xs text-foreground">{v.name}</span>
-                            {v.year_range && <span className="text-2xs text-muted-foreground">{v.year_range}</span>}
+                            <span className="text-sm text-foreground">{v.name}</span>
+                            {v.year_range && <span className="text-sm text-muted-foreground">{v.year_range}</span>}
                           </span>
                         </label>
                       );
@@ -536,10 +537,10 @@ export default function ColorsPanel() {
               </div>
             </div>
 
-            {error && <p className="text-2xs font-medium text-destructive">{error}</p>}
+            {error && <p className="text-sm font-medium text-destructive">{error}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowModal(false)} className="rounded-lg text-2xs">取消</Button>
+            <Button variant="outline" onClick={() => setShowModal(false)} className="rounded-lg text-sm">取消</Button>
             <Button onClick={handleSave} className="rounded-lg bg-primary hover:bg-primary/80">保存</Button>
           </DialogFooter>
         </DialogContent>
@@ -553,15 +554,15 @@ export default function ColorsPanel() {
           </DialogHeader>
           <div className="space-y-3">
             {deleteFormulaList.length === 0 ? (
-              <p className="text-2xs text-muted-foreground">该颜色下没有配方，删除后不可恢复。</p>
+              <p className="text-sm text-muted-foreground">该颜色下没有配方，删除后不可恢复。</p>
             ) : (
               <>
-                <p className="text-2xs font-medium text-destructive">
+                <p className="text-sm font-medium text-destructive">
                   该颜色下有 <span className="font-bold">{deleteFormulaList.length}</span> 条配方，删除颜色将一并删除以下配方及其色母配比明细（不可恢复）：
                 </p>
                 <div className="max-h-48 overflow-y-auto rounded-lg border border-border bg-muted/30 p-2 space-y-1">
                   {deleteFormulaList.map((f) => (
-                    <div key={f.id} className="flex items-center justify-between rounded px-2 py-1 text-2xs">
+                    <div key={f.id} className="flex items-center justify-between rounded px-2 py-1 text-sm">
                       <span className="font-medium text-foreground">{f.version || f.id}</span>
                       <span className="text-muted-foreground">{f.updated_at || "—"}</span>
                     </div>
@@ -569,16 +570,16 @@ export default function ColorsPanel() {
                 </div>
               </>
             )}
-            {deleteError && <p className="text-2xs font-medium text-destructive">{deleteError}</p>}
+            {deleteError && <p className="text-sm font-medium text-destructive">{deleteError}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleteLoading} className="rounded-lg text-2xs">取消</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleteLoading} className="rounded-lg text-sm">取消</Button>
             <Button
               onClick={confirmDelete}
               disabled={deleteLoading}
               className="rounded-lg bg-destructive text-white hover:bg-destructive/80"
             >
-              {deleteLoading ? "删除中..." : deleteFormulaList.length === 0 ? "确认删除" : `确认删除（连带 ${deleteFormulaList.length} 条配方）`}
+              {deleteLoading ? <Spinner className="size-4" /> : deleteFormulaList.length === 0 ? "确认删除" : `确认删除（连带 ${deleteFormulaList.length} 条配方）`}
             </Button>
           </DialogFooter>
         </DialogContent>

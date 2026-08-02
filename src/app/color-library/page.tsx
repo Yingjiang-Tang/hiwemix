@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -24,14 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Search,
-  Edit,
-  Trash2,
-  Settings,
-  Plus,
-  Loader2,
-} from "lucide-react";
+import { Search, Edit, Trash2, Settings, Plus } from "lucide-react";
 
 // 色母分类标签
 const TONER_CATEGORIES: { key: TonerCategory; label: string }[] = [
@@ -783,8 +777,7 @@ export default function TonerPage() {
       <div className="flex-1 px-6 py-4 sm:px-8 md:px-[60px] md:py-6">
         {dbLoading ? (
           <div className="flex flex-col items-center py-20 text-muted-foreground">
-            <Loader2 className="size-6 animate-spin" />
-            <span className="mt-3 text-sm">加载中...</span>
+            <Spinner className="size-6" />
           </div>
         ) : filteredToners.length === 0 ? (
           <div className="flex flex-col items-center py-20 text-muted-foreground">

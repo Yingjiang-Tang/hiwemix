@@ -12,6 +12,7 @@ import GuidesPanel from "./components/GuidesPanel";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import { Menu, Tag, Droplet, Layers, Beaker, FileText } from "lucide-react";
 
 const TABS = [
@@ -35,7 +36,7 @@ function SideNav({ activeTab, onSelect, onClose }: { activeTab: TabKey; onSelect
             <button
               key={tab.key}
               onClick={() => { onSelect(tab.key); onClose?.(); }}
-              className={`relative flex items-center gap-3 rounded-none w-full pl-[60px] pr-4 py-2.5 text-left text-2xs transition-colors ${
+              className={`relative flex items-center gap-3 rounded-none w-full pl-[60px] pr-4 py-2.5 text-left text-sm transition-colors ${
                 active
                   ? "bg-blue-50/80 font-semibold text-primary dark:bg-primary dark:text-primary-foreground"
                   : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground/80"
@@ -72,7 +73,7 @@ export default function DataManagementPage() {
   if (loading || !user || user.role !== "admin") {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-muted-foreground">加载中...</p>
+        <Spinner className="size-8" />
       </div>
     );
   }

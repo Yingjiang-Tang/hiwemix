@@ -7,6 +7,7 @@ import type { CarMake, SearchParams, AppSettings } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner";
 import { Search, RotateCcw, ChevronDown } from "lucide-react";
 
 export interface SearchPanelProps {
@@ -287,8 +288,14 @@ export default function SearchPanel({
                   variant="default"
                   className="h-8 flex-1 rounded-lg bg-primary text-2xs font-semibold hover:bg-primary/80"
                 >
-                  <Search className="size-4" />
-                  {isLoading ? t.searching : t.search}
+                  {isLoading ? (
+                    <Spinner className="size-4" />
+                  ) : (
+                    <>
+                      <Search className="size-4" />
+                      {t.search}
+                    </>
+                  )}
                 </Button>
                 <Button
                   type="button"

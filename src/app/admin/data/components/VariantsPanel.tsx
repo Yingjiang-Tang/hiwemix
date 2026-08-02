@@ -65,7 +65,7 @@ export default function VariantsPanel() {
   return (
     <div>
       <div className="flex justify-start mb-4">
-        <Button onClick={openCreate} className="rounded-lg bg-primary text-2xs hover:bg-primary/80"><Plus className="size-4" /> 新增配方类型</Button>
+        <Button onClick={openCreate} variant="outline-primary" className="rounded-lg text-sm"><Plus className="size-4" /> 新增配方类型</Button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -80,8 +80,8 @@ export default function VariantsPanel() {
           <TableBody>
             {pageRows.map((v) => (
               <TableRow key={v.id} className="border-b border-border/50 last:border-b-0 hover:bg-muted/50">
-                <TableCell className="py-3 text-center text-2xs text-muted-foreground font-medium">{v.id}</TableCell>
-                <TableCell className="py-3 text-center text-2xs text-foreground truncate">{v.name}</TableCell>
+                <TableCell className="py-3 text-center text-sm text-muted-foreground font-medium">{v.id}</TableCell>
+                <TableCell className="py-3 text-center text-sm font-medium text-foreground truncate">{v.name}</TableCell>
                 <TableCell className="py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
                     <button onClick={() => openEdit(v)} className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary"><Edit className="size-4" /></button>
@@ -115,10 +115,10 @@ export default function VariantsPanel() {
               <Label className="text-sm font-medium text-foreground/80">名称</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-9 rounded-lg" />
             </div>
-            {error && <p className="text-2xs font-medium text-destructive">{error}</p>}
+            {error && <p className="text-sm font-medium text-destructive">{error}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowModal(false)} className="rounded-lg text-2xs">取消</Button>
+            <Button variant="outline" onClick={() => setShowModal(false)} className="rounded-lg text-sm">取消</Button>
             <Button onClick={handleSave} className="rounded-lg bg-primary hover:bg-primary/80">保存</Button>
           </DialogFooter>
         </DialogContent>

@@ -6,10 +6,10 @@ import { useLang } from "@/components/LanguageContext";
 import { colorSwatchStyle } from "@/lib/utils";
 import type { FormulaTableRow } from "@/types";
 import { formatYearEntry } from "@/lib/db-formula";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { SearchSlash } from "lucide-react";
+import { SearchSlash, ChevronUp, Eye } from "lucide-react";
 
 export interface SearchResultsProps {
   rows: FormulaTableRow[];
@@ -18,25 +18,13 @@ export interface SearchResultsProps {
   onOpenFormula: (row: FormulaTableRow) => void;
 }
 
-// 段落固定顺序：实色 → 金属漆 → 珠光漆 → 哑光 → 糖果漆 → 特殊漆
-const SECTION_ORDER = ["solid", "metallic", "pearl", "matte", "candy", "special"] as const;
-
-// 段落标题英文标签
-const SECTION_LABELS: Record<string, string> = {
-  solid: "Solid",
-  metallic: "Metallic",
-  pearl: "Pearl",
-  matte: "Matte",
-  candy: "Candy",
-  special: "Special",
-};
-
-function SkeletonGrid() {
+// 段标题样式：品牌名居中，外框药丸圆角浅灰边框（与原来类型分段标题一致）
+function SectionTitle({ label, id }: { label: string; id: string }) {
   return (
-    <div className="grid grid-cols-5 justify-items-center gap-x-0 gap-y-0 px-0 pb-4">
-      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => (
-        <Skeleton key={i} className="mb-[70px] aspect-square w-[87.5%] rounded-none" />
-      ))}
+    <div className="flex items-center justify-start px-4 py-2">
+      <h2 id={id} className="rounded-full border-[0.5px] border-[#a8a8a8] px-4 py-1.5 font-heading text-[27px] font-normal tracking-wide text-ink">
+        {label}
+      </h2>
     </div>
   );
 }
@@ -56,7 +44,7 @@ function VariantSubCard({
 
   return (
     <div
-      className="group relative h-20 w-20 cursor-pointer overflow-hidden rounded-lg transition-all duration-300 ease-in-out active:scale-[0.95]"
+      className="group relative h-20 w-20 cursor-pointer overflow-hidden transition-all duration-300 ease-in-out active:scale-[0.95]"
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -172,7 +160,7 @@ function GroupedColorCard({
   // 母卡片纯视觉内容（复用于 PopoverTrigger render 和单配方卡片）
   const cardBody = (
     <div
-      className="group relative aspect-square w-full cursor-pointer overflow-hidden transition-all duration-300 ease-in-out hover:scale-[1.15]"
+      className="group relative aspect-square w-full cursor-pointer overflow-hidden transition-all duration-300 ease-in-out hover:scale-[1.15] hover:z-10 transform-gpu [backface-visibility:hidden]"
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -282,6 +270,134 @@ function GroupedColorCard({
   );
 }
 
+// ===== 品牌段落组件：折叠时只显示一行，点击「查看更多」展开全部 =====
+const CARDS_PER_ROW = 5; // 每行卡片数（与网格 grid-cols-5 对应）
+const VISIBLE_WHEN_COLLAPSED = 4; // 折叠时显示的真实卡片数，第 5 格留给「查看更多」
+
+function BrandSection({
+  makeName,
+  colorCards,
+  onSelect,
+}: {
+  makeName: string;
+  colorCards: [string, FormulaTableRow[]][];
+  onSelect: (row: FormulaTableRow) => void;
+}) {
+  const { t } = useLang();
+  const [expanded, setExpanded] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const prevExpandedRef = useRef(false);
+  const needsMore = colorCards.length > VISIBLE_WHEN_COLLAPSED;
+  // 折叠时只渲染前 N 张 + 占位；展开时渲染全部
+  const visibleCards = needsMore && !expanded ? colorCards.slice(0, VISIBLE_WHEN_COLLAPSED) : colorCards;
+
+  // 收起后内容变短，浏览器滚动位置会漂移到别的品牌；平滑滚回本品牌标题处
+  useEffect(() => {
+    if (prevExpandedRef.current && !expanded && sectionRef.current) {
+      sectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    prevExpandedRef.current = expanded;
+  }, [expanded]);
+
+  return (
+    <section
+      ref={sectionRef}
+      aria-labelledby={`make-${makeName}`}
+      className="mb-0 scroll-mt-[84px]"
+    >
+      {/* 车漆流动动画：内联 <style> 避免 Turbopack 漏掉 globals.css 中的 @keyframes（见 HeroSection 同款注释） */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes paint-flow {
+          0%   { background-position: 0% 50%; }
+          25%  { background-position: 70% 30%; }
+          50%  { background-position: 100% 70%; }
+          75%  { background-position: 40% 90%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes paint-blob-drift {
+          0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+          20%  { transform: translate(14%, -12%) scale(1.2) rotate(20deg); }
+          45%  { transform: translate(-12%, 8%) scale(0.85) rotate(-25deg); }
+          70%  { transform: translate(8%, 16%) scale(1.15) rotate(15deg); }
+          100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+        }
+        .paint-flow {
+          background:
+            radial-gradient(ellipse 90% 70% at 20% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 60%),
+            radial-gradient(ellipse 70% 60% at 80% 75%, rgba(50, 180, 192, 0.45) 0%, transparent 65%),
+            linear-gradient(115deg, #2587c9 0%, #32b4c0 33%, #e471fd 66%, #2587c9 100%);
+          background-size: 260% 260%;
+          animation: paint-flow 5s ease-in-out infinite;
+        }
+        .paint-blob {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(28px);
+          pointer-events: none;
+          animation: paint-blob-drift 4s ease-in-out infinite;
+        }
+      ` }} />
+      <SectionTitle label={makeName} id={`make-${makeName}`} />
+      {/* 段内网格：折叠时一行，展开时可多行；--card-delay 从 0 重置交错入场动画 */}
+      <div
+        className="grid grid-cols-5 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10"
+        style={{ ["--card-delay" as string]: "0s" }}
+      >
+        {visibleCards.map(([colorCode, cardRows]) => (
+          <GroupedColorCard
+            key={colorCode}
+            rows={cardRows}
+            onSelect={(row) => onSelect(row)}
+          />
+        ))}
+
+        {/* 折叠且还有更多时：第 5 格显示「查看更多」占位卡片（车漆流动效果） */}
+        {needsMore && !expanded && (
+          <button
+            onClick={() => setExpanded(true)}
+            className="group relative aspect-square w-[87.5%] mb-[70px] cursor-pointer overflow-hidden transition-all duration-300 ease-in-out transform-gpu [backface-visibility:hidden]"
+            aria-label={`${t.viewMore} ${makeName}`}
+          >
+            {/* 流动漆液背景 */}
+            <div className="paint-flow absolute inset-0" />
+            {/* 漂移光斑，模拟漆面光泽流动 */}
+            <div className="paint-blob left-[10%] top-[15%] h-[45%] w-[45%]" style={{ animationDelay: "0s", backgroundColor: "rgba(255,255,255,0.4)" }} />
+            <div className="paint-blob right-[5%] bottom-[10%] h-[55%] w-[55%]" style={{ animationDelay: "-2s", backgroundColor: "rgba(228,113,253,0.45)" }} />
+            {/* 压暗遮罩保证文字可读 */}
+            <div className="absolute inset-0 bg-black/25 transition-colors group-hover:bg-black/35" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white">
+              <Eye className="size-7 drop-shadow transition-transform duration-300 group-hover:scale-110" strokeWidth={1.75} />
+              <span className="text-[19px] font-normal drop-shadow transition-transform duration-300 group-hover:scale-105">
+                {t.viewMore}
+              </span>
+            </div>
+          </button>
+        )}
+
+        {/* 展开状态：末尾显示「收起」占位卡片（车漆流动效果） */}
+        {needsMore && expanded && (
+          <button
+            onClick={() => setExpanded(false)}
+            className="group relative aspect-square w-[87.5%] mb-[70px] cursor-pointer overflow-hidden transition-all duration-300 ease-in-out transform-gpu [backface-visibility:hidden]"
+            aria-label={`${t.collapse} ${makeName}`}
+          >
+            <div className="paint-flow absolute inset-0" />
+            <div className="paint-blob left-[10%] top-[15%] h-[45%] w-[45%]" style={{ animationDelay: "-1s", backgroundColor: "rgba(255,255,255,0.4)" }} />
+            <div className="paint-blob right-[5%] bottom-[10%] h-[55%] w-[55%]" style={{ animationDelay: "-3s", backgroundColor: "rgba(228,113,253,0.45)" }} />
+            <div className="absolute inset-0 bg-black/25 transition-colors group-hover:bg-black/35" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white">
+              <ChevronUp className="size-7 drop-shadow transition-transform duration-300 group-hover:scale-110" strokeWidth={1.75} />
+              <span className="text-[19px] font-normal drop-shadow transition-transform duration-300 group-hover:scale-105">
+                {t.collapse}
+              </span>
+            </div>
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
 // ===== 主搜索结果显示组件 =====
 export default function SearchResults({
   rows,
@@ -293,11 +409,8 @@ export default function SearchResults({
 
   if (isLoading) {
     return (
-      <div>
-        <div className="flex items-center pl-0 pr-4 py-3">
-          <Skeleton className="h-4 w-32" />
-        </div>
-        <SkeletonGrid />
+      <div className="flex min-h-[300px] items-center justify-center text-muted-foreground">
+        <Spinner className="size-8" />
       </div>
     );
   }
@@ -330,68 +443,47 @@ export default function SearchResults({
     );
   }
 
-  // 按 color_code 分组：同一颜色的多个配方合并为一个母卡片
+  // 先按品牌分组：同一品牌的所有配方合并为一个品牌段落
   const groups = new Map<string, FormulaTableRow[]>();
   for (const row of rows) {
-    const key = row.color.color_code;
+    const key = row.makeName;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(row);
   }
   const groupedEntries = Array.from(groups.entries());
 
-  // 段内卡片按颜色代码升序
-  groupedEntries.sort((a, b) => a[0].localeCompare(b[0]));
-
-  // 按漆面类型分桶：多类型颜色整张母卡片重复进入每个所属段落
-  const sections = SECTION_ORDER.map((type) => ({
-    type,
-    cards: groupedEntries.filter(([, groupRows]) =>
-      groupRows[0].color.color_type.includes(type)
-    ),
-  }));
+  // 品牌段落按名称首字母 A→Z 排序；段内再按 color_code 分组（同一颜色的多条配方合成一张母卡片）
+  groupedEntries.sort((a, b) => a[0].localeCompare(b[0], "en"));
+  const brandSections = groupedEntries.map(([makeName, groupRows]) => {
+    const colorGroups = new Map<string, FormulaTableRow[]>();
+    for (const row of groupRows) {
+      const key = row.color.color_code;
+      if (!colorGroups.has(key)) colorGroups.set(key, []);
+      colorGroups.get(key)!.push(row);
+    }
+    const colorCards = Array.from(colorGroups.entries());
+    colorCards.sort((a, b) => a[0].localeCompare(b[0], "en"));
+    return { makeName, colorCards };
+  });
 
   return (
     <div>
       {/* 结果计数栏 */}
       <div className="flex items-center pl-0 pr-4 py-3">
         <p className="text-sm font-semibold text-primary">
-          Found {groupedEntries.length} colors ({rows.length} formulas)
+          Found {brandSections.length} brands ({rows.length} formulas)
         </p>
       </div>
 
-      {/* 按漆面类型分段落展示 */}
-      {sections.map(({ type, cards }) =>
-        cards.length === 0 ? null : (
-          <section
-            key={type}
-            aria-labelledby={`section-${type}`}
-            className="mb-[80px]"
-          >
-            {/* 段落标题：英文类型名居中，外框药丸圆角浅灰边框（shadcn 风格） */}
-            <div className="flex items-center justify-center px-4 py-2">
-              <h2
-                id={`section-${type}`}
-                className="rounded-full border-[0.5px] border-[#a8a8a8] px-4 py-1.5 font-heading text-[27px] font-normal tracking-wide text-ink"
-              >
-                {SECTION_LABELS[type] ?? type}
-              </h2>
-            </div>
-            {/* 段内 6 列网格：距标题条 40px，--card-delay 从 0 重置交错入场动画 */}
-            <div
-              className="grid grid-cols-5 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10"
-              style={{ ["--card-delay" as string]: "0s" }}
-            >
-              {cards.map(([colorCode, groupRows]) => (
-                <GroupedColorCard
-                  key={colorCode}
-                  rows={groupRows}
-                  onSelect={(row) => onOpenFormula(row)}
-                />
-              ))}
-            </div>
-          </section>
-        )
-      )}
+      {/* 按品牌分段展示，品牌名 A→Z */}
+      {brandSections.map(({ makeName, colorCards }) => (
+        <BrandSection
+          key={makeName}
+          makeName={makeName}
+          colorCards={colorCards}
+          onSelect={(row) => onOpenFormula(row)}
+        />
+      ))}
     </div>
   );
 }

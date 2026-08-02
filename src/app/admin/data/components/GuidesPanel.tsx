@@ -6,6 +6,7 @@ import { generateGuideId, generateGuideCategoryId } from "@/lib/id-generator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
   SelectContent,
@@ -95,15 +96,17 @@ export default function GuidesPanel() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
   const pageRows = filtered.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE);
 
+  if (loading) return <div className="flex justify-center py-4"><Spinner /></div>;
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
         <Select value={filterCat} onValueChange={(v) => setFilterCat(v || "")}>
-          <SelectTrigger className="h-9 min-w-[160px] rounded-lg text-2xs"><SelectValue placeholder="全部分类" /></SelectTrigger>
+          <SelectTrigger className="h-9 min-w-[160px] rounded-lg text-sm"><SelectValue placeholder="全部分类" /></SelectTrigger>
           <SelectContent className="z-[130] max-h-[200px]">{categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.nameZh}</SelectItem>)}</SelectContent>
         </Select>
-        <Button onClick={() => setShowCatModal(true)} variant="outline" className="h-9 rounded-lg text-2xs">管理分类</Button>
-        <Button onClick={openCreate} className="h-9 rounded-lg bg-primary text-2xs hover:bg-primary/80"><Plus className="size-4" /> 新增指南</Button>
+        <Button onClick={() => setShowCatModal(true)} variant="outline-primary" className="rounded-lg text-sm">管理分类</Button>
+        <Button onClick={openCreate} variant="outline-primary" className="rounded-lg text-sm"><Plus className="size-4" /> 新增指南</Button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -120,10 +123,10 @@ export default function GuidesPanel() {
           <TableBody>
             {pageRows.map((guide) => (
               <TableRow key={guide.id} className="border-b border-border/50 last:border-b-0 hover:bg-muted/50">
-                <TableCell className="py-3 text-center text-2xs text-muted-foreground font-medium">{guide.id}</TableCell>
-                <TableCell className="py-3 text-center text-2xs text-foreground truncate">{guide.titleZh}</TableCell>
-                <TableCell className="py-3 text-center text-2xs text-muted-foreground truncate">{guide.title}</TableCell>
-                <TableCell className="py-3 text-center text-2xs text-muted-foreground">{guide.categoryName}</TableCell>
+                <TableCell className="py-3 text-center text-sm text-muted-foreground font-medium">{guide.id}</TableCell>
+                <TableCell className="py-3 text-center text-sm font-medium text-foreground truncate">{guide.titleZh}</TableCell>
+                <TableCell className="py-3 text-center text-sm text-muted-foreground truncate">{guide.title}</TableCell>
+                <TableCell className="py-3 text-center text-sm text-muted-foreground">{guide.categoryName}</TableCell>
                 <TableCell className="py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
                     <button onClick={() => openEdit(guide)} className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary"><Edit className="size-4" /></button>
@@ -178,10 +181,10 @@ export default function GuidesPanel() {
               <Label className="text-sm font-medium text-foreground/80">中文正文</Label>
               <textarea value={form.contentZh} onChange={(e) => setForm({ ...form, contentZh: e.target.value })} className="min-h-[120px] w-full rounded-lg border border-border p-3 text-sm outline-none focus:border-primary" />
             </div>
-            {error && <p className="text-2xs font-medium text-destructive">{error}</p>}
+            {error && <p className="text-sm font-medium text-destructive">{error}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowModal(false)} className="rounded-lg text-2xs">取消</Button>
+            <Button variant="outline" onClick={() => setShowModal(false)} className="rounded-lg text-sm">取消</Button>
             <Button onClick={handleSave} className="rounded-lg bg-primary hover:bg-primary/80">保存</Button>
           </DialogFooter>
         </DialogContent>
@@ -195,7 +198,7 @@ export default function GuidesPanel() {
             <div className="flex flex-col gap-2 max-h-[200px] overflow-auto">
               {categories.map((cat) => (
                 <div key={cat.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
-                  <span className="text-2xs"><span className="font-medium">{cat.nameZh}</span> <span className="text-muted-foreground">({cat.name})</span></span>
+                  <span className="text-sm"><span className="font-medium">{cat.nameZh}</span> <span className="text-muted-foreground">({cat.name})</span></span>
                   <Button onClick={() => handleDeleteCategory(cat)} variant="ghost" size="sm" className="h-7 text-destructive hover:bg-destructive/10">删除</Button>
                 </div>
               ))}

@@ -145,11 +145,11 @@ export default function BrandsPanel() {
     <div>
       {/* Header buttons */}
       <div className="flex justify-start gap-2 mb-4">
-        <Button onClick={openCreateRegion} variant="outline" size="sm" className="rounded-lg text-2xs">
+        <Button onClick={openCreateRegion} variant="outline-primary" className="rounded-lg text-sm">
           <Plus className="size-4" /> 新增产地
         </Button>
-        <Button onClick={openCreateBrand} size="sm" className="rounded-lg bg-primary text-2xs hover:bg-primary/80">
-          新增品牌
+        <Button onClick={openCreateBrand} variant="outline-primary" className="rounded-lg text-sm">
+          <Plus className="size-4" /> 新增品牌
         </Button>
       </div>
 
@@ -167,9 +167,9 @@ export default function BrandsPanel() {
           <TableBody>
             {pageRows.map((brand, i) => (
               <TableRow key={brand.id} className="border-b border-border/50 last:border-b-0 hover:bg-muted/50">
-                <TableCell className="py-3 text-center text-2xs text-muted-foreground">{brand.id}</TableCell>
-                <TableCell className="py-3 text-center text-2xs text-foreground truncate max-w-[180px]">{brand.name}</TableCell>
-                <TableCell className="py-3 text-center text-2xs text-muted-foreground">{brand.region}</TableCell>
+                <TableCell className="py-3 text-center text-sm text-muted-foreground">{brand.id}</TableCell>
+                <TableCell className="py-3 text-center text-sm font-medium text-foreground truncate max-w-[180px]">{brand.name}</TableCell>
+                <TableCell className="py-3 text-center text-sm text-muted-foreground">{brand.region}</TableCell>
                 <TableCell className="py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
                     <button
@@ -207,7 +207,7 @@ export default function BrandsPanel() {
           <DialogHeader><DialogTitle>确认删除</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">确定删除产地「{regionToDelete}」吗？此操作不可撤销。</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRegionToDelete(null)} className="rounded-lg text-2xs">取消</Button>
+            <Button variant="outline" onClick={() => setRegionToDelete(null)} className="rounded-lg text-sm">取消</Button>
             <Button
               onClick={() => { if (regionToDelete) { handleDeleteRegion(regionToDelete); setRegionToDelete(null); } }}
               variant="destructive" className="rounded-lg"
@@ -243,10 +243,10 @@ export default function BrandsPanel() {
                 </SelectContent>
               </Select>
             </div>
-            {brandError && <p className="text-2xs font-medium text-destructive">{brandError}</p>}
+            {brandError && <p className="text-sm font-medium text-destructive">{brandError}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBrandModal(false)} className="rounded-lg text-2xs">取消</Button>
+            <Button variant="outline" onClick={() => setShowBrandModal(false)} className="rounded-lg text-sm">取消</Button>
             <Button onClick={handleSaveBrand} className="rounded-lg bg-primary hover:bg-primary/80">保存</Button>
           </DialogFooter>
         </DialogContent>
@@ -259,15 +259,15 @@ export default function BrandsPanel() {
           <div className="flex flex-col gap-4 py-2">
             {/* 已有产地列表：新增时可对照，避免重复 */}
             <div>
-              <p className="mb-2 text-2xs font-medium text-muted-foreground">已有产地</p>
+              <p className="mb-2 text-sm font-medium text-muted-foreground">已有产地</p>
               {regions.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-border px-3 py-3 text-center text-2xs text-muted-foreground">暂无产地</p>
+                <p className="rounded-lg border border-dashed border-border px-3 py-3 text-center text-sm text-muted-foreground">暂无产地</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {regions.map((region) => (
                     <span
                       key={region.code}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1 text-2xs text-muted-foreground"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1 text-sm text-muted-foreground"
                     >
                       {region.code}
                       <button
@@ -293,10 +293,10 @@ export default function BrandsPanel() {
                 maxLength={10}
               />
             </div>
-            {regionError && <p className="text-2xs font-medium text-destructive">{regionError}</p>}
+            {regionError && <p className="text-sm font-medium text-destructive">{regionError}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRegionModal(false)} className="rounded-lg text-2xs">取消</Button>
+            <Button variant="outline" onClick={() => setShowRegionModal(false)} className="rounded-lg text-sm">取消</Button>
             <Button onClick={handleSaveRegion} className="rounded-lg bg-primary hover:bg-primary/80">保存</Button>
           </DialogFooter>
         </DialogContent>

@@ -489,39 +489,39 @@ html, body {
 
 .dark {
   --background:
-    oklch(0.145 0 0);
+    oklch(0.22 0.012 260);
   --foreground:
-    oklch(0.985 0 0);
+    oklch(0.955 0.005 260);
   --card:
-    oklch(0.205 0 0);
+    oklch(0.27 0.012 260);
   --card-foreground:
-    oklch(0.985 0 0);
+    oklch(0.955 0.005 260);
   --popover:
-    oklch(0.205 0 0);
+    oklch(0.27 0.012 260);
   --popover-foreground:
-    oklch(0.985 0 0);
+    oklch(0.955 0.005 260);
   --primary:
     oklch(0.55 0.15 240);
   --primary-foreground:
     oklch(0.985 0 0);
   --secondary:
-    oklch(0.269 0 0);
+    oklch(0.315 0.012 260);
   --secondary-foreground:
-    oklch(0.985 0 0);
+    oklch(0.955 0.005 260);
   --muted:
-    oklch(0.269 0 0);
+    oklch(0.315 0.012 260);
   --muted-foreground:
-    oklch(0.8 0 0);
+    oklch(0.78 0.01 260);
   --accent:
-    oklch(0.269 0 0);
+    oklch(0.315 0.012 260);
   --accent-foreground:
-    oklch(0.985 0 0);
+    oklch(0.955 0.005 260);
   --destructive:
     oklch(0.704 0.191 22.216);
   --border:
-    oklch(1 0 0 / 10%);
+    oklch(1 0 0 / 12%);
   --input:
-    oklch(1 0 0 / 15%);
+    oklch(1 0 0 / 16%);
   --ring:
     oklch(0.556 0 0);
   --chart-1:
@@ -535,33 +535,33 @@ html, body {
   --chart-5:
     oklch(0.269 0 0);
   --sidebar:
-    oklch(0.205 0 0);
+    oklch(0.27 0.012 260);
   --sidebar-foreground:
-    oklch(0.985 0 0);
+    oklch(0.955 0.005 260);
   --sidebar-primary:
     oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground:
     oklch(0.985 0 0);
   --sidebar-accent:
-    oklch(0.269 0 0);
+    oklch(0.315 0.012 260);
   --sidebar-accent-foreground:
-    oklch(0.985 0 0);
+    oklch(0.955 0.005 260);
   --sidebar-border:
-    oklch(1 0 0 / 10%);
+    oklch(1 0 0 / 12%);
   --sidebar-ring:
     oklch(0.556 0 0);
 
   /* ===== 自定义 token — 深色值 ===== */
-  --color-canvas: #0a0a0a;
-  --color-canvas-soft: #141414;
-  --color-canvas-muted: #1f1f1f;
+  --color-canvas: #1c1c1f;
+  --color-canvas-soft: #242428;
+  --color-canvas-muted: #2d2d32;
   --color-canvas-inverse: #fafafa;
   --color-ink: #fafafa;
-  --color-body: #a3a3a3;
-  --color-mute: #737373;
+  --color-body: #b0b0b8;
+  --color-mute: #8a8a92;
   --color-on-primary: #ffffff;
-  --color-hairline: #2a2a2a;
-  --color-hairline-strong: #525252;
+  --color-hairline: #3a3a42;
+  --color-hairline-strong: #5a5a64;
   --color-error: #f87171;
   --color-error-soft: #3a1a1a;
   --color-warning: #fbbf24;
@@ -571,14 +571,14 @@ html, body {
   --shadow-level-3: 0 1px 1px rgba(0,0,0,0.2), 0 8px 16px -4px rgba(0,0,0,0.3), 0 24px 32px -8px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.06);
 }
 
-/* ===== Header — 深色变量 ===== */
+/* ===== Header — 深色变量（与全站暗色 token 保持一致） ===== */
 .dark {
-  --header-bg: #0a0a0a;
-  --header-text: #fafafa;
-  --header-text-muted: #a3a3a3;
-  --header-border: #2a2a2a;
+  --header-bg: var(--background);
+  --header-text: var(--foreground);
+  --header-text-muted: var(--muted-foreground);
+  --header-border: var(--border);
   --header-hover-bg: rgba(255, 255, 255, 0.06);
-  --header-bottom-border: #2a2a2a;
+  --header-bottom-border: var(--border);
 }
 
 @layer base {

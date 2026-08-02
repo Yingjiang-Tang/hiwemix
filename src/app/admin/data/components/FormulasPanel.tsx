@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Spinner } from "@/components/ui/spinner";
 import { Search, Plus, Trash2 } from "lucide-react";
 
 const PAINT_SYSTEMS = ["1K", "2K"] as const;
@@ -169,7 +170,7 @@ export default function FormulasPanel() {
     return formulas.filter((f) => { if (f.id.toLowerCase().includes(q)) return true; const cc = colors.find((c) => c.id === f.color_id)?.color_code ?? ""; return cc.toLowerCase().includes(q); });
   }, [formulas, formulaSearch, colors]);
 
-  const INPUT_CLASS = "w-full border border-input rounded-lg px-3 py-2 h-[38px] text-2xs outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/10";
+  const INPUT_CLASS = "w-full border border-input rounded-lg px-3 py-2 h-[38px] text-sm outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/10";
 
   function renderComponentTable(group?: ComponentGroup) {
     const title = group ?? "色母组件";
@@ -177,8 +178,8 @@ export default function FormulasPanel() {
     return (
       <div key={group ?? "regular"} className="mt-4">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          <Button onClick={() => addComponent(group)} variant="outline" size="sm" className="rounded-lg text-2xs"><Plus className="size-4" /> 添加色母</Button>
+          <h3 className="text-base font-semibold text-foreground">{title}</h3>
+          <Button onClick={() => addComponent(group)} variant="outline" size="sm" className="rounded-lg text-sm"><Plus className="size-4" /> 添加色母</Button>
         </div>
 
         <div className="[&_div[data-slot='table-container']]:overflow-visible rounded-lg border border-border max-h-none">
@@ -194,7 +195,7 @@ export default function FormulasPanel() {
             </TableHeader>
             <TableBody>
               {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="py-12 text-center text-2xs italic text-muted-foreground">暂无色母，点击「+ 添加色母」开始</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="py-12 text-center text-sm italic text-muted-foreground">暂无色母，点击「+ 添加色母」开始</TableCell></TableRow>
               )}
               {filtered.map((c, rowIndex) => {
                 const globalIndex = components.indexOf(c);
@@ -268,7 +269,7 @@ export default function FormulasPanel() {
           const sum = group ? (percentageSums as Record<ComponentGroup, number>)[group] ?? 0 : (percentageSums as { all: number }).all ?? 0;
           const isValid = Math.abs(sum - 100) < 0.01;
           return (
-            <div className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-2xs font-medium ${isValid ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-destructive/10 border border-destructive/20 text-destructive'}`}>
+            <div className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${isValid ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-destructive/10 border border-destructive/20 text-destructive'}`}>
               {isValid ? '✓' : '⚠'} 百分比总和：{sum.toFixed(2)}% {!isValid && '（必须等于 100%）'}
             </div>
           );
@@ -277,23 +278,23 @@ export default function FormulasPanel() {
     );
   }
 
-  if (loading) return <div className="text-center py-4"><Button disabled>加载中...</Button></div>;
+  if (loading) return <div className="flex justify-center py-4"><Spinner /></div>;
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row min-h-[calc(100vh-140px)]">
       {/* 左栏：配方列表 */}
       <div className="lg:w-64 flex-shrink-0 flex flex-col max-h-[200px] lg:max-h-none">
-        <Button onClick={newFormula} className="rounded-lg bg-primary mb-3 hover:bg-primary/80"><Plus className="size-4" /> 新增配方</Button>
+        <Button onClick={newFormula} variant="outline-primary" className="rounded-lg mb-3"><Plus className="size-4" /> 新增配方</Button>
         <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="搜索配方代码或名称..." value={formulaSearch} onChange={(e) => setFormulaSearch(e.target.value)} className="h-9 rounded-lg pl-9 text-2xs" />
+          <Input placeholder="搜索配方代码或名称..." value={formulaSearch} onChange={(e) => setFormulaSearch(e.target.value)} className="h-9 rounded-lg pl-9 text-sm" />
         </div>
         <div className="flex-1 overflow-auto rounded-lg border border-border min-h-0">
           {filteredFormulas.map((f) => {
             const isSel = selectedId === f.id;
             return (
               <button key={f.id} onClick={() => selectFormula(f)}
-                className={`w-full text-left px-3 py-3 border-b border-border/50 text-2xs transition-colors ${isSel ? 'bg-blue-50/60 font-semibold text-primary' : 'text-foreground/80 hover:bg-muted'}`}
+                className={`w-full text-left px-3 py-3 border-b border-border/50 text-sm transition-colors ${isSel ? 'bg-blue-50/60 font-semibold text-primary' : 'text-foreground/80 hover:bg-muted'}`}
               >
                 <span className="block font-semibold text-foreground">{colors.find((c) => c.id === f.color_id)?.color_code || f.color_id}</span>
                 <span className="block text-xs text-muted-foreground">{f.id}</span>
@@ -369,12 +370,12 @@ export default function FormulasPanel() {
           ) : renderComponentTable()}
         </div>
 
-        {error && <p className="text-2xs font-medium text-destructive mt-3">{error}</p>}
-        {message && <p className="text-2xs font-medium text-green-600 mt-3">{message}</p>}
+        {error && <p className="text-sm font-medium text-destructive mt-3">{error}</p>}
+        {message && <p className="text-sm font-medium text-green-600 mt-3">{message}</p>}
 
         <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border -mx-5 -mb-5 px-5 pb-0">
-          {selectedId && <Button onClick={handleDelete} variant="outline" className="rounded-lg text-2xs text-destructive border-destructive/20 hover:bg-destructive/10">删除配方</Button>}
-          <Button onClick={handleSave} disabled={!percentageValid} className="rounded-lg bg-primary text-2xs hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground/30">保存配方</Button>
+          {selectedId && <Button onClick={handleDelete} variant="outline" className="rounded-lg text-sm text-destructive border-destructive/20 hover:bg-destructive/10">删除配方</Button>}
+          <Button onClick={handleSave} disabled={!percentageValid} className="rounded-lg bg-primary text-sm hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground/30">保存配方</Button>
         </div>
       </div>
     </div>

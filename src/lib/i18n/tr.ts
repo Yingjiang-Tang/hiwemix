@@ -49,7 +49,7 @@ const dict_tr = dict({
     colorNamePlaceholder: "örn. Super White",
     year: "Yıl", yearPlaceholder: "örn. 2020 veya 2018-2022",
     yearSingle: "Tek", yearRange: "Aralık",
-    detail: "Detay", expand: "Genişlet", collapse: "Daralt",
+    detail: "Detay", expand: "Genişlet", collapse: "Daralt", viewMore: "Daha fazla",
     version: "Sürüm", paintSystemNotes: "Notlar",
     volume: "Hacim", tonerCode: "Toner Kodu", tonerName: "Toner Adı",
     percentage: "Yüzde(%)", actualAmount: "Gerçek miktar(g)",

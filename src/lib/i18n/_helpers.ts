@@ -80,6 +80,7 @@ export interface I18nDict {
   detail: string;
   expand: string;
   collapse: string;
+  viewMore: string;
   version: string;
   paintSystemNotes: string;
   volume: string;
