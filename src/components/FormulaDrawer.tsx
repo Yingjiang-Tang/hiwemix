@@ -142,9 +142,9 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   return (
     <>
       <Sheet open onOpenChange={(v) => { if (!v) handleClose(); }}>
-        <SheetContent side="right" className="!fixed !inset-0 !w-screen !max-w-full !translate-x-0 !rounded-none p-0 gap-0 overflow-y-auto bg-white z-[2000]">
+        <SheetContent side="right" className="!fixed !inset-0 !w-screen !max-w-full !translate-x-0 !rounded-none p-0 gap-0 overflow-y-auto bg-card z-[2000]">
           {/* Header Bar: 品牌/颜色代码/名称/元数据 + 操作按钮 */}
-          <div className="sticky top-0 z-10 border-b border-border bg-white px-3 py-3 sm:px-5 sm:py-4">
+          <div className="sticky top-0 z-10 border-b border-border bg-card px-3 py-3 sm:px-5 sm:py-4">
             <div className="flex items-start gap-3 sm:gap-4">
               {/* 标题：配方代码 | 颜色名称 */}
               <div className="min-w-0 flex-1">

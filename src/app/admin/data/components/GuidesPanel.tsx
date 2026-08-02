@@ -102,9 +102,8 @@ export default function GuidesPanel() {
           <SelectTrigger className="h-9 min-w-[160px] rounded-lg text-2xs"><SelectValue placeholder="全部分类" /></SelectTrigger>
           <SelectContent className="z-[130] max-h-[200px]">{categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.nameZh}</SelectItem>)}</SelectContent>
         </Select>
-        <Button onClick={() => setShowCatModal(true)} variant="outline" size="sm" className="rounded-lg text-2xs">管理分类</Button>
-        <div className="flex-1" />
-        <Button onClick={openCreate} className="rounded-lg bg-primary text-2xs hover:bg-primary/80"><Plus className="size-4" /> 新增指南</Button>
+        <Button onClick={() => setShowCatModal(true)} variant="outline" className="h-9 rounded-lg text-2xs">管理分类</Button>
+        <Button onClick={openCreate} className="h-9 rounded-lg bg-primary text-2xs hover:bg-primary/80"><Plus className="size-4" /> 新增指南</Button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -147,7 +146,7 @@ export default function GuidesPanel() {
 
       {/* Guide create/edit dialog */}
       <Dialog open={showModal} onOpenChange={(v) => { if (!v) setShowModal(false); }}>
-        <DialogContent className="max-w-2xl bg-white !max-w-[650px]">
+        <DialogContent className="max-w-2xl bg-card !max-w-[650px]">
           <DialogHeader><DialogTitle>{editing ? "编辑指南" : "新增指南"}</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-1.5">
@@ -190,7 +189,7 @@ export default function GuidesPanel() {
 
       {/* Category management dialog */}
       <Dialog open={showCatModal} onOpenChange={(v) => { if (!v) setShowCatModal(false); }}>
-        <DialogContent className="max-w-sm bg-white">
+        <DialogContent className="max-w-sm bg-card">
           <DialogHeader><DialogTitle>管理分类</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-3 py-2">
             <div className="flex flex-col gap-2 max-h-[200px] overflow-auto">

@@ -50,7 +50,7 @@ export default function LanguageSwitcher({
   return (
     <Select value={lang} onValueChange={(v) => setLang((v as Lang) || "en")}>
       <SelectTrigger
-        className="h-8 w-auto min-w-0 gap-1.5 rounded-lg border border-border bg-background px-3 text-2xs font-medium"
+        className="h-8 w-auto min-w-0 gap-1.5 rounded-lg border border-border bg-transparent px-3 text-2xs font-medium header-action-btn"
         style={{ transition: transitionStyle }}
       >
         <SelectValue />

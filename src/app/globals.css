@@ -201,7 +201,7 @@
 
 body {
   color: var(--foreground);
-  background: transparent;
+  background-color: var(--background);
   font-family: var(--font-inter), var(--font-noto), "Helvetica Neue", Arial, sans-serif;
   font-weight: 400;
   font-size: 17px;
@@ -501,9 +501,9 @@ html, body {
   --popover-foreground:
     oklch(0.985 0 0);
   --primary:
-    oklch(0.922 0 0);
+    oklch(0.55 0.15 240);
   --primary-foreground:
-    oklch(0.205 0 0);
+    oklch(0.985 0 0);
   --secondary:
     oklch(0.269 0 0);
   --secondary-foreground:
@@ -511,7 +511,7 @@ html, body {
   --muted:
     oklch(0.269 0 0);
   --muted-foreground:
-    oklch(0.708 0 0);
+    oklch(0.8 0 0);
   --accent:
     oklch(0.269 0 0);
   --accent-foreground:
@@ -550,6 +550,35 @@ html, body {
     oklch(1 0 0 / 10%);
   --sidebar-ring:
     oklch(0.556 0 0);
+
+  /* ===== 自定义 token — 深色值 ===== */
+  --color-canvas: #0a0a0a;
+  --color-canvas-soft: #141414;
+  --color-canvas-muted: #1f1f1f;
+  --color-canvas-inverse: #fafafa;
+  --color-ink: #fafafa;
+  --color-body: #a3a3a3;
+  --color-mute: #737373;
+  --color-on-primary: #ffffff;
+  --color-hairline: #2a2a2a;
+  --color-hairline-strong: #525252;
+  --color-error: #f87171;
+  --color-error-soft: #3a1a1a;
+  --color-warning: #fbbf24;
+  --color-warning-soft: #3a2a10;
+  --shadow-level-1: 0 1px 1px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.06);
+  --shadow-level-2: 0 2px 2px rgba(0,0,0,0.25), 0 8px 8px -8px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.06);
+  --shadow-level-3: 0 1px 1px rgba(0,0,0,0.2), 0 8px 16px -4px rgba(0,0,0,0.3), 0 24px 32px -8px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.06);
+}
+
+/* ===== Header — 深色变量 ===== */
+.dark {
+  --header-bg: #0a0a0a;
+  --header-text: #fafafa;
+  --header-text-muted: #a3a3a3;
+  --header-border: #2a2a2a;
+  --header-hover-bg: rgba(255, 255, 255, 0.06);
+  --header-bottom-border: #2a2a2a;
 }
 
 @layer base {

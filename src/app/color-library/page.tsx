@@ -196,7 +196,7 @@ function AddMaterialDialog({
 
   return (
       <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-        <DialogContent className="max-w-sm bg-white z-[1500] shadow-xl ring-1 ring-foreground/10">
+        <DialogContent className="max-w-sm bg-card z-[1500] shadow-xl ring-1 ring-foreground/10">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
               <Plus className="size-5 text-primary" />
@@ -410,7 +410,7 @@ function ManagementModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-4xl w-full p-6 rounded-2xl bg-white dark:bg-zinc-900 !max-w-[850px] max-h-[85vh] flex flex-col overflow-hidden">
+      <DialogContent className="max-w-4xl w-full p-6 rounded-2xl bg-card dark:bg-zinc-900 !max-w-[850px] max-h-[85vh] flex flex-col overflow-hidden">
 
             {/* 二级弹窗展开时的轻度蒙版 */}
             {(addOpen || editingItem) && (
@@ -523,7 +523,7 @@ function ManagementModal({
 
       {/* ===== 编辑子弹窗（独立 Dialog，Portal 到 body） ===== */}
         <Dialog open={!!editingItem} onOpenChange={(v) => { if (!v) setEditingItem(null); }}>
-          <DialogContent className="max-w-sm bg-white z-[1500] shadow-xl ring-1 ring-foreground/10">
+          <DialogContent className="max-w-sm bg-card z-[1500] shadow-xl ring-1 ring-foreground/10">
           <DialogHeader>
             <DialogTitle>编辑色母 — {editingItem?.code}</DialogTitle>
           </DialogHeader>
@@ -724,14 +724,14 @@ export default function TonerPage() {
   const activeTab = TONER_CATEGORIES.find((c) => c.key === activeCategory)?.key || "2K_BASECOAT";
 
   return (
-    <div className="flex min-h-screen flex-col overflow-x-clip bg-[#fafafa]">
+    <div className="flex min-h-screen flex-col overflow-x-clip bg-background">
       <SiteHeader />
 
       {/* 顶部占位 */}
         <div className="h-[84px]" />
 
       {/* 分类 Tabs + 搜索栏 */}
-      <div className="sticky top-16 z-30 border-b border-border bg-white px-6 py-3 sm:px-8 md:px-[60px]">
+      <div className="sticky top-16 z-30 border-b border-border bg-card px-6 py-3 sm:px-8 md:px-[60px]">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           {/* 左侧：分类 Tabs */}
           <div className="-mx-2 overflow-x-auto px-2 scrollbar-hide sm:-mx-0 sm:px-0">

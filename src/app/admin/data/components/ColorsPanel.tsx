@@ -31,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Search, Edit, Trash2, Plus, X } from "lucide-react";
+import ColorPickerField from "@/components/ColorPickerField";
 
 import { useLang } from "@/components/LanguageContext";
 
@@ -116,18 +117,30 @@ export default function ColorsPanel() {
   }
   async function handleDelete(c: Color) {
     setDeleteError("");
+    setDeleteLoading(true);
     // 第一步：请求配方清单（不删除）。有配方则弹窗列出，无配方直接进入删除确认。
     try {
       const res = await fetch("/api/admin/colors", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: c.id }) });
-      if (res.ok) { fetchColors(); return; }
-      const d = await res.json();
+      const raw = await res.text();
+      let d: { needsConfirm?: boolean; formulas?: unknown[]; error?: string } = {};
+      try { d = raw ? JSON.parse(raw) : {}; } catch { /* 非 JSON 响应，原样保留 */ }
+      if (res.ok && !d.needsConfirm) { fetchColors(); return; }
       if (d.needsConfirm) {
         setDeleteTarget(c);
-        setDeleteFormulaList(d.formulas ?? []);
+        setDeleteFormulaList(Array.isArray(d.formulas) ? d.formulas as { id: string; version: string; updated_at: string }[] : []);
         return;
       }
-      alert(d.error || "删除失败");
-    } catch { alert("网络错误，请重试"); }
+      // 服务端报错：把消息打到弹窗里（深色模式下 alert 容易被忽略）
+      setDeleteTarget(c);
+      setDeleteFormulaList([]);
+      setDeleteError(`服务器响应 ${res.status}：${d.error || raw.slice(0, 200) || "未知错误"}`);
+    } catch (e) {
+      setDeleteTarget(c);
+      setDeleteFormulaList([]);
+      setDeleteError(`网络错误：${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setDeleteLoading(false);
+    }
   }
   // 用户在弹窗里确认后，带 force=true 真正删除
   async function confirmDelete() {
@@ -240,7 +253,7 @@ export default function ColorsPanel() {
 
   return (
     <div>
-      <div className="flex justify-end items-center mb-4 gap-3">
+      <div className="flex justify-start items-center mb-4 gap-3">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="搜索颜色、车型、品牌..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-9 rounded-lg pl-9 text-2xs" />
@@ -293,7 +306,7 @@ export default function ColorsPanel() {
                 <TableCell className="py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
                     <button onClick={() => openEdit(row.originalColor)} className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary"><Edit className="size-4" /></button>
-                    <button onClick={() => handleDelete(row.originalColor)} className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="size-4" /></button>
+                    <button onClick={() => handleDelete(row.originalColor)} aria-label="删除颜色" title="删除颜色" className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="size-4" /></button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -312,7 +325,7 @@ export default function ColorsPanel() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={showModal} onOpenChange={(v) => { if (!v) setShowModal(false); }}>
-        <DialogContent className="max-w-2xl bg-white !max-w-[650px]">
+        <DialogContent className="max-w-2xl bg-card !max-w-[650px]">
           <DialogHeader><DialogTitle>{editing ? "编辑颜色" : "新增颜色"}</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-5 py-2 max-h-[70vh] overflow-y-auto">
             {/* 基本信息卡片 */}
@@ -383,7 +396,10 @@ export default function ColorsPanel() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label className="text-sm font-medium text-foreground/80">预览色</Label>
-                    <Input type="color" value={form.hex_preview} onChange={(e) => setForm({ ...form, hex_preview: e.target.value })} className="h-9 rounded-lg p-1" />
+                    <ColorPickerField
+                      value={form.hex_preview}
+                      onChange={(hex) => setForm({ ...form, hex_preview: hex })}
+                    />
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -396,37 +412,37 @@ export default function ColorsPanel() {
             {/* 适用年份卡片 */}
             <div className="rounded-xl border border-border p-5">
               <h3 className="mb-4 text-sm font-semibold text-foreground/80 border-b border-border/50 pb-3">适用年份</h3>
-              {/* 年份芯片列表 */}
-              <div className="flex flex-wrap gap-2 mb-3">
-                {yearEntries.map((entry) => (
-                  <span key={`${entry.year}-${entry.year_end ?? 's'}`} className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-2xs text-blue-700">
-                    {formatYearEntry(entry)}
-                    <button onClick={() => removeYearEntry(entry)} className="size-4 text-blue-400 hover:text-blue-600"><X className="size-3" /></button>
-                  </span>
-                ))}
-                {yearEntries.length === 0 && <p className="text-2xs text-muted-foreground">暂无年份</p>}
-              </div>
-              {/* 模式切换 */}
-              <div className="flex gap-2 mb-3">
-                <button
-                  onClick={() => setYearMode("single")}
-                  className={`text-2xs px-3 py-1 rounded-lg border transition-colors ${yearMode === "single" ? "bg-primary text-white border-primary" : "border-border text-muted-foreground hover:bg-muted"}`}
-                >
-                  {t.yearSingle}
-                </button>
-                <button
-                  onClick={() => setYearMode("range")}
-                  className={`text-2xs px-3 py-1 rounded-lg border transition-colors ${yearMode === "range" ? "bg-primary text-white border-primary" : "border-border text-muted-foreground hover:bg-muted"}`}
-                >
-                  {t.yearRange}
-                </button>
-              </div>
-              {/* 输入框 */}
-              <div className="flex gap-2">
+
+              {/* 第一排：模式切换 + 输入 + 添加（全部一行） */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* 模式切换：单年 / 区间 */}
+                <div className="inline-flex rounded-lg border border-border p-0.5">
+                  <button
+                    onClick={() => setYearMode("single")}
+                    className={`text-2xs px-3 py-1.5 rounded-md transition-colors ${
+                      yearMode === "single"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t.yearSingle}
+                  </button>
+                  <button
+                    onClick={() => setYearMode("range")}
+                    className={`text-2xs px-3 py-1.5 rounded-md transition-colors ${
+                      yearMode === "range"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t.yearRange}
+                  </button>
+                </div>
+
                 <Input
                   type="number"
                   placeholder={yearMode === "single" ? "年份 (1900-2100)" : "起始年份"}
-                  className="h-9 w-32 rounded-lg"
+                  className="h-9 w-28 rounded-lg"
                   min={1900}
                   max={2100}
                   value={yearInput}
@@ -434,10 +450,13 @@ export default function ColorsPanel() {
                   onKeyDown={(e) => { if (e.key === "Enter") addYearEntry(); }}
                 />
                 {yearMode === "range" && (
+                  <span className="text-muted-foreground">—</span>
+                )}
+                {yearMode === "range" && (
                   <Input
                     type="number"
                     placeholder="结束年份"
-                    className="h-9 w-32 rounded-lg"
+                    className="h-9 w-28 rounded-lg"
                     min={1900}
                     max={2100}
                     value={yearEndInput}
@@ -445,29 +464,73 @@ export default function ColorsPanel() {
                     onKeyDown={(e) => { if (e.key === "Enter") addYearEntry(); }}
                   />
                 )}
-                <Button variant="outline" size="sm" className="rounded-lg text-2xs" onClick={addYearEntry}>添加</Button>
+                <Button variant="outline" size="sm" className="h-9 rounded-lg text-2xs" onClick={addYearEntry}>添加</Button>
+              </div>
+
+              {/* 已添加年份列表 */}
+              <div className="mt-4">
+                <p className="mb-2 text-2xs font-medium text-muted-foreground">已添加年份</p>
+                {yearEntries.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-2xs text-muted-foreground">
+                    暂无年份，请在上方添加
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {yearEntries.map((entry) => (
+                      <span key={`${entry.year}-${entry.year_end ?? 's'}`} className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-2xs text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+                        {formatYearEntry(entry)}
+                        <button onClick={() => removeYearEntry(entry)} className="size-4 text-blue-400 hover:text-blue-600"><X className="size-3" /></button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* 关联变体卡片 */}
+            {/* 关联配方类型卡片 */}
             <div className="rounded-xl border border-border p-5">
-              <h3 className="mb-4 text-sm font-semibold text-foreground/80 border-b border-border/50 pb-3">关联变体</h3>
-              <div className="max-h-[200px] overflow-auto rounded-lg border border-border p-3">
+              <h3 className="mb-4 text-sm font-semibold text-foreground/80 border-b border-border/50 pb-3">关联配方类型</h3>
+              <div className="max-h-[220px] overflow-auto rounded-lg border border-border">
                 {allVariants.length === 0 ? (
-                  <p className="text-2xs text-muted-foreground">暂无变体</p>
+                  <p className="px-4 py-6 text-center text-2xs text-muted-foreground">暂无配方类型</p>
                 ) : (
-                  <div className="flex flex-col gap-1">
-                    {allVariants.map((v) => (
-                      <label key={v.id} className="flex items-center gap-2 cursor-pointer py-0.5">
-                        <input
-                          type="checkbox"
-                          checked={variantIds.includes(v.id)}
-                          onChange={() => toggleVariant(v.id)}
-                          className="size-4 rounded border-input text-primary focus:ring-primary"
-                        />
-                        <span className="text-2xs text-foreground/80">{v.name} <span className="text-muted-foreground">({v.year_range})</span></span>
-                      </label>
-                    ))}
+                  <div className="flex flex-col">
+                    {allVariants.map((v) => {
+                      const checked = variantIds.includes(v.id);
+                      return (
+                        <label
+                          key={v.id}
+                          className={`flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/50 ${
+                            checked ? "bg-primary/5 dark:bg-primary/10" : ""
+                          } ${v.id !== allVariants[0].id ? "border-t border-border/60" : ""}`}
+                        >
+                          <span
+                            className={`flex size-4 shrink-0 items-center justify-center rounded-[4px] border transition-colors ${
+                              checked
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-input bg-transparent"
+                            }`}
+                            aria-hidden="true"
+                          >
+                            {checked && (
+                              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M1.5 5.5l2.5 2.5 4.5-6" />
+                              </svg>
+                            )}
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleVariant(v.id)}
+                            className="sr-only"
+                          />
+                          <span className="flex flex-1 items-baseline justify-between gap-2">
+                            <span className="text-2xs text-foreground">{v.name}</span>
+                            {v.year_range && <span className="text-2xs text-muted-foreground">{v.year_range}</span>}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -484,7 +547,7 @@ export default function ColorsPanel() {
 
       {/* 删除确认弹窗：列出该颜色下会级联删除的配方 */}
       <Dialog open={deleteTarget != null} onOpenChange={(v) => { if (!v && !deleteLoading) { setDeleteTarget(null); setDeleteFormulaList([]); } }}>
-        <DialogContent className="max-w-lg bg-white">
+        <DialogContent className="max-w-lg bg-card">
           <DialogHeader>
             <DialogTitle>删除颜色「{deleteTarget?.color_name}」</DialogTitle>
           </DialogHeader>

@@ -12,14 +12,14 @@ import GuidesPanel from "./components/GuidesPanel";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Menu, BarChart3, Palette, Grid3X3, FlaskConical, BookOpen } from "lucide-react";
+import { Menu, Tag, Droplet, Layers, Beaker, FileText } from "lucide-react";
 
 const TABS = [
-  { key: "brands", label: "品牌", icon: BarChart3 },
-  { key: "colors", label: "颜色", icon: Palette },
-  { key: "variants", label: "配方类型", icon: Grid3X3 },
-  { key: "formulas", label: "配方", icon: FlaskConical },
-  { key: "guides", label: "指南", icon: BookOpen },
+  { key: "brands", label: "品牌", icon: Tag },
+  { key: "colors", label: "颜色", icon: Droplet },
+  { key: "variants", label: "配方类型", icon: Layers },
+  { key: "formulas", label: "配方", icon: Beaker },
+  { key: "guides", label: "指南", icon: FileText },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -27,7 +27,7 @@ type TabKey = (typeof TABS)[number]["key"];
 function SideNav({ activeTab, onSelect, onClose }: { activeTab: TabKey; onSelect: (k: TabKey) => void; onClose?: () => void }) {
   return (
     <nav>
-      <div className="flex flex-col gap-0.5 pr-3 py-3">
+      <div className="flex flex-col gap-0.5 py-3">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.key;
@@ -35,15 +35,15 @@ function SideNav({ activeTab, onSelect, onClose }: { activeTab: TabKey; onSelect
             <button
               key={tab.key}
               onClick={() => { onSelect(tab.key); onClose?.(); }}
-              className={`relative flex items-center gap-3 rounded-lg pl-2 pr-3 py-2.5 text-left text-2xs transition-colors ${
+              className={`relative flex items-center gap-3 rounded-none w-full pl-[60px] pr-4 py-2.5 text-left text-2xs transition-colors ${
                 active
-                  ? "bg-blue-50/80 font-semibold text-primary"
+                  ? "bg-blue-50/80 font-semibold text-primary dark:bg-primary dark:text-primary-foreground"
                   : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground/80"
               }`}
               aria-current={active ? "page" : undefined}
             >
               {active && (
-                <span className="absolute left-0 top-1/2 h-3/5 w-[3px] -translate-y-1/2 rounded-r bg-primary" />
+                <span className="absolute left-0 top-1/2 h-3/5 w-[3px] -translate-y-1/2 rounded-none bg-primary" />
               )}
               <Icon className="size-4 flex-shrink-0" />
               {tab.label}
@@ -77,24 +77,22 @@ export default function DataManagementPage() {
     );
   }
 
-  const activeLabel = TABS.find((t) => t.key === activeTab)?.label ?? "";
-
   return (
-    <div className="min-h-screen overflow-x-clip bg-[#fafafa]">
+    <div className="min-h-screen overflow-x-clip bg-background">
       <SiteHeader />
 
       {/* 移动端浮动按钮 */}
       <button
         onClick={() => setMobileNavOpen((v) => !v)}
         aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
-        className="fixed right-4 top-20 z-[1250] inline-flex size-9 items-center justify-center rounded-lg border border-border bg-white shadow-sm md:hidden"
+        className="fixed right-4 top-20 z-[1250] inline-flex size-9 items-center justify-center rounded-lg border border-border bg-card shadow-sm md:hidden"
       >
         <Menu className="size-5" />
       </button>
 
       <div className="flex pt-[84px]">
         {/* 桌面端侧边栏 */}
-        <aside className="hidden md:block w-[224px] flex-shrink-0 border-r border-border bg-white h-[calc(100vh-64px)] sticky top-16 overflow-y-auto pl-[60px] pr-4">
+        <aside className="hidden md:block w-[224px] flex-shrink-0 border-r border-border bg-card h-[calc(100vh-64px)] sticky top-16 overflow-y-auto">
           <SideNav activeTab={activeTab} onSelect={setActiveTab} />
         </aside>
 
@@ -107,13 +105,6 @@ export default function DataManagementPage() {
 
         {/* 右侧主区 */}
         <main className="flex-1 min-h-[calc(100vh-64px)] px-6 py-6 sm:px-8 md:px-[60px]">
-          {/* 面包屑 */}
-          <div className="mb-4 flex items-center gap-2 text-2xs text-muted-foreground md:mb-5">
-            <span>Data Management</span>
-            <span>/</span>
-            <span className="font-medium text-foreground">{activeLabel}</span>
-          </div>
-
           {activeTab === "brands" && <BrandsPanel />}
           {activeTab === "colors" && <ColorsPanel />}
           {activeTab === "variants" && <VariantsPanel />}

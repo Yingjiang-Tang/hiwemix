@@ -64,7 +64,7 @@ export default function VariantsPanel() {
 
   return (
     <div>
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-start mb-4">
         <Button onClick={openCreate} className="rounded-lg bg-primary text-2xs hover:bg-primary/80"><Plus className="size-4" /> 新增配方类型</Button>
       </div>
 
@@ -103,7 +103,7 @@ export default function VariantsPanel() {
       </div>
 
       <Dialog open={showModal} onOpenChange={(v) => { if (!v) setShowModal(false); }}>
-        <DialogContent className="max-w-sm bg-white">
+        <DialogContent className="max-w-sm bg-card">
           <DialogHeader><DialogTitle>{editing ? "编辑配方类型" : "新增配方类型"}</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-1.5">

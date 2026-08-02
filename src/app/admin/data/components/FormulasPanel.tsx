@@ -212,7 +212,7 @@ export default function FormulasPanel() {
                         const hits = matchingToners(tonerQuery, tonerPool);
                         if (hits.length === 0) return null;
                         return (
-                          <div className="absolute left-2 right-2 top-full z-50 mt-1 max-h-40 overflow-auto rounded-lg border border-border bg-white shadow-lg">
+                          <div className="absolute left-2 right-2 top-full z-50 mt-1 max-h-40 overflow-auto rounded-lg border border-border bg-card shadow-lg">
                             {hits.map((t) => (
                               <button
                                 key={t.code}
@@ -314,7 +314,7 @@ export default function FormulasPanel() {
             <Label className="text-sm font-medium text-foreground/80">关联颜色</Label>
             <Input value={colorQuery} onChange={(e) => { setColorQuery(e.target.value); setColorDropdownOpen(true); if (colorBlurRef.current) { clearTimeout(colorBlurRef.current); colorBlurRef.current = null; } }} onFocus={() => { setColorDropdownOpen(true); if (colorBlurRef.current) { clearTimeout(colorBlurRef.current); colorBlurRef.current = null; } }} onBlur={() => { colorBlurRef.current = setTimeout(() => setColorDropdownOpen(false), 150); }} className="h-9 rounded-lg" placeholder="搜索颜色代码、名称、品牌..." />
             {colorDropdownOpen && matchingColors(colorQuery, colors, brands).length > 0 && (
-              <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-auto rounded-lg border border-border bg-white shadow-lg">
+              <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-auto rounded-lg border border-border bg-card shadow-lg">
                 {matchingColors(colorQuery, colors, brands).map((c) => {
                   const bName = brandMap.get(c.make_id) ?? c.make_id;
                   return (

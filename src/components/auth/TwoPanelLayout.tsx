@@ -89,7 +89,7 @@ export default function TwoPanelLayout({
       </div>
 
       {/* 右侧表单区 (60%) */}
-      <div className="relative flex flex-1 items-center justify-center bg-white px-6 py-10 lg:px-5">
+      <div className="relative flex flex-1 items-center justify-center bg-background px-6 py-10 lg:px-5">
         <div className="w-full max-w-[360px]">
           <div className="mb-6 flex justify-center lg:-mt-[30px]">
             <Image

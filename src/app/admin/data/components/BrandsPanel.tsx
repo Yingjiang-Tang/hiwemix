@@ -144,7 +144,7 @@ export default function BrandsPanel() {
   return (
     <div>
       {/* Header buttons */}
-      <div className="flex justify-end gap-2 mb-4">
+      <div className="flex justify-start gap-2 mb-4">
         <Button onClick={openCreateRegion} variant="outline" size="sm" className="rounded-lg text-2xs">
           <Plus className="size-4" /> 新增产地
         </Button>
@@ -201,30 +201,9 @@ export default function BrandsPanel() {
         </div>
       </div>
 
-      {/* Regions list */}
-      <div className="mt-4 rounded-xl border border-border p-4">
-        <p className="mb-2 text-sm font-semibold text-foreground/80">已有产地：</p>
-        <div className="flex flex-wrap gap-2">
-          {regions.map((region) => (
-            <span
-              key={region.code}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1 text-2xs text-muted-foreground"
-            >
-              {region.code}
-              <button
-                onClick={() => setRegionToDelete(region.code)}
-                className="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground hover:text-destructive"
-              >
-                <X className="size-3" />
-              </button>
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* Region delete confirmation */}
       <Dialog open={!!regionToDelete} onOpenChange={() => setRegionToDelete(null)}>
-        <DialogContent className="max-w-sm bg-white">
+        <DialogContent className="max-w-sm bg-card">
           <DialogHeader><DialogTitle>确认删除</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">确定删除产地「{regionToDelete}」吗？此操作不可撤销。</p>
           <DialogFooter>
@@ -239,7 +218,7 @@ export default function BrandsPanel() {
 
       {/* Brand create/edit dialog */}
       <Dialog open={showBrandModal} onOpenChange={(v) => { if (!v) setShowBrandModal(false); }}>
-        <DialogContent className="max-w-sm bg-white">
+        <DialogContent className="max-w-sm bg-card">
           <DialogHeader><DialogTitle>{editing ? "编辑品牌" : "新增品牌"}</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-1.5">
@@ -275,11 +254,37 @@ export default function BrandsPanel() {
 
       {/* Region create dialog */}
       <Dialog open={showRegionModal} onOpenChange={(v) => { if (!v) setShowRegionModal(false); }}>
-        <DialogContent className="max-w-sm bg-white">
+        <DialogContent className="max-w-sm bg-card">
           <DialogHeader><DialogTitle>新增产地</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-4 py-2">
+            {/* 已有产地列表：新增时可对照，避免重复 */}
+            <div>
+              <p className="mb-2 text-2xs font-medium text-muted-foreground">已有产地</p>
+              {regions.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-border px-3 py-3 text-center text-2xs text-muted-foreground">暂无产地</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {regions.map((region) => (
+                    <span
+                      key={region.code}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1 text-2xs text-muted-foreground"
+                    >
+                      {region.code}
+                      <button
+                        onClick={() => { setShowRegionModal(false); setRegionToDelete(region.code); }}
+                        className="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground hover:text-destructive"
+                        aria-label={`删除产地 ${region.code}`}
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-medium text-foreground/80">产地代码</Label>
+              <Label className="text-sm font-medium text-foreground/80">新产地代码</Label>
               <Input
                 value={regionForm.code}
                 onChange={(e) => setRegionForm({ ...regionForm, code: e.target.value.toUpperCase() })}

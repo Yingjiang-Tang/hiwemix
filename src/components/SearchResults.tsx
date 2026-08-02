@@ -219,8 +219,8 @@ function GroupedColorCard({
 
   // 卡片下方信息块：左对齐卡片，常显配方代码 / 颜色 / 漆面类型
   const infoBlock = (
-    <div className="mt-[45px] text-left font-[family-name:var(--font-inter)]">
-      <p className="truncate text-[20px] font-normal leading-tight text-gray-700">
+    <div className="mt-[45px] text-left font-[family-name:var(--font-outfit)]">
+      <p className="truncate text-[20px] font-normal leading-tight text-foreground">
         {parent.color.color_code}
       </p>
       <p className="mt-2 truncate text-[16px] font-normal leading-tight text-muted-foreground">

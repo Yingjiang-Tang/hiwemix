@@ -84,7 +84,7 @@ export async function DELETE(req: NextRequest) {
   if (error) return error;
   let body: { id?: string; force?: boolean };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "请求格式错误" }, { status: 400 }); }
-  const { id } = body;
+  const { id, force } = body;
   if (!id) return NextResponse.json({ error: "缺少 ID" }, { status: 400 });
 
   // 删除颜色会通过 ON DELETE CASCADE 级联删除其下所有配方和色母组件。
@@ -101,14 +101,14 @@ export async function DELETE(req: NextRequest) {
     updated_at: String(r.updated_at ?? ""),
   }));
 
-  // 前端已确认（带 force=true）才真正删除；否则返回清单供弹窗展示
-  if (!body.force) {
+  // 前端已确认（带 force=true）才真正删除；否则返回 409 Conflict 供弹窗展示
+  if (!force) {
     return NextResponse.json({
       success: false,
       needsConfirm: true,
       formulaCount: formulas.length,
       formulas,
-    });
+    }, { status: 409 });
   }
 
   await deleteColor(id);

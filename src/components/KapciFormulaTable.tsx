@@ -105,7 +105,7 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
       {/* 总量控制栏 */}
       <div className="mb-4 flex flex-col flex-wrap items-stretch gap-2 rounded-xl border border-border/60 bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
         {/* 左侧：配方属性 */}
-        <span className="flex items-center gap-2 text-[15px] font-semibold text-black">
+        <span className="flex items-center gap-2 text-[15px] font-semibold text-foreground">
           <span>{t.version} {formula.version}</span>
           <span aria-hidden="true">|</span>
           <span>{formula.paint_system}</span>
@@ -146,7 +146,7 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
                 className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
                   activeGroup === g
                     ? "bg-primary text-primary-foreground"
-                    : "border border-border bg-white text-muted-foreground hover:bg-muted"
+                    : "border border-border bg-card text-muted-foreground hover:bg-muted"
                 }`}
               >
                 {g === "Pearl Paint" ? t.pearlPaintLabel : t.groundPaintLabel}

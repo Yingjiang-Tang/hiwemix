@@ -35,6 +35,14 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn("h-full", "antialiased", inter.variable, notoSansSC.variable, notoSansArabic.variable, notoSansHebrew.variable, outfit.variable, "font-sans", geist.variable)}
     >
+      <head>
+        {/* 防深色模式闪烁：在 React 渲染前同步读取 localStorage 并应用 .dark class */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('hiwemix-theme');if(t==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full">
         <TooltipProvider delay={300}>
           <Providers>

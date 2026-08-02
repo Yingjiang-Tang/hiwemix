@@ -42,10 +42,8 @@ export default function Footer({ isLightBackground = false }: { isLightBackgroun
 
   return (
     <footer
-      className="relative h-[150px] w-full transition-all duration-[1.5s] ease-in-out"
-      style={{
-        backgroundColor: "#2487ca",
-      }}
+      className="relative h-[150px] w-full"
+      style={{ backgroundColor: "transparent" }}
     >
       {/* 三排内容：图标 → 导航链接 → 版权声明 */}
       <div className="absolute bottom-[30px] left-0 right-0 flex flex-col items-center gap-[10px]">
@@ -63,7 +61,7 @@ export default function Footer({ isLightBackground = false }: { isLightBackgroun
               target="_blank"
               rel="noopener noreferrer"
               aria-label={label}
-              className="inline-flex size-9 items-center justify-center rounded-full text-white/70 transition-colors hover:text-white"
+              className="inline-flex size-9 items-center justify-center rounded-full text-foreground/70 transition-colors hover:text-foreground"
             >
               <Icon className="size-5" />
             </a>
@@ -74,10 +72,10 @@ export default function Footer({ isLightBackground = false }: { isLightBackgroun
         <nav className="flex items-center justify-center gap-4 text-2xs">
           {navItems.map((item, i) => (
             <span key={item.label} className="flex items-center gap-4">
-              {i > 0 && <span className="text-white/30">|</span>}
+              {i > 0 && <span className="text-foreground/30">|</span>}
               <Link
                 href={item.href}
-                className="text-white/70 hover:text-white transition-colors"
+                className="text-foreground/70 hover:text-foreground transition-colors"
               >
                 {item.label}
               </Link>
@@ -86,7 +84,7 @@ export default function Footer({ isLightBackground = false }: { isLightBackgroun
         </nav>
 
         {/* 版权声明 */}
-        <p className="text-center text-2xs text-white/70">
+        <p className="text-center text-2xs text-foreground/70">
           Copyright © 2026 HIWE All Rights Reserved
         </p>
       </div>

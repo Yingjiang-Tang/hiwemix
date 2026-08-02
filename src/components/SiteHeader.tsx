@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/components/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -139,6 +140,8 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
             )}
 
             <LanguageSwitcher transitionStyle={transitionStyle} />
+
+            <ThemeToggle />
 
             {/* 移动端汉堡按钮 */}
             <button

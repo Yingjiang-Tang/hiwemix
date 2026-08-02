@@ -82,7 +82,7 @@ export default function ApplicationGuidePage() {
   }, [guides, selectedCategory, searchQuery, lang]);
 
   return (
-    <div className="flex min-h-screen flex-col overflow-x-clip bg-white">
+    <div className="flex min-h-screen flex-col overflow-x-clip bg-background">
       <SiteHeader />
 
       {/* Body: 三栏布局 */}
@@ -145,8 +145,8 @@ export default function ApplicationGuidePage() {
                 onClick={() => setSelectedGuide(guide)}
                 className={`cursor-pointer rounded-xl border px-3.5 py-3 transition-colors ${
                   selectedGuide?.id === guide.id
-                    ? "border-primary bg-blue-50/30 shadow-sm"
-                    : "border-border/60 bg-white hover:border-primary"
+                    ? "border-primary bg-blue-50/30 shadow-sm dark:bg-blue-950/30"
+                    : "border-border/60 bg-card hover:border-primary"
                 }`}
               >
                 <p className="text-2xs font-semibold text-foreground md:text-sm">
