@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import type { Toner, TonerCategory } from "@/types";
 import { useAuth } from "@/components/AuthContext";
+import { useLang } from "@/components/LanguageContext";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Edit, Trash2, Settings, Plus } from "lucide-react";
+import { Search, Edit, Trash2, Settings, Plus, ChevronUp, Eye } from "lucide-react";
 
 // 色母分类标签
 const TONER_CATEGORIES: { key: TonerCategory; label: string }[] = [
@@ -35,6 +36,20 @@ const TONER_CATEGORIES: { key: TonerCategory; label: string }[] = [
   { key: "1K_PEARL_BASECOAT", label: "1K Pearl Basecoat" },
   { key: "SUPPLEMENTARY", label: "辅料" },
 ];
+
+// All 选项（查看全部色母，按类别分组展示）
+const ALL_CATEGORY = "ALL";
+
+// 段标题样式：分类名居中，外框药丸圆角浅灰边框（与首页搜索结果段标题一致）
+function SectionTitle({ label, id }: { label: string; id: string }) {
+  return (
+    <div className="mt-8 flex items-center justify-start px-4 py-2">
+      <h2 id={id} className="rounded-full border-[0.5px] border-[#a8a8a8] px-4 py-1.5 font-heading text-[27px] font-normal tracking-wide text-ink">
+        {label}
+      </h2>
+    </div>
+  );
+}
 
 // ==================== 工具函数 ====================
 
@@ -85,45 +100,164 @@ function generateTonerCode(category: TonerCategory, existingCodes: string[]): st
   return `${prefix}${String(maxNum + 1).padStart(4, "0")}`;
 }
 
-// ==================== 色母卡片组件（首页配方面板风格） ====================
+// ==================== 色母卡片组件（首页搜索配方卡片风格） ====================
 
 function TonerCard({ code, tradeName, nameZh, hex }: { code: string; tradeName: string; nameZh: string; hex: string }) {
   return (
-    <div
-      className="group relative aspect-square cursor-pointer overflow-hidden transition-all duration-300 ease-in-out active:scale-[0.98]"
-    >
-      {/* 颜色底色 + 金属漆渐变光泽 */}
-      <div
-        className="absolute inset-0"
-        style={
-          hex
-            ? {
-                backgroundColor: hex,
-                backgroundImage:
-                  "linear-gradient(135deg, rgba(0,0,0,0.21) 0%, rgba(0,0,0,0.11) 8%, rgba(0,0,0,0.03) 18%, rgba(255,255,255,0.08) 28%, rgba(255,255,255,0.28) 38%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.28) 62%, rgba(255,255,255,0.08) 72%, rgba(0,0,0,0.03) 82%, rgba(0,0,0,0.11) 92%, rgba(0,0,0,0.21) 100%)",
-              }
-            : { backgroundColor: "#d1d5db" }
-        }
-      />
+    <div className="animate-card-row mb-[70px] w-[87.5%]">
+      {/* 色块：正方形，悬停轻微放大（与首页配色卡片一致） */}
+      <div className="relative aspect-square w-full cursor-pointer overflow-hidden transition-all duration-300 ease-in-out hover:scale-[1.15] hover:z-10 transform-gpu [backface-visibility:hidden]">
+        {/* 颜色底色 + 金属漆渐变光泽 */}
+        <div
+          className="absolute inset-0"
+          style={
+            hex
+              ? {
+                  backgroundColor: hex,
+                  backgroundImage:
+                    "linear-gradient(135deg, rgba(0,0,0,0.21) 0%, rgba(0,0,0,0.11) 8%, rgba(0,0,0,0.03) 18%, rgba(255,255,255,0.08) 28%, rgba(255,255,255,0.28) 38%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.28) 62%, rgba(255,255,255,0.08) 72%, rgba(0,0,0,0.03) 82%, rgba(0,0,0,0.11) 92%, rgba(0,0,0,0.21) 100%)",
+                }
+              : { backgroundColor: "#d1d5db" }
+          }
+        />
+      </div>
 
-      {/* 悬停时半透明黑色遮罩，平滑淡入 */}
-      <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-      {/* 悬停文字内容，与遮罩同步淡入 */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <p className="max-w-full truncate text-center font-mono text-2xl font-bold tracking-tight text-white">
+      {/* 卡片下方信息块：左对齐常显，产品代码 / 英文名 / 中文名 */}
+      <div className="mt-[45px] text-left font-[family-name:var(--font-outfit)]">
+        <p className="truncate text-[20px] font-normal leading-tight text-foreground">
           {code}
         </p>
-        <p className="max-w-full truncate text-center text-sm font-medium text-white">
+        <p className="mt-2 truncate text-[16px] font-normal leading-tight text-muted-foreground">
           {tradeName}
         </p>
         {nameZh && (
-          <p className="max-w-full truncate text-center text-xs text-white/80">
+          <p className="truncate text-[16px] font-normal leading-tight text-muted-foreground">
             {nameZh}
           </p>
         )}
       </div>
     </div>
+  );
+}
+
+// ==================== 色母分组段落组件（首页搜索配方品牌段风格） ====================
+// 折叠时只渲染前 4 张真实卡片，第 5 格留给「查看更多」；展开后显示全部 + 「收起」
+
+const TONER_CARDS_PER_ROW = 5; // 每行卡片数（与网格 grid-cols-5 对应）
+const TONER_VISIBLE_WHEN_COLLAPSED = 4; // 折叠时显示的真实卡片数，第 5 格留给「查看更多」
+
+function TonerSection({
+  label,
+  toners,
+}: {
+  label: string;
+  toners: Toner[];
+}) {
+  const { t } = useLang();
+  const [expanded, setExpanded] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const prevExpandedRef = useRef(false);
+  const needsMore = toners.length > TONER_VISIBLE_WHEN_COLLAPSED;
+  // 折叠时只渲染前 N 张 + 占位；展开时渲染全部
+  const visibleToners = needsMore && !expanded ? toners.slice(0, TONER_VISIBLE_WHEN_COLLAPSED) : toners;
+
+  // 收起后内容变短，浏览器滚动位置会漂移到别的分类；平滑滚回本分类标题处
+  useEffect(() => {
+    if (prevExpandedRef.current && !expanded && sectionRef.current) {
+      sectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    prevExpandedRef.current = expanded;
+  }, [expanded]);
+
+  return (
+    <section
+      ref={sectionRef}
+      aria-labelledby={`toner-category-${label}`}
+      className="mb-0 scroll-mt-[175px]"
+    >
+      {/* 车漆流动动画：内联 <style> 避免 Turbopack 漏掉 globals.css 中的 @keyframes（与首页 SearchResults 同款） */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes paint-flow {
+          0%   { background-position: 0% 50%; }
+          25%  { background-position: 70% 30%; }
+          50%  { background-position: 100% 70%; }
+          75%  { background-position: 40% 90%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes paint-blob-drift {
+          0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+          20%  { transform: translate(14%, -12%) scale(1.2) rotate(20deg); }
+          45%  { transform: translate(-12%, 8%) scale(0.85) rotate(-25deg); }
+          70%  { transform: translate(8%, 16%) scale(1.15) rotate(15deg); }
+          100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+        }
+        .paint-flow {
+          background:
+            radial-gradient(ellipse 90% 70% at 20% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 60%),
+            radial-gradient(ellipse 70% 60% at 80% 75%, rgba(50, 180, 192, 0.45) 0%, transparent 65%),
+            linear-gradient(115deg, #2587c9 0%, #32b4c0 33%, #e471fd 66%, #2587c9 100%);
+          background-size: 260% 260%;
+          animation: paint-flow 5s ease-in-out infinite;
+        }
+        .paint-blob {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(28px);
+          pointer-events: none;
+          animation: paint-blob-drift 4s ease-in-out infinite;
+        }
+      ` }} />
+      <SectionTitle label={label} id={`toner-category-${label}`} />
+      {/* 段内网格：折叠时一行，展开时可多行；--card-delay 从 0 重置交错入场动画 */}
+      <div
+        className="grid grid-cols-5 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10"
+        style={{ ["--card-delay" as string]: "0s" }}
+      >
+        {visibleToners.map((toner) => (
+          <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} nameZh={toner.nameZh} hex={toner.hex} />
+        ))}
+
+        {/* 折叠且还有更多时：第 5 格显示「查看更多」占位卡片（车漆流动效果） */}
+        {needsMore && !expanded && (
+          <button
+            onClick={() => setExpanded(true)}
+            className="group relative aspect-square w-[87.5%] mb-[70px] cursor-pointer overflow-hidden transition-all duration-300 ease-in-out transform-gpu [backface-visibility:hidden]"
+            aria-label={`${t.viewMore} ${label}`}
+          >
+            <div className="paint-flow absolute inset-0" />
+            <div className="paint-blob left-[10%] top-[15%] h-[45%] w-[45%]" style={{ animationDelay: "0s", backgroundColor: "rgba(255,255,255,0.4)" }} />
+            <div className="paint-blob right-[5%] bottom-[10%] h-[55%] w-[55%]" style={{ animationDelay: "-2s", backgroundColor: "rgba(228,113,253,0.45)" }} />
+            <div className="absolute inset-0 bg-black/25 transition-colors group-hover:bg-black/35" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white">
+              <Eye className="size-7 drop-shadow transition-transform duration-300 group-hover:scale-110" strokeWidth={1.75} />
+              <span className="text-[19px] font-normal drop-shadow transition-transform duration-300 group-hover:scale-105">
+                {t.viewMore}
+              </span>
+            </div>
+          </button>
+        )}
+
+        {/* 展开状态：末尾显示「收起」占位卡片（车漆流动效果） */}
+        {needsMore && expanded && (
+          <button
+            onClick={() => setExpanded(false)}
+            className="group relative aspect-square w-[87.5%] mb-[70px] cursor-pointer overflow-hidden transition-all duration-300 ease-in-out transform-gpu [backface-visibility:hidden]"
+            aria-label={`${t.collapse} ${label}`}
+          >
+            <div className="paint-flow absolute inset-0" />
+            <div className="paint-blob left-[10%] top-[15%] h-[45%] w-[45%]" style={{ animationDelay: "-1s", backgroundColor: "rgba(255,255,255,0.4)" }} />
+            <div className="paint-blob right-[5%] bottom-[10%] h-[55%] w-[55%]" style={{ animationDelay: "-3s", backgroundColor: "rgba(228,113,253,0.45)" }} />
+            <div className="absolute inset-0 bg-black/25 transition-colors group-hover:bg-black/35" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white">
+              <ChevronUp className="size-7 drop-shadow transition-transform duration-300 group-hover:scale-110" strokeWidth={1.75} />
+              <span className="text-[19px] font-normal drop-shadow transition-transform duration-300 group-hover:scale-105">
+                {t.collapse}
+              </span>
+            </div>
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -621,7 +755,7 @@ function ManagementModal({
 export default function TonerPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-  const [activeCategory, setActiveCategory] = useState<TonerCategory>("2K_BASECOAT");
+  const [activeCategory, setActiveCategory] = useState<TonerCategory | typeof ALL_CATEGORY>("2K_BASECOAT");
   const [searchQuery, setSearchQuery] = useState("");
   const [manageOpen, setManageOpen] = useState(false);
 
@@ -652,11 +786,23 @@ export default function TonerPage() {
   const filteredToners = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     return toners.filter((toner) => {
-      if (toner.category !== activeCategory) return false;
+      if (activeCategory !== ALL_CATEGORY && toner.category !== activeCategory) return false;
       if (!q) return true;
       return toner.code.toLowerCase().includes(q) || toner.tradeName.toLowerCase().includes(q) || toner.nameZh.includes(q);
     });
   }, [toners, activeCategory, searchQuery]);
+
+  // All 视图下：按分类分组，保持 TONER_CATEGORIES 顺序；非 All 视图下：平铺卡片
+  const categorySections = useMemo(() => {
+    if (activeCategory !== ALL_CATEGORY) return [];
+    return TONER_CATEGORIES
+      .filter((cat) => cat.key !== "SUPPLEMENTARY" || isAdmin)
+      .map((cat) => ({
+        label: cat.label,
+        toners: filteredToners.filter((t) => t.category === cat.key),
+      }))
+      .filter((s) => s.toners.length > 0);
+  }, [activeCategory, filteredToners, isAdmin]);
 
   // 管理弹窗回调 — 调用 Supabase API
   const handleUpdateItem = useCallback(async (updated: Toner) => {
@@ -715,7 +861,7 @@ export default function TonerPage() {
     }
   }, []);
 
-  const activeTab = TONER_CATEGORIES.find((c) => c.key === activeCategory)?.key || "2K_BASECOAT";
+  const activeTab = activeCategory === ALL_CATEGORY ? ALL_CATEGORY : TONER_CATEGORIES.find((c) => c.key === activeCategory)?.key || "2K_BASECOAT";
 
   return (
     <div className="flex min-h-screen flex-col overflow-x-clip bg-background">
@@ -725,20 +871,30 @@ export default function TonerPage() {
         <div className="h-[84px]" />
 
       {/* 分类 Tabs + 搜索栏 */}
-      <div className="sticky top-16 z-30 border-b border-border bg-card px-6 py-3 sm:px-8 md:px-[60px]">
+      <div className="sticky top-[79px] z-30 border-b border-border bg-card px-6 py-5 sm:px-8 md:px-[60px]">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           {/* 左侧：分类 Tabs */}
           <div className="-mx-2 overflow-x-auto px-2 scrollbar-hide sm:-mx-0 sm:px-0">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveCategory((v as TonerCategory) || "2K_BASECOAT")}>
-              <TabsList variant="default" className="h-9 bg-muted/80">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveCategory((v as TonerCategory | typeof ALL_CATEGORY) || "2K_BASECOAT")}>
+              <TabsList variant="default" className="group-data-horizontal/tabs:h-fit h-auto gap-1 rounded-none bg-transparent p-0">
+                {/* All：查看全部，按分类分组展示 */}
+                <TabsTrigger
+                  value={ALL_CATEGORY}
+                  className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted"
+                >
+                  All
+                  <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
+                    {toners.length}
+                  </Badge>
+                </TabsTrigger>
                 {TONER_CATEGORIES.filter((cat) => cat.key !== "SUPPLEMENTARY" || isAdmin).map((cat) => (
                   <TabsTrigger
                     key={cat.key}
                     value={cat.key}
-                    className="h-7 gap-1.5 px-3 text-2xs"
+                    className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted"
                   >
                     {cat.label}
-                    <Badge variant="secondary" className="h-4 min-w-4 rounded-full bg-muted px-1 text-[10px] leading-none text-muted-foreground">
+                    <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
                       {toners.filter((t) => t.category === cat.key).length}
                     </Badge>
                   </TabsTrigger>
@@ -755,7 +911,7 @@ export default function TonerPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search code or name..."
-                className="h-9 rounded-lg pl-9 text-2xs"
+                className="h-10 rounded-lg pl-9 text-sm"
               />
             </div>
             {isAdmin && (
@@ -763,7 +919,7 @@ export default function TonerPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setManageOpen(true)}
-                className="inline-flex items-center justify-center h-8 shrink-0 rounded-lg gap-1.5 text-2xs leading-none"
+                className="inline-flex items-center justify-center h-9 shrink-0 rounded-lg gap-1.5 text-sm leading-none"
               >
                 <Settings className="size-4" />
                 管理材料
@@ -784,8 +940,19 @@ export default function TonerPage() {
             <span className="text-sm">No toners found</span>
             <span className="mt-1 text-xs">Try a different search or category</span>
           </div>
+        ) : activeCategory === ALL_CATEGORY ? (
+          /* All 视图：按分类分组展示，每段一行卡片 + 「查看更多」折叠 */
+          <div>
+            {categorySections.map((section) => (
+              <TonerSection key={section.label} label={section.label} toners={section.toners} />
+            ))}
+          </div>
         ) : (
-          <div className="grid grid-cols-4 gap-x-0 gap-y-[30px] px-0 pb-4 sm:grid-cols-6 md:grid-cols-8">
+          /* 单分类视图：平铺网格 */
+          <div
+            className="grid grid-cols-5 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10"
+            style={{ ["--card-delay" as string]: "0s" }}
+          >
             {filteredToners.map((toner) => (
               <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} nameZh={toner.nameZh} hex={toner.hex} />
             ))}

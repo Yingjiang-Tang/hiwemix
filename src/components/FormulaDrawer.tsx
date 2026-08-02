@@ -5,14 +5,14 @@ import type { SearchResult, Formula, FormulaComponent, ComponentGroup, YearEntry
 import { colorSwatchStyle } from "@/lib/utils";
 import { formatYearEntry } from "@/lib/db-formula";
 import { useLang } from "@/components/LanguageContext";
+import { useFavorites } from "@/components/FavoritesContext";
 import KapciFormulaTable from "./KapciFormulaTable";
 import Toast from "./Toast";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { X, Printer, Copy } from "lucide-react";
+import { X, Printer, Copy, Heart } from "lucide-react";
 
 interface FormulaDrawerProps {
   result: SearchResult | null;
@@ -77,6 +77,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 export default function FormulaDrawer({ result, onClose, initialFormulaIdx, formulaId, initialYear }: FormulaDrawerProps) {
   const { t } = useLang();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [activeFormulaIdx, setActiveFormulaIdx] = useState(0);
   const [brands, setBrands] = useState<{ id: string; name: string; region: string }[]>([]);
   const [hexInput, setHexInput] = useState("");
@@ -137,6 +138,26 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
     );
   }
 
+  // 收藏 / 取消收藏当前配方
+  async function handleToggleFavorite() {
+    if (!activeFormula) return;
+    const snapshot = {
+      formula_id: activeFormula.id,
+      color_code: color.color_code,
+      color_name: color.color_name,
+      make_name: make,
+      formula_type: activeFormula.formula_type,
+      paint_system: activeFormula.paint_system,
+      version: activeFormula.version,
+    };
+    try {
+      await toggleFavorite(snapshot);
+      setToastMsg(isFavorite(activeFormula.id) ? t.favoriteRemoved : t.favoriteAdded);
+    } catch {
+      setToastMsg(t.favoriteFail);
+    }
+  }
+
   const currentYear = initialYear ? formatYearEntry(initialYear) : "-";
 
   return (
@@ -144,7 +165,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
       <Sheet open onOpenChange={(v) => { if (!v) handleClose(); }}>
         <SheetContent side="right" className="!fixed !inset-0 !w-screen !max-w-full !translate-x-0 !rounded-none p-0 gap-0 overflow-y-auto bg-card z-[2000]">
           {/* Header Bar: 品牌/颜色代码/名称/元数据 + 操作按钮 */}
-          <div className="sticky top-0 z-10 border-b border-border bg-card px-3 py-3 sm:px-5 sm:py-4">
+          <div className="sticky top-0 z-10 border-b border-border bg-card px-3 py-5 sm:px-5 sm:py-6">
             <div className="flex items-start gap-3 sm:gap-4">
               {/* 标题：配方代码 | 颜色名称 */}
               <div className="min-w-0 flex-1">
@@ -155,33 +176,51 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
                 </h2>
               </div>
 
-              {/* 右侧操作按钮 */}
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <Button onClick={handlePrint} variant="outline" size="sm" className="hidden sm:inline-flex">
-                  <Printer className="size-4" />
-                  {t.print}
+              {/* 右侧操作按钮：圆形图标按钮（Favorite/打印/复制），整体左移 70px */}
+              <div className="relative left-[-70px] flex items-center gap-2.5 flex-shrink-0">
+                <Button
+                  onClick={handleToggleFavorite}
+                  variant="outline"
+                  size="icon"
+                  className={`size-[38px] bg-transparent border-muted-foreground/30 rounded-full ${
+                    isFavorite(activeFormula?.id ?? "") ? "border-muted-foreground/30 bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  aria-pressed={isFavorite(activeFormula?.id ?? "")}
+                  aria-label={isFavorite(activeFormula?.id ?? "") ? t.favorited : t.favorite}
+                >
+                  <Heart className={`size-[18px] ${isFavorite(activeFormula?.id ?? "") ? "fill-current" : ""}`} />
                 </Button>
-                <Button onClick={handlePrint} size="icon-sm" variant="ghost" className="inline-flex sm:hidden">
-                  <Printer className="size-4" />
+                <Button
+                  onClick={handlePrint}
+                  variant="outline"
+                  size="icon"
+                  className="size-[38px] rounded-full bg-transparent border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                  aria-label={t.print}
+                >
+                  <Printer className="size-[18px]" />
                 </Button>
-                <Button onClick={handleCopy} variant="default" size="sm" className="hidden sm:inline-flex">
-                  <Copy className="size-4" />
-                  {t.copy}
-                </Button>
-                <Button onClick={handleCopy} size="icon-sm" className="inline-flex sm:hidden">
-                  <Copy className="size-4" />
-                </Button>
-                <Button onClick={handleClose} variant="ghost" size="icon-sm">
-                  <X className="size-5" />
+                <Button
+                  onClick={handleCopy}
+                  variant="outline"
+                  size="icon"
+                  className="size-[38px] rounded-full bg-transparent border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                  aria-label={t.copy}
+                >
+                  <Copy className="size-[18px]" />
                 </Button>
               </div>
+
+              {/* 关闭按钮：保持最右，不随按钮组左移 */}
+              <Button onClick={handleClose} variant="ghost" size="icon-sm" className="ml-1 flex-shrink-0 size-[36px]">
+                <X className="size-[26px]" />
+              </Button>
             </div>
           </div>
 
           {/* Body: 两栏布局 */}
           <div className="flex flex-col md:flex-row flex-1">
             {/* 左侧：配方详情 (~62.5%) */}
-            <div className="flex-1 overflow-auto border-b border-border p-4 sm:p-5 md:flex-[62.5%] md:border-b-0 md:border-r">
+            <div className="flex-1 overflow-auto border-b border-border p-[60px] md:flex-[62.5%] md:border-b-0 md:border-r">
               {activeFormula && displayedFormula && (
                 <div>
                   <KapciFormulaTable
@@ -205,7 +244,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
             {/* 右侧：颜色预览+信息 (~37.5%) */}
             <div className="flex-shrink-0 overflow-auto md:flex-[37.5%]">
               {/* 颜色预览 */}
-              <div className="p-4 sm:p-5">
+              <div className="p-[60px]">
                 <div
                   className="h-[50px] rounded-xl border border-border/60 sm:h-[80px]"
                   style={colorSwatchStyle(previewColor)}
@@ -216,13 +255,13 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
 
               {/* Tab Switcher: shadcn 胶囊式 Tabs */}
               <Tabs value={infoTab} onValueChange={(v) => setInfoTab(Number(v))}>
-                <TabsList variant="default" className="mx-4 mt-2 w-[calc(100%-2rem)] sm:mx-5 sm:mt-3 sm:w-[calc(100%-2.5rem)]">
+                <TabsList variant="default" className="mx-[60px] mt-3 w-[calc(100%-120px)] sm:mt-4">
                   <TabsTrigger value={0} className="text-xs md:text-sm">{t.tabColorInfo}</TabsTrigger>
                   <TabsTrigger value={1} className="text-xs md:text-sm">{t.tabColorDocs}</TabsTrigger>
                   <TabsTrigger value={2} className="text-xs md:text-sm">{t.tabPlasticParts}</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value={0} className="p-4 sm:p-5">
+                <TabsContent value={0} className="p-[60px]">
                   <div className="flex flex-col gap-2 md:gap-3">
                     <InfoRow label={t.manufacturerLabel} value={make} />
                     <InfoRow label={t.originLabel} value={origin} />
