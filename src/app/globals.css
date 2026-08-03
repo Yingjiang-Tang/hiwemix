@@ -215,6 +215,41 @@ body[data-bg-state="white"] {
   background: #ffffff !important;
 }
 
+/* ===== 认证页 — 纯白卡片 ===== */
+/* 移除液态玻璃毛玻璃效果，改回简洁纯白卡片 */
+.glass-card {
+  background: #ffffff;
+  box-shadow:
+    0 8px 24px -8px rgba(29, 111, 176, 0.2),
+    0 24px 48px -12px rgba(29, 111, 176, 0.25);
+  border: 1px solid rgba(29, 111, 176, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ===== 认证页 — 强制亮色主题（蓝白渐变背景 + 白色卡片） ===== */
+/* 项目默认暗色（html.dark），认证页需固定为亮色变量，否则卡片会随主题变深 */
+.auth-light {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.562 0.157 244);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+
 /* ===== RTL / RTL 语言字体支持 ===== */
 /* 布局方向固定 LTR（不做镜像翻转），阿语/希语文字按 lang 应用对应字体 */
 html[lang="ar"] body,

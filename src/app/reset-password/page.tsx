@@ -174,8 +174,8 @@ export default function ResetPasswordPage() {
 
   return (
     <TwoPanelLayout>
-      <Card className="border-border/60 shadow-sm">
-        <CardContent className="flex flex-col gap-5 pt-6">
+      <Card className="glass-card rounded-[26px] border-border/60 shadow-sm">
+        <CardContent className="mx-auto flex w-full max-w-[360px] flex-col gap-5 pt-6 pb-5">
           {/* Step 1: 输入邮箱 */}
           {step === "email" && (
             <>

@@ -62,6 +62,10 @@ Desktop.ini
 *.temp
 *.log
 
+# 调试临时文件
+_tmp_*.html
+tds-check.js
+
 # Build artifacts
 dist/
 build/
