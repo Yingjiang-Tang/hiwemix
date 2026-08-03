@@ -36,7 +36,8 @@ interface KapciFormulaTableProps {
 }
 
 function calcWeight(gramsPer100g: number, totalGrams: number): number {
-  return Math.round((gramsPer100g / 100) * totalGrams * 10) / 10;
+  // 3 位小数：1 位小数在微小总量（如 0.1ml）下会把各色母全部舍成 0，导致 Total 显示 0.0
+  return Math.round((gramsPer100g / 100) * totalGrams * 1000) / 1000;
 }
 
 function parsePositiveNumber(raw: string): number | null {
@@ -44,6 +45,15 @@ function parsePositiveNumber(raw: string): number | null {
   const num = Number(raw);
   if (isNaN(num) || num < 0) return null;
   return Math.round(num * 10) / 10;
+}
+
+// Volume 输入框专用：保留 4 位小数精度（kg 单位下 0.0001kg = 0.1g），
+// 不能用 parsePositiveNumber——它强制 1 位小数会把 0.05kg 吞成 0.1kg
+function parseVolumeNumber(raw: string): number | null {
+  if (raw === "") return null;
+  const num = Number(raw);
+  if (isNaN(num) || num < 0) return null;
+  return Math.round(num * 10000) / 10000;
 }
 
 function massToneColor(comp: FormulaComponent): string {
@@ -58,6 +68,8 @@ function massToneColor(comp: FormulaComponent): string {
 export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint", onGroupChange, showGroupToggle = false }: KapciFormulaTableProps) {
   const { t } = useLang();
   const [volume, setVolume] = useState(1);
+  // 输入框草稿：允许清空/自由输入过程，有效数字才提交到 volume（否则受控组件会把旧值回填，导致"删不掉"）
+  const [volumeDraft, setVolumeDraft] = useState("1");
   const [unit, setUnit] = useState<Unit>("kg");
   const [weights, setWeights] = useState<number[]>([]);
   const isManualEditRef = useRef(false);
@@ -88,11 +100,13 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
   }, [formula.id, formula.components, totalGrams]);
 
   function handleVolumeChange(raw: string) {
-    const num = parsePositiveNumber(raw);
+    // 草稿先行：空串/非法输入不提交，仅更新草稿，允许用户清空或输入中间态（如 "1."、"0.0"）
+    setVolumeDraft(raw);
+    const num = parseVolumeNumber(raw);
     if (num === null) return;
     isManualEditRef.current = false;
-    // 放开小量下限：允许 5g / 5ml 级别，微小修补场景不浪费漆
-    setVolume(Math.max(0.005, Math.round(num * 1000) / 1000));
+    // 放开小量下限：允许 0.1g 级别微调，微小修补场景不浪费漆
+    setVolume(Math.max(0.0001, Math.round(num * 10000) / 10000));
   }
 
   function handleWeightChange(idx: number, raw: string) {
@@ -113,12 +127,14 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
 
     const newVolume = totalGramsToVolume(newTotalGrams, unit);
     setVolume(Math.round(newVolume * 1000) / 1000);
+    // 反向联动：weight 编辑导致总克数变化时，volume 草稿跟随刷新
+    setVolumeDraft(String(Math.round(newVolume * 1000) / 1000));
   }
 
   const totalWeight = weights.reduce((a, b) => a + b, 0);
-  // 合计随所选单位换算显示（克 → 当前单位）；千克/升保留 3 位小数，避免小量配方显示成 0.0
+  // 合计随所选单位换算显示：统一保留 3 位小数，避免小量配方（如 0.1ml）显示成 0.0
   const totalInUnit = totalGramsToVolume(totalWeight, unit);
-  const totalDisplay = totalInUnit.toFixed(unit === "kg" || unit === "L" ? 3 : 1);
+  const totalDisplay = totalInUnit.toFixed(3);
 
   return (
     <div>
@@ -137,14 +153,14 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
         <div className="flex flex-wrap items-center gap-2 sm:flex-row sm:items-center">
           <Input
             type="number"
-            value={volume}
+            value={volumeDraft}
             onChange={(e) => handleVolumeChange(e.target.value)}
             className="h-8 w-[72px] rounded-md text-center text-[16px] font-semibold md:w-[90px]"
-            min={0.005}
+            min={0.0001}
             step={0.01}
           />
           <span className="text-[16px] font-semibold text-muted-foreground">×</span>
-          <Select value={unit} onValueChange={(v) => setUnit((v as Unit) || "kg")}>
+          <Select value={unit} onValueChange={(v) => { setUnit((v as Unit) || "kg"); setVolumeDraft(String(volume)); }}>
             <SelectTrigger className="h-8 w-16 rounded-lg text-[14px] font-semibold md:w-20">
               <SelectValue />
             </SelectTrigger>
@@ -213,7 +229,7 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
                     />
                   </TableCell>
                   <TableCell className="w-1/5 py-2.5 text-center font-semibold tabular-nums">
-                    {running.toFixed(1)}
+                    {running.toFixed(3)}
                   </TableCell>
                   <TableCell className="w-1/5 py-2.5">
                     <div

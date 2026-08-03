@@ -23,6 +23,9 @@ export function invalidateTonerCache(): void {
   const g = globalThis as Record<string, unknown>;
   if (typeof g.__TONER_CACHE_VERSION === "number") {
     g.__TONER_CACHE_VERSION = (g.__TONER_CACHE_VERSION as number) + 1;
+  } else {
+    // 首次变更（缓存版本号尚未初始化）：置为 1，保证与 getTonerMap 的初始 -1 不同
+    g.__TONER_CACHE_VERSION = 1;
   }
 }
 

@@ -162,18 +162,31 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
           {/* Header Bar: 品牌/颜色代码/名称/元数据 + 操作按钮
               左内边距与下方配方栏 px-[60px] 对齐，标题左边缘与配方表格左边缘齐平 */}
           <div className="sticky top-0 z-10 border-b border-border bg-card pl-[60px] pr-[60px] py-5 sm:py-6">
-            <div className="flex items-start gap-3 sm:gap-4">
-              {/* 标题：配方代码 | 颜色名称 */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* 品牌 Logo */}
+              <img
+                src="/hiwemix2-01.png"
+                alt="HIWE"
+                className="h-[26px] w-auto object-contain"
+              />
+              {/* 标题：品牌 车型 | 配方代码 | 颜色名称 */}
               <div className="min-w-0 flex-1">
-                <h2 className="truncate font-heading text-xl font-bold leading-tight text-foreground sm:text-2xl">
-                  {color.color_code}
+                <h2 className="truncate text-[16px] font-extrabold leading-tight text-foreground sm:text-[20px] font-[family-name:var(--font-inter)]">
+                  <span className="font-normal text-primary dark:text-white">{make}</span>
+                  {color.car_model && (
+                    <>
+                      <span className="font-normal text-primary dark:text-white"> {color.car_model}</span>
+                    </>
+                  )}
                   <span className="mx-2 text-muted-foreground/40" aria-hidden="true">|</span>
-                  {color.color_name}
+                  <span className="font-semibold">{color.color_code}</span>
+                  <span className="mx-2 text-muted-foreground/40" aria-hidden="true">|</span>
+                  <span className="font-semibold">{color.color_name}</span>
                 </h2>
               </div>
 
-              {/* 右侧操作按钮：圆形图标按钮（Favorite/打印/复制），整体左移 30px */}
-              <div className="relative left-[-30px] flex items-center gap-2.5 flex-shrink-0">
+              {/* 右侧操作按钮：圆形图标按钮（Favorite/打印/复制），整体左移 10px */}
+              <div className="relative left-[-10px] flex items-center gap-2.5 flex-shrink-0">
                 <Button
                   onClick={handleToggleFavorite}
                   variant="outline"

@@ -245,14 +245,14 @@ function mapFormulaRow(row: Record<string, unknown>, tonerMap?: Map<string, Tone
       grams_per_100g: Number(c.percentage) || 0,  // 始终从 percentage 派生
     };
     if (c.density != null) comp.density = Number(c.density);
-    // 组件自带 rgb 优先；缺失时回退到色母目录中对应 toner 的 hex（若存在）
+    // 色母目录 hex 优先（改 toner 颜色后所有配方实时同步）；组件自带 rgb 仅兜底
     const toner = tonerMap ? findToner(tonerMap, String(c.toner_code ?? "")) : undefined;
     const ownRgb =
       c.rgb_r != null && c.rgb_g != null && c.rgb_b != null
         ? { rgb_r: Number(c.rgb_r) || 0, rgb_g: Number(c.rgb_g) || 0, rgb_b: Number(c.rgb_b) || 0 }
         : undefined;
-    let fallbackRgb = ownRgb;
-    if (!fallbackRgb && toner?.hex) fallbackRgb = hexToCompRgb(toner.hex);
+    let fallbackRgb = toner?.hex ? hexToCompRgb(toner.hex) : undefined;
+    if (!fallbackRgb) fallbackRgb = ownRgb;
     if (fallbackRgb) {
       comp.rgb_r = fallbackRgb.rgb_r;
       comp.rgb_g = fallbackRgb.rgb_g;
