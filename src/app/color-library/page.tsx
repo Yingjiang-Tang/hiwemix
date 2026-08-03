@@ -123,7 +123,7 @@ function TonerCard({ code, tradeName, hex }: { code: string; tradeName: string; 
       </div>
 
       {/* 卡片下方信息块：左对齐常显，产品代码 / 英文名 */}
-      <div className="mt-[45px] text-left font-[family-name:var(--font-outfit)]">
+      <div className="mt-[45px] text-left font-[family-name:var(--font-sans)]">
         <p className="truncate text-[20px] font-normal leading-tight text-foreground">
           {code}
         </p>

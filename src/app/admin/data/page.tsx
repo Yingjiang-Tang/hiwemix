@@ -20,7 +20,7 @@ const TABS = [
   { key: "colors", label: "颜色", icon: Droplet },
   { key: "variants", label: "配方类型", icon: Layers },
   { key: "formulas", label: "配方", icon: Beaker },
-  { key: "tds", label: "TDS", icon: FileText },
+  { key: "tds", label: "文档", icon: FileText },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];

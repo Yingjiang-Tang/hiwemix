@@ -34,7 +34,7 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
           />
         </h1>
         <p
-          className="mx-auto mt-5 max-w-[1100px] text-center font-[family-name:var(--font-outfit)] leading-relaxed text-white/85 md:mt-6 whitespace-pre-line"
+          className="mx-auto mt-5 max-w-[1100px] text-center font-[family-name:var(--font-sans)] leading-relaxed text-white/85 md:mt-6 whitespace-pre-line"
           style={{ fontSize: "21px", fontWeight: 300 }}
         >
           {t.heroSubtitle}
@@ -44,7 +44,7 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
             onClick={onExplore}
             type="button"
           style={{ fontSize: "16px", fontWeight: 400 }}
-          className="group inline-flex items-center gap-2 rounded-full border-2 border-white bg-transparent px-9 py-4 capitalize tracking-[0.15em] text-white transition-all duration-300 ease-out hover:bg-white/10 hover:scale-105 active:scale-95 font-[family-name:var(--font-outfit)]"
+          className="group inline-flex items-center gap-2 rounded-full border-2 border-white bg-transparent px-9 py-4 capitalize tracking-[0.15em] text-white transition-all duration-300 ease-out hover:bg-white/10 hover:scale-105 active:scale-95 font-[family-name:var(--font-sans)]"
           >
             {t.heroCta}
           </button>

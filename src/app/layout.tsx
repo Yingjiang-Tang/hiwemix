@@ -4,15 +4,14 @@ import { AuthProvider } from "@/components/AuthContext";
 import { FavoritesProvider } from "@/components/FavoritesContext";
 import Providers from "@/components/Providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Inter, Noto_Sans_SC, Noto_Sans_Arabic, Noto_Sans_Hebrew, Outfit, Geist } from "next/font/google";
+import BackToTop from "@/components/BackToTop";
+import { Noto_Sans_SC, Noto_Sans_Arabic, Noto_Sans_Hebrew, Geist } from "next/font/google";
 
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const notoSansSC = Noto_Sans_SC({ subsets: ["latin"], variable: "--font-noto" });
 const notoSansArabic = Noto_Sans_Arabic({ subsets: ["arabic"], variable: "--font-arabic" });
 const notoSansHebrew = Noto_Sans_Hebrew({ subsets: ["hebrew"], variable: "--font-hebrew" });
@@ -34,13 +33,13 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("h-full", "antialiased", inter.variable, notoSansSC.variable, notoSansArabic.variable, notoSansHebrew.variable, outfit.variable, "font-sans", geist.variable)}
+      className={cn("h-full", "antialiased", notoSansSC.variable, notoSansArabic.variable, notoSansHebrew.variable, "font-sans", geist.variable)}
     >
       <head>
-        {/* 防深色模式闪烁：在 React 渲染前同步读取 localStorage 并应用 .dark class */}
+        {/* 防深色模式闪烁：在 React 渲染前同步读取 localStorage 并应用 .dark class；默认暗色，仅当显式存了 light 时用亮色 */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('hiwemix-theme');if(t==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('hiwemix-theme');if(t!=='light'){document.documentElement.classList.add('dark');}}catch(e){}})();`,
           }}
         />
       </head>
@@ -51,6 +50,7 @@ export default function RootLayout({
             <AuthProvider>
               <FavoritesProvider>
                 {children}
+                <BackToTop />
               </FavoritesProvider>
             </AuthProvider>
           </LanguageProvider>

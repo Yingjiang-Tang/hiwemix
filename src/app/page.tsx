@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import SearchPanel from "@/components/SearchPanel";
 import SearchResults from "@/components/SearchResults";
@@ -120,11 +120,12 @@ export default function Home() {
     setDrawerYear(row.yearEntry);
   }
 
-  // Explore Now 触发：Hero 退出 + SearchPanel 滑入视口
-  const handleExplore = useCallback(() => {
+  // Explore Now 触发：Hero 退出 + 首次载入全部配方（无筛选），用户再在搜索框自行筛选；滚回顶部或点 Logo 可恢复
+  function handleExplore() {
     setHeroVisible(false);
     setHeroExplored(true);
-  }, []);
+    handleSearch({});
+  }
 
   return (
     <div className={heroVisible ? "flex h-screen flex-col overflow-hidden" : "flex min-h-screen flex-col"}>
@@ -138,12 +139,12 @@ export default function Home() {
         <section className="flex flex-1 flex-col bg-background px-6 sm:px-8 md:px-[60px]">
           <VerifiedBanner />
 
-          <div className="pt-20 md:pt-24">
+          <div className="pt-[100px] md:pt-[116px]">
             <SearchPanel onSearch={handleSearch} isLoading={isLoading} />
           </div>
 
           {hasSearched && (
-            <div className="mt-4 md:mt-5">
+            <div className="mt-[26px] md:mt-[30px]">
               <SearchResults rows={tableRows} isLoading={isLoading} hasSearched={hasSearched} onOpenFormula={handleOpenFormula} />
             </div>
           )}

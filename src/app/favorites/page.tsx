@@ -236,7 +236,7 @@ export default function FavoritesPage() {
                       </div>
 
                       {/* 卡片下方信息块：左对齐常显，与首页一致 */}
-                      <div className="mt-[45px] text-left font-[family-name:var(--font-outfit)]">
+                      <div className="mt-[45px] text-left font-[family-name:var(--font-sans)]">
                         <p className="truncate text-[20px] font-normal leading-tight text-foreground">
                           {snap.color_code}
                         </p>

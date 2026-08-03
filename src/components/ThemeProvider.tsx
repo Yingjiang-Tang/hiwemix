@@ -29,7 +29,7 @@ function applyThemeClass(theme: Theme) {
 }
 
 export default function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
+  const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
     const stored = readStoredTheme();
@@ -37,7 +37,7 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
       setThemeState(stored);
       applyThemeClass(stored);
     } else {
-      applyThemeClass("light");
+      applyThemeClass("dark");
     }
   }, []);
 

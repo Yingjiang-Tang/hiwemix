@@ -101,7 +101,7 @@
 }
 
 /* 导航链接 hover/激活 */
-  .header-nav-link { color: var(--header-text-muted); font-family: var(--font-outfit); }
+  .header-nav-link { color: var(--header-text-muted); font-family: var(--font-sans); }
 .header-nav-link:hover,
 .header-nav-link[aria-current="page"] { color: var(--header-text); }
 
@@ -203,7 +203,7 @@
 body {
   color: var(--foreground);
   background-color: var(--background);
-  font-family: var(--font-inter), var(--font-noto), "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans), var(--font-noto), "Helvetica Neue", Arial, sans-serif;
   font-weight: 400;
   font-size: 17px;
   line-height: 1.5;
@@ -215,13 +215,12 @@ body[data-bg-state="white"] {
   background: #ffffff !important;
 }
 
-/* ===== RTL support for Arabic / Hebrew ===== */
-html[dir="rtl"] body {
-  font-family: var(--font-arabic), var(--font-hebrew), var(--font-inter), "Helvetica Neue", Arial, sans-serif;
+/* ===== RTL / RTL 语言字体支持 ===== */
+/* 布局方向固定 LTR（不做镜像翻转），阿语/希语文字按 lang 应用对应字体 */
+html[lang="ar"] body,
+html[lang="he"] body {
+  font-family: var(--font-arabic), var(--font-hebrew), var(--font-sans), "Helvetica Neue", Arial, sans-serif;
 }
-
-html[dir="rtl"] .ltr-only { display: none; }
-html[dir="ltr"] .rtl-only { display: none; }
 
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -407,7 +406,7 @@ html, body {
   --text-2xs: 0.8125rem;
   --text-2xs--line-height: 1.4;
   --font-heading:
-    var(--font-outfit);
+    var(--font-sans);
   --font-sans:
     var(--font-sans);
   --color-sidebar-ring:

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { useLang } from "@/components/LanguageContext";
 import { useFavorites } from "@/components/FavoritesContext";
-import { colorSwatchStyle } from "@/lib/utils";
+import { colorSwatchStyle, cn } from "@/lib/utils";
 import type { FormulaTableRow } from "@/types";
 import { formatYearEntry } from "@/lib/db-formula";
 import { Spinner } from "@/components/ui/spinner";
@@ -217,7 +217,7 @@ function GroupedColorCard({
 
   // 卡片下方信息块：左对齐卡片，常显配方代码 / 颜色 / 漆面类型；右侧线框收藏按钮
   const infoBlock = (
-    <div className="mt-[45px] flex items-start justify-between gap-2 text-left font-[family-name:var(--font-outfit)]">
+    <div className="mt-[45px] flex items-start justify-between gap-2 text-left font-[family-name:var(--font-sans)]">
       <div className="min-w-0 flex-1">
         <p className="truncate text-[20px] font-normal leading-tight text-foreground">
           {parent.color.color_code}
@@ -443,6 +443,25 @@ export default function SearchResults({
   // 品牌筛选：默认「全部品牌」，选中某个品牌后只显示该品牌的分段
   const [activeMake, setActiveMake] = useState<string>(ALL_MAKES);
 
+  // sticky 品牌筛选栏吸附状态：卡片顶部顶到 Header 底部（79px）时，上方两角变直角贴住 Header；离开吸附恢复圆角
+  const [barStuck, setBarStuck] = useState(false);
+  const barRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function updateStuck() {
+      const el = barRef.current;
+      if (!el) return;
+      setBarStuck(el.getBoundingClientRect().top <= 80);
+    }
+    updateStuck();
+    window.addEventListener("scroll", updateStuck, { passive: true });
+    window.addEventListener("resize", updateStuck);
+    return () => {
+      window.removeEventListener("scroll", updateStuck);
+      window.removeEventListener("resize", updateStuck);
+    };
+  }, [rows.length]);
+
   // 新搜索产生新的 rows 时，重置品牌筛选为「全部品牌」（新结果里不一定还有之前选中的品牌）
   useEffect(() => {
     setActiveMake(ALL_MAKES);
@@ -522,19 +541,25 @@ export default function SearchResults({
 
   return (
     <div>
-      {/* 品牌筛选栏：All + 各品牌（与 Toner 分类 Tabs 同款样式），滚动时吸附在 Header 下方；负 margin 抵消外层 section 内边距以贴边 */}
-      <div className="sticky top-[79px] z-30 -mx-6 border-b border-border bg-card px-6 py-5 sm:-mx-8 sm:px-8 md:-mx-[60px] md:px-[60px]">
+      {/* 品牌筛选栏：All + 各品牌（与配方搜索面板同款圆角卡片样式），滚动吸附在 Header 下方；吸附时上方两角变直角贴住 Header，回到顶部恢复圆角 */}
+      <div
+        ref={barRef}
+        className={cn(
+          "sticky top-[79px] z-30 rounded-xl bg-card p-6 ring-1 ring-border shadow-[var(--shadow-level-1)]",
+          barStuck && "rounded-t-none border-t-0"
+        )}
+      >
         <div className="flex min-w-0 flex-1">
-          <Tabs value={activeMake} onValueChange={(v) => setActiveMake(v)}>
-            <TabsList variant="default" className="group-data-horizontal/tabs:h-fit h-auto gap-1 rounded-none bg-transparent p-0">
-              <TabsTrigger value={ALL_MAKES} className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted">
+          <Tabs value={activeMake} onValueChange={(v) => setActiveMake(v)} className="w-full">
+            <TabsList variant="default" className="group-data-horizontal/tabs:h-fit h-auto w-full flex-wrap justify-start gap-1 rounded-none bg-transparent p-0">
+              <TabsTrigger value={ALL_MAKES} className="h-9 flex-none gap-1.5 rounded-full px-4 text-sm data-active:bg-muted">
                 {t.allMakes}
                 <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
                   {rows.length}
                 </Badge>
               </TabsTrigger>
               {makeTabs.map((mk) => (
-                <TabsTrigger key={mk.value} value={mk.value} className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted">
+                <TabsTrigger key={mk.value} value={mk.value} className="h-9 flex-none gap-1.5 rounded-full px-4 text-sm data-active:bg-muted">
                   {mk.label}
                   <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
                     {mk.count}

@@ -171,7 +171,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
               />
               {/* 标题：品牌 车型 | 配方代码 | 颜色名称 */}
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-[16px] font-extrabold leading-tight text-foreground sm:text-[20px] font-[family-name:var(--font-inter)]">
+                <h2 className="truncate text-[16px] font-extrabold leading-tight text-foreground sm:text-[20px] font-[family-name:var(--font-sans)]">
                   <span className="font-normal text-primary dark:text-white">{make}</span>
                   {color.car_model && (
                     <>

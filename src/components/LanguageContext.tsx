@@ -41,12 +41,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 同步 <html lang> 与 dir 属性（阿语/希语切到 RTL）
+  // 同步 <html lang>；布局方向固定 LTR（不做 RTL 镜像，避免界面翻转），阿语/希语字体由 globals.css 按 lang 应用
   const dir = LANGS.find((l) => l.code === lang)?.dir ?? "ltr";
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.documentElement.lang = lang;
-      document.documentElement.dir = dir;
+      document.documentElement.dir = "ltr";
     }
   }, [lang, dir]);
 

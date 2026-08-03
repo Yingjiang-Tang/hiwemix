@@ -157,6 +157,11 @@ export interface I18nDict {
   tdsSelectHint: string;
   tdsBackToList: string;
   tdsTableOfContents: string;
+  tdsDocTypeAll: string;
+  tdsDocTypeTds: string;
+  tdsDocTypeMsds: string;
+  tdsDocTypeSds: string;
+  tdsDocTypeManual: string;
   adminTitle: string;
   adminNewUser: string;
   adminNoPermission: string;
