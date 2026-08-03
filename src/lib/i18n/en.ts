@@ -4,10 +4,10 @@ import { dict } from './_helpers';
 const dict_en = dict({
     brandName: "HIWE Formula Search",
     brandNameShort: "HIWE",
-    heroTitlePrefix: "FIND YOUR",
-    heroTitleHighlight: "PERFECT MATCH",
+    heroTitlePrefix: "Find Your",
+    heroTitleHighlight: "Perfect Match",
     heroBadge: "Professional Refinish Formula System",
-    heroSubtitle: "Formulate professional, classic, and premium automotive finishes with HIWE toners and additives to deliver an extraordinary experience for you and your customers.",
+    heroSubtitle: "Formulate professional, classic, and premium finishes with HIWE toners and additives.\nMatched by brand, year, or color code in seconds.",
     heroTrust1: "500,000+ Formulas",
     heroTrust2: "50+ Auto Brands",
     heroTrust3: "Global Paint Database",
