@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLang } from "@/components/LanguageContext";
 import { pickText } from "@/lib/i18n";
+import { trackPageView } from "@/lib/analytics";
 import type { Guide, GuideCategory, DocType } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Search, FileText } from "lucide-react";
@@ -19,6 +20,9 @@ export default function TdsIndexPage() {
   const [categories, setCategories] = useState<GuideCategory[]>([]);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [selectedGuideId, setSelectedGuideId] = useState<string | null>(null);
+
+  // 页面访问埋点（首载一次）
+  useEffect(() => { trackPageView("tds"); }, []);
 
   useEffect(() => {
     fetch("/api/tds")

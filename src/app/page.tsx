@@ -10,6 +10,7 @@ import HeroSection from "@/components/HeroSection";
 import VerifiedBanner from "@/components/VerifiedBanner";
 import { useLang } from "@/components/LanguageContext";
 import { yearEntryContains } from "@/lib/db-formula";
+import { track, trackPageView } from "@/lib/analytics";
 import type { CarMake, Color, ColorType, Formula, SearchParams, SearchResult, FormulaTableRow, YearEntry } from "@/types";
 
 // FormulaDrawer（Sheet + Tabs + KapciFormulaTable + framer-motion 依赖较重）
@@ -47,6 +48,9 @@ export default function Home() {
   }
 
   useEffect(() => { loadData().catch(() => {}); }, []);
+
+  // 页面访问埋点（首载一次）
+  useEffect(() => { trackPageView("home"); }, []);
 
   function handleSearch(params: SearchParams) {
     setIsLoading(true);
@@ -109,6 +113,13 @@ export default function Home() {
       }
       setSearchResults(results);
       setTableRows(rows);
+      // 搜索事件埋点（记录品牌/色号/颜色名/年份，不含个人身份）
+      void track("search", {
+        make: params.make_id ? brandsMap.get(params.make_id) ?? params.make_id : undefined,
+        code: params.color_code,
+        name: params.color_name,
+        year: params.year,
+      });
     }).catch((err) => { console.error(err); setSearchResults([]); }).finally(() => setIsLoading(false));
   }
 

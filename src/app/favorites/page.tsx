@@ -7,6 +7,7 @@ import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import { useLang } from "@/components/LanguageContext";
 import { useFavorites } from "@/components/FavoritesContext";
+import { trackPageView } from "@/lib/analytics";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Heart, Search, RotateCcw, X } from "lucide-react";
@@ -51,6 +52,9 @@ export default function FavoritesPage() {
   const [query, setQuery] = useState("");
   const [drawerResult, setDrawerResult] = useState<SearchResult | null>(null);
   const [drawerFormulaId, setDrawerFormulaId] = useState<string | undefined>();
+
+  // 页面访问埋点（首载一次）
+  useEffect(() => { trackPageView("favorites"); }, []);
 
   // 拉取全量数据，用于从收藏快照反查完整配方
   useEffect(() => {

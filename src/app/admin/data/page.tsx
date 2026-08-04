@@ -9,11 +9,12 @@ import ColorsPanel from "./components/ColorsPanel";
 import VariantsPanel from "./components/VariantsPanel";
 import FormulasPanel from "./components/FormulasPanel";
 import GuidesPanel from "./components/TdsPanel";
+import AnalyticsPanel from "./components/AnalyticsPanel";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import { Menu, Tag, Droplet, Layers, Beaker, FileText } from "lucide-react";
+import { Menu, Tag, Droplet, Layers, Beaker, FileText, BarChart3 } from "lucide-react";
 
 const TABS = [
   { key: "brands", label: "品牌", icon: Tag },
@@ -21,6 +22,7 @@ const TABS = [
   { key: "variants", label: "配方类型", icon: Layers },
   { key: "formulas", label: "配方", icon: Beaker },
   { key: "tds", label: "文档", icon: FileText },
+  { key: "analytics", label: "数据分析", icon: BarChart3 },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -111,6 +113,7 @@ export default function DataManagementPage() {
           {activeTab === "variants" && <VariantsPanel />}
           {activeTab === "formulas" && <FormulasPanel />}
           {activeTab === "tds" && <GuidesPanel />}
+          {activeTab === "analytics" && <AnalyticsPanel />}
         </main>
       </div>
     </div>

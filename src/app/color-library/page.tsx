@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import type { Toner, TonerCategory } from "@/types";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/components/LanguageContext";
+import { trackPageView } from "@/lib/analytics";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -777,6 +778,9 @@ export default function TonerPage() {
   useEffect(() => {
     fetchToners();
   }, [fetchToners]);
+
+  // 页面访问埋点（首载一次）
+  useEffect(() => { trackPageView("color-library"); }, []);
 
   const filteredToners = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
