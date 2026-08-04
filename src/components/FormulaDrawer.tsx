@@ -7,6 +7,7 @@ import { colorSwatchStyle } from "@/lib/utils";
 import { formatYearEntry } from "@/lib/db-formula";
 import { useLang } from "@/components/LanguageContext";
 import { useFavorites } from "@/components/FavoritesContext";
+import { track } from "@/lib/analytics";
 import KapciFormulaTable from "./KapciFormulaTable";
 import Toast from "./Toast";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -93,12 +94,33 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
       setHexInput(result.color.hex_preview);
       setActiveGroup("Pearl Paint");
       setPhotoFailed(false);
+
+      // 配方查看事件（打开抽屉即记一次；附带品牌/色号/颜色名）
+      const make = brands.find((m) => m.id === result.color.make_id)?.name ?? result.color.make_id;
+      void track("formula_view", {
+        make,
+        code: result.color.color_code,
+        name: result.color.color_name,
+        formula_id: formulaId ?? result.formulas[0]?.id,
+        version: result.formulas[0]?.version,
+      });
     }
+    // 依赖 brands：品牌名解析需要已加载；brands 变化仅在首次挂载
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, initialFormulaIdx, formulaId]);
 
   const handleClose = useCallback(() => { onClose(); }, [onClose]);
 
-  function handlePrint() { window.print(); }
+  function handlePrint() {
+    // 打印前标记：CSS 只打印抽屉内容，隐藏首页其余部分（打印按钮的 beforeprint 在 window.print 前触发）
+    document.documentElement.classList.add("printing-formula");
+    window.print();
+    // 打印对话框关闭后移除标记，恢复屏幕显示
+    window.addEventListener("afterprint", function restore() {
+      document.documentElement.classList.remove("printing-formula");
+      window.removeEventListener("afterprint", restore);
+    });
+  }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") handleClose(); }
@@ -158,7 +180,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   return (
     <>
       <Sheet open onOpenChange={(v) => { if (!v) handleClose(); }}>
-        <SheetContent side="right" className="!fixed !inset-0 !w-screen !max-w-full !translate-x-0 !rounded-none p-0 gap-0 overflow-y-auto bg-card z-[2000]">
+        <SheetContent side="right" className="formula-print-area formula-drawer p-0 gap-0 bg-card z-[2000]">
           {/* Header Bar: 品牌/颜色代码/名称/元数据 + 操作按钮
               左内边距与下方配方栏 px-[60px] 对齐，标题左边缘与配方表格左边缘齐平 */}
           <div className="sticky top-0 z-10 border-b border-border bg-card pl-[60px] pr-[60px] py-5 sm:py-6">

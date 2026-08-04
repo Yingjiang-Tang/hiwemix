@@ -337,7 +337,18 @@ html[lang="he"] body {
 .animate-card-row:nth-child(n+13):nth-child(6n+5) { animation-delay: calc(var(--card-delay, 0s) + 0.64s); }
 .animate-card-row:nth-child(n+13):nth-child(6n+6) { animation-delay: calc(var(--card-delay, 0s) + 0.70s); }
 
+@page {
+  /* 不锁定方向：让打印对话框可选横屏/竖屏；打印配方时用户可按需切换 */
+  size: A4;
+  margin: 12mm;
+}
+
 @media print {
+  /* 打印配方抽屉时（.printing-formula 由 handlePrint 添加）：隐藏抽屉外的所有页面内容 */
+  html.printing-formula body > *:not([data-slot="sheet-portal"]):not(script):not(style) {
+    display: none !important;
+  }
+
   header, aside, footer, nav, button, [aria-hidden="true"], .mobile-fab, script, style {
     display: none !important;
   }
@@ -349,14 +360,51 @@ html[lang="he"] body {
     margin: 0 !important;
   }
 
-  [class*="fixed"][class*="right-0"][class*="top-0"][class*="z-50"] {
+  /* 配方抽屉打印：fixed 容器改为 static，溢出内容全部展开跨页流动 */
+  .formula-print-area,
+  .formula-print-area [data-slot="sheet-content"] {
     position: static !important;
     transform: none !important;
-    width: 100% !important;
+    width: auto !important;
     max-width: 100% !important;
     height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
     box-shadow: none !important;
     border: none !important;
+    inset: auto !important;
+    z-index: auto !important;
+    flex: none !important;
+    gap: 0 !important;
+    display: block !important;
+  }
+
+  .formula-print-area [data-slot="sheet-overlay"] {
+    display: none !important;
+  }
+
+  /* 抽屉内部两栏打印时改纵向堆叠 */
+  .formula-print-area .md\:flex-row {
+    display: block !important;
+  }
+
+  .formula-print-area [class*="md:flex-[62.5%]"],
+  .formula-print-area [class*="md:flex-[37.5%]"],
+  .formula-print-area [class*="md:border-r"],
+  .formula-print-area [class*="md:border-b-0"] {
+    flex: none !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+
+  .formula-print-area .sticky {
+    position: static !important;
+  }
+
+  /* 打印时隐藏操作按钮（打印/复制/收藏/关闭），但保留标题与配方内容 */
+  .formula-print-area button,
+  .formula-print-area [data-slot="sheet-close"] {
+    display: none !important;
   }
 
   body {
@@ -423,6 +471,102 @@ html, body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* ===== 配方抽屉移动端修复 =====
+   手机（<768px）触屏上，抽屉若保持 fixed + 视口高度锁定 + 内层 overflow-auto，
+   会形成"抽屉→左栏→表格"多层嵌套滚动，手指滑动被内层容器拦截导致划不动。
+   这里让抽屉在手机上脱离固定定位、内容随页面自然滚动，消除嵌套滚动。 */
+/* ===== 配方抽屉：移动端流式 + 桌面端全屏 =====
+   手机（<768px）触屏上，抽屉若保持 fixed + 视口高度锁定 + 内层 overflow-auto，
+   会形成"抽屉→左栏→表格"多层嵌套滚动，手指滑动被内层容器拦截导致划不动。
+   因此默认（移动端）让抽屉脱离固定定位、内容随页面自然滚动；
+   桌面端（≥768px）才固定为全屏抽屉。 */
+.formula-drawer,
+.formula-drawer[data-slot="sheet-content"] {
+  position: static !important;
+  inset: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+  z-index: auto !important;
+  display: block !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* 两栏改纵向堆叠 */
+.formula-drawer .md\:flex-row {
+  display: block !important;
+}
+.formula-drawer [class*="md:flex-[62.5%]"],
+.formula-drawer [class*="md:flex-[37.5%]"],
+.formula-drawer [class*="md:border-r"],
+.formula-drawer [class*="md:border-b-0"] {
+  flex: none !important;
+  border: none !important;
+  overflow: visible !important;
+}
+
+/* 左栏/右栏从滚动容器变为自然流式，表格不再被限高 */
+.formula-drawer .flex-1.overflow-auto,
+.formula-drawer .flex-shrink-0.overflow-auto {
+  overflow: visible !important;
+}
+.formula-drawer .sticky {
+  position: static !important;
+}
+
+/* 抽屉遮罩默认隐藏（抽屉为页面内联展示，不需要遮罩层） */
+.formula-drawer [data-slot="sheet-overlay"] {
+  display: none !important;
+}
+
+/* 桌面端：恢复全屏固定抽屉 */
+@media (min-width: 768px) {
+  .formula-drawer,
+  .formula-drawer[data-slot="sheet-content"] {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    max-width: 100% !important;
+    height: 100vh !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border: none !important;
+  }
+
+  .formula-drawer .md\:flex-row {
+    display: flex !important;
+  }
+  .formula-drawer [class*="md:flex-[62.5%]"],
+  .formula-drawer [class*="md:flex-[37.5%]"],
+  .formula-drawer [class*="md:border-r"],
+  .formula-drawer [class*="md:border-b-0"] {
+    flex: 1 1 auto !important;
+    border-right: 1px solid var(--color-border) !important;
+    overflow: auto !important;
+  }
+  .formula-drawer .sticky {
+    position: sticky !important;
+  }
+  .formula-drawer .flex-1.overflow-auto,
+  .formula-drawer .flex-shrink-0.overflow-auto {
+    overflow: auto !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  /* 移动端打印也保持流式 */
+  .formula-drawer {
+    position: static !important;
+  }
 }
 
 /* 安全区底部内边距（适配 iPhone home indicator） */
