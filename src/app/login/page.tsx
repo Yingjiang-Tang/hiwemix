@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import TwoPanelLayout from "@/components/auth/TwoPanelLayout";
+import { useLang } from "@/components/LanguageContext";
 import { createClient } from "@/lib/supabase/client";
 import { getErrorMessage } from "@/lib/error-utils";
 import Link from "next/link";
@@ -24,6 +25,7 @@ export default function LoginPage() {
 
 // 内层组件：使用 useSearchParams，必须在 Suspense boundary 内
 function LoginForm() {
+  const { t } = useLang();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -35,15 +37,16 @@ function LoginForm() {
   // 显示密码重置成功 / 邮箱确认成功 / 回调错误的消息
   useEffect(() => {
     if (searchParams.get("reset") === "success") {
-      setSuccess("Password updated. Please sign in with your new password.");
+      setSuccess(t.loginResetSuccess);
     }
     if (searchParams.get("confirmed") === "1") {
-      setSuccess("Email confirmed. Please sign in.");
+      setSuccess(t.loginConfirmed);
     }
     const errParam = searchParams.get("error");
     if (errParam) {
       setError(errParam);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   // OAuth 跳转后若用户点浏览器「返回」，bfcache 恢复页面时重置 loading，避免按钮卡死（AUTH-9）
@@ -70,9 +73,9 @@ function LoginForm() {
         password,
       });
       if (loginError) {
-        const msg = getErrorMessage(loginError, "Login failed");
+        const msg = getErrorMessage(loginError, t.loginErrorFailed);
         if (msg.toLowerCase().includes("credentials")) {
-          setError("Invalid email or password. If you signed up with Google or Facebook, use the social login buttons below.");
+          setError(t.loginErrorInvalid);
         } else {
           setError(msg);
         }
@@ -82,7 +85,7 @@ function LoginForm() {
       // 登录成功，跳转首页
       router.push("/");
     } catch (err) {
-      setError(getErrorMessage(err, "Login failed"));
+      setError(getErrorMessage(err, t.loginErrorFailed));
       setLoading(false);
     }
   }
@@ -101,11 +104,11 @@ function LoginForm() {
         },
       });
       if (oauthError) {
-        setError(getErrorMessage(oauthError, "Google sign-in failed"));
+        setError(getErrorMessage(oauthError, t.oauthGoogleFailed));
         setLoading(false);
       }
     } catch {
-      setError("Google sign-in is temporarily unavailable");
+      setError(t.oauthUnavailable);
       setLoading(false);
     }
   }
@@ -124,11 +127,11 @@ function LoginForm() {
         },
       });
       if (oauthError) {
-        setError(getErrorMessage(oauthError, "Facebook sign-in failed"));
+        setError(getErrorMessage(oauthError, t.oauthFacebookFailed));
         setLoading(false);
       }
     } catch {
-      setError("Facebook sign-in is temporarily unavailable");
+      setError(t.oauthUnavailable);
       setLoading(false);
     }
   }
@@ -138,20 +141,20 @@ function LoginForm() {
       <Card className="glass-card rounded-[26px] border-border/60 shadow-sm">
         <CardContent className="mx-auto flex w-full max-w-[360px] flex-col gap-5 pt-6 pb-5">
           <div className="text-center">
-            <h2 className="text-[35px] font-bold text-primary">Sign in</h2>
+            <h2 className="text-[35px] font-bold text-primary">{t.loginWelcome}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Sign in to access the formula search and admin management dashboard.
+              {t.loginSubtitle}
             </p>
           </div>
 
           {/* 邮箱+密码登录表单 */}
           <form onSubmit={handleEmailLogin} className="flex flex-col gap-4" autoComplete="off">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t.loginEmail}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t.loginPlaceholderEmail}
                 autoComplete="off"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -160,18 +163,18 @@ function LoginForm() {
             </div>
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t.loginPassword}</Label>
                 <Link
                   href="/reset-password"
                   className="text-2xs font-medium text-muted-foreground hover:text-foreground hover:underline"
                 >
-                  Forgot password?
+                  {t.forgotPassword}
                 </Link>
               </div>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder={t.loginPlaceholderPassword}
                 autoComplete="off"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -183,14 +186,14 @@ function LoginForm() {
               disabled={loading}
               className="h-11 w-full rounded-xl text-sm font-medium"
             >
-              {loading ? <Spinner className="size-4" /> : "Sign in"}
+              {loading ? <Spinner className="size-4" /> : t.loginButton}
             </Button>
           </form>
 
           {/* 分隔线 */}
           <div className="flex items-center gap-3">
             <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground">or</span>
+            <span className="text-xs text-muted-foreground">{t.or}</span>
             <Separator className="flex-1" />
           </div>
 
@@ -226,7 +229,7 @@ function LoginForm() {
                       fill="#EA4335"
                     />
                   </svg>
-                  Continue with Google
+                  {t.continueWithGoogle}
                 </>
               )}
             </Button>
@@ -249,7 +252,7 @@ function LoginForm() {
                       fill="#0866FF"
                     />
                   </svg>
-                  Continue with Facebook
+                  {t.continueWithFacebook}
                 </>
               )}
             </Button>
@@ -277,9 +280,9 @@ function LoginForm() {
 
           {/* 注册链接 */}
           <p className="text-center text-xs text-muted-foreground">
-            Don&apos;t have an account?{" "}
+            {t.noAccount}{" "}
             <Link href="/register" className="font-medium text-primary hover:underline">
-              Sign up
+              {t.signUp}
             </Link>
           </p>
         </CardContent>

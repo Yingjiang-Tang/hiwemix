@@ -1,20 +1,22 @@
-﻿"use client";
+"use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { i18n, LANGS, type Lang } from "@/lib/i18n";
-
-// 服务器端和客户端首次渲染统一用 "en"，避免 hydration mismatch
-// 真实语言在 useEffect 中从 localStorage 读取
+import { ENGLISH_DEFAULTS, LANGS, type Lang, type I18nDict } from "@/lib/i18n";
+import { loadDict } from "@/lib/i18n/loader";
 
 // ============================================================
 // Language Context
+// 复刻 Kapci 翻译架构：翻译字典按需异步加载（切语言才下载 chunk），
+// 缺键自动回退英文原文（ENGLISH_DEFAULTS）。语言只存 localStorage，不写 URL。
+// 首帧同步用英文（en 可由 ENGLISH_DEFAULTS 同步构造，无 import 等待），
+// 避免 SSR/客户端 hydration mismatch。
 // ============================================================
-type Translations = (typeof i18n)["en"];
 
 interface LanguageContextValue {
   lang: Lang;
-  t: Translations;
+  t: I18nDict;
   dir: "ltr" | "rtl";
+  loading: boolean;
   setLang: (lang: Lang) => void;
 }
 
@@ -22,12 +24,22 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");
+  const [t, setT] = useState<I18nDict>(ENGLISH_DEFAULTS);
+  const [loading, setLoading] = useState(false);
 
   const setLang = useCallback((l: Lang) => {
     setLangState(l);
+    setLoading(true);
     try {
       localStorage.setItem("site-language", l);
     } catch { /* noop */ }
+    loadDict(l)
+      .then((d) => setT(d))
+      .catch(() => {
+        // 加载失败回退英文原文（Kapci fallbackLng: "en"）
+        setT(ENGLISH_DEFAULTS);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   // 客户端挂载后从 localStorage 读取真实语言，避免 SSR/客户端不一致
@@ -35,7 +47,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     try {
       const stored = localStorage.getItem("site-language");
       if (stored && stored !== lang) {
-        setLangState(stored as Lang);
+        setLang(stored as Lang);
       }
     } catch { /* noop */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,13 +62,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   }, [lang, dir]);
 
-  // 不支持的语言回退到英文翻译
-  const translations = (i18n as Record<string, unknown>)[lang] ?? i18n.en;
-
   const value: LanguageContextValue = {
     lang,
-    t: translations as unknown as Translations,
+    t,
     dir,
+    loading,
     setLang,
   };
 

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useLang } from "@/components/LanguageContext";
+import { pickText } from "@/lib/i18n";
 import Markdown from "@/components/Markdown";
 import { Button } from "@/components/ui/button";
 import type { Guide } from "@/types";
@@ -28,12 +29,8 @@ export default function TdsGuideContent({ guide, onBack }: TdsGuideContentProps)
   // 右侧导航栏容器：滚轮事件转发到左侧文档滚动容器
   const tocRef = useRef<HTMLElement | null>(null);
 
-  const content = guide
-    ? lang === "zh"
-      ? guide.contentZh || guide.content
-      : guide.content || guide.contentZh
-    : "";
-  const title = guide ? (lang === "zh" ? guide.titleZh : guide.title) : "";
+  const content = guide ? pickText(lang, guide.content || "", guide.contentZh) : "";
+  const title = guide ? pickText(lang, guide.title, guide.titleZh) : "";
 
   // 章节闪烁：把目标章节 + 后续正文 8s 内变主题蓝
   const flashSection = (heading: HTMLElement) => {

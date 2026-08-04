@@ -9,12 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import TwoPanelLayout from "@/components/auth/TwoPanelLayout";
+import { useLang } from "@/components/LanguageContext";
 import { createClient } from "@/lib/supabase/client";
 import { getErrorMessage } from "@/lib/error-utils";
 import { getEmailRedirectTo } from "@/lib/auth-redirect";
 import Link from "next/link";
 
 export default function RegisterPage() {
+  const { t } = useLang();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -29,11 +31,11 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!email.trim() || !password || !confirmPassword) return;
     if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError(t.registerErrorPassword);
       return;
     }
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t.registerErrorMismatch);
       return;
     }
 
@@ -52,16 +54,14 @@ export default function RegisterPage() {
       });
 
       if (signUpError) {
-        setError(getErrorMessage(signUpError, "Sign up failed"));
+        setError(getErrorMessage(signUpError, t.registerErrorFailed));
         setLoading(false);
         return;
       }
 
       // signUp 返回 session=null 时，说明 Supabase 开启了邮箱确认，需要用户点邮件链接
       if (!data.session) {
-        setInfo(
-          "Account created. Please check your email to confirm your account, then sign in."
-        );
+        setInfo(t.registerConfirmEmail);
         setLoading(false);
         return;
       }
@@ -70,7 +70,7 @@ export default function RegisterPage() {
       router.push("/");
       router.refresh();
     } catch (err) {
-      setError(getErrorMessage(err, "Sign up failed"));
+      setError(getErrorMessage(err, t.registerErrorFailed));
       setLoading(false);
     }
   }
@@ -89,11 +89,11 @@ export default function RegisterPage() {
         },
       });
       if (oauthError) {
-        setError(getErrorMessage(oauthError, "Google sign-in failed"));
+        setError(getErrorMessage(oauthError, t.oauthGoogleFailed));
         setLoading(false);
       }
     } catch {
-      setError("Google sign-in is temporarily unavailable");
+      setError(t.oauthUnavailable);
       setLoading(false);
     }
   }
@@ -112,11 +112,11 @@ export default function RegisterPage() {
         },
       });
       if (oauthError) {
-        setError(getErrorMessage(oauthError, "Facebook sign-in failed"));
+        setError(getErrorMessage(oauthError, t.oauthFacebookFailed));
         setLoading(false);
       }
     } catch {
-      setError("Facebook sign-in is temporarily unavailable");
+      setError(t.oauthUnavailable);
       setLoading(false);
     }
   }
@@ -126,19 +126,19 @@ export default function RegisterPage() {
       <Card className="glass-card rounded-[26px] border-border/60 shadow-sm">
         <CardContent className="mx-auto flex w-full max-w-[360px] flex-col gap-5 pt-6 pb-5">
           <div className="text-center">
-            <h2 className="text-xl font-bold text-foreground">Create your account</h2>
+            <h2 className="text-xl font-bold text-foreground">{t.registerTitle}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Enter your email and password to get started
+              {t.registerSubtitle}
             </p>
           </div>
 
           <form onSubmit={handleRegister} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t.loginEmail}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t.loginPlaceholderEmail}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -146,11 +146,11 @@ export default function RegisterPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t.loginPassword}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="At least 8 characters"
+                placeholder={t.registerPasswordPlaceholder}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 minLength={8}
@@ -158,11 +158,11 @@ export default function RegisterPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="confirmPassword">Confirm password</Label>
+              <Label htmlFor="confirmPassword">{t.registerConfirmLabel}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
-                placeholder="Re-enter password"
+                placeholder={t.registerConfirmPlaceholder}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 minLength={8}
@@ -174,14 +174,14 @@ export default function RegisterPage() {
               disabled={loading}
               className="h-11 w-full rounded-xl text-sm font-medium"
             >
-              {loading ? <Spinner className="size-4" /> : "Create account"}
+              {loading ? <Spinner className="size-4" /> : t.registerButton}
             </Button>
           </form>
 
           {/* 分隔线 */}
           <div className="flex items-center gap-3">
             <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground">or</span>
+            <span className="text-xs text-muted-foreground">{t.or}</span>
             <Separator className="flex-1" />
           </div>
 
@@ -217,7 +217,7 @@ export default function RegisterPage() {
                       fill="#EA4335"
                     />
                   </svg>
-                  Continue with Google
+                  {t.continueWithGoogle}
                 </>
               )}
             </Button>
@@ -240,7 +240,7 @@ export default function RegisterPage() {
                       fill="#0866FF"
                     />
                   </svg>
-                  Continue with Facebook
+                  {t.continueWithFacebook}
                 </>
               )}
             </Button>
@@ -267,9 +267,9 @@ export default function RegisterPage() {
           )}
 
           <p className="text-center text-xs text-muted-foreground">
-            Already have an account?{" "}
+            {t.haveAccount}{" "}
             <Link href="/login" className="font-medium text-primary hover:underline">
-              Sign in
+              {t.loginLink}
             </Link>
           </p>
         </CardContent>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useLang } from "@/components/LanguageContext";
+import { pickText } from "@/lib/i18n";
 import type { Guide, GuideCategory, DocType } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Search, FileText } from "lucide-react";
@@ -39,8 +40,8 @@ export default function TdsIndexPage() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       r = r.filter((g) => {
-        const title = lang === "zh" ? g.titleZh : g.title;
-        const summary = lang === "zh" ? g.summaryZh : g.summary;
+        const title = pickText(lang, g.title, g.titleZh);
+        const summary = pickText(lang, g.summary, g.summaryZh);
         return (
           title.toLowerCase().includes(q) ||
           (summary?.toLowerCase().includes(q) ?? false)
@@ -49,19 +50,6 @@ export default function TdsIndexPage() {
     }
     return r;
   }, [guides, selectedCategory, selectedDocType, searchQuery, lang]);
-
-  // 选中的文档对象（从全部 guides 中查找）
-  const selectedGuide = useMemo(
-    () => guides.find((g) => g.id === selectedGuideId) ?? null,
-    [guides, selectedGuideId]
-  );
-
-  // 列表筛选变化时若当前选中已不在结果中，清空选中
-  useEffect(() => {
-    if (selectedGuideId && !filteredGuides.some((g) => g.id === selectedGuideId)) {
-      setSelectedGuideId(null);
-    }
-  }, [filteredGuides, selectedGuideId]);
 
   return (
     <div className="flex flex-1 flex-col lg:flex-row">
@@ -74,6 +62,7 @@ export default function TdsIndexPage() {
         onSelectCategory={setSelectedCategory}
         onSelectDocType={setSelectedDocType}
       />
+
 
       {/* 中栏：文档列表 */}
       <div className="border-b border-border bg-background pt-8 pr-5 pb-5 pl-5 lg:w-[320px] lg:flex-shrink-0 lg:border-b-0 lg:border-r lg:overflow-y-auto lg:h-[calc(100vh-84px)] lg:sticky lg:top-[84px]">
@@ -91,9 +80,6 @@ export default function TdsIndexPage() {
           {filteredGuides.length === 0 ? (
             <p className="py-8 text-center text-xs text-muted-foreground">—</p>
           ) : (
-            filteredGuides.map((guide) => {
-              const isSelected = selectedGuideId === guide.id;
-              return (
                 <button
                   key={guide.id}
                   type="button"
@@ -111,7 +97,7 @@ export default function TdsIndexPage() {
                       isSelected ? "text-foreground" : "text-muted-foreground"
                     )}
                   >
-                    {lang === "zh" ? guide.titleZh : guide.title}
+                    {pickText(lang, guide.title, guide.titleZh)}
                   </p>
                   <div
                     className={cn(
@@ -127,6 +113,7 @@ export default function TdsIndexPage() {
                 </button>
               );
             })
+
           )}
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLang } from "@/components/LanguageContext";
+import { pickText } from "@/lib/i18n";
 import type { DocType, Guide, GuideCategory } from "@/types";
 import { cn } from "@/lib/utils";
 import {
@@ -108,7 +109,7 @@ function SidebarContent({
                           )}
                         >
                           <span className="flex-1 truncate">
-                            {lang === "zh" ? cat.nameZh : cat.name}
+                            {pickText(lang, cat.name, cat.nameZh)}
                           </span>
                           {count > 0 && (
                             <Badge
