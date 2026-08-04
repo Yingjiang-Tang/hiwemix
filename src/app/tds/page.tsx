@@ -51,6 +51,19 @@ export default function TdsIndexPage() {
     return r;
   }, [guides, selectedCategory, selectedDocType, searchQuery, lang]);
 
+  // 选中的文档对象（从全部 guides 中查找）
+  const selectedGuide = useMemo(
+    () => guides.find((g) => g.id === selectedGuideId) ?? null,
+    [guides, selectedGuideId]
+  );
+
+  // 列表筛选变化时若当前选中已不在结果中，清空选中
+  useEffect(() => {
+    if (selectedGuideId && !filteredGuides.some((g) => g.id === selectedGuideId)) {
+      setSelectedGuideId(null);
+    }
+  }, [filteredGuides, selectedGuideId]);
+
   return (
     <div className="flex flex-1 flex-col lg:flex-row">
       {/* 左栏：分类菜单 */}
@@ -80,6 +93,9 @@ export default function TdsIndexPage() {
           {filteredGuides.length === 0 ? (
             <p className="py-8 text-center text-xs text-muted-foreground">—</p>
           ) : (
+            filteredGuides.map((guide) => {
+              const isSelected = selectedGuideId === guide.id;
+              return (
                 <button
                   key={guide.id}
                   type="button"
