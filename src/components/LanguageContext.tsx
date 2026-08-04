@@ -3,11 +3,14 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { ENGLISH_DEFAULTS, LANGS, type Lang, type I18nDict } from "@/lib/i18n";
 import { loadDict } from "@/lib/i18n/loader";
+import { getClientCookie, setClientCookie, LANG_COOKIE } from "@/lib/cookies";
 
 // ============================================================
 // Language Context
 // 复刻 Kapci 翻译架构：翻译字典按需异步加载（切语言才下载 chunk），
-// 缺键自动回退英文原文（ENGLISH_DEFAULTS）。语言只存 localStorage，不写 URL。
+// 缺键自动回退英文原文（ENGLISH_DEFAULTS）。
+// 语言存 cookie：服务端组件可用 cookies() 读到，实现首屏正确语言 SSR，
+// 消除英文一闪再变目标语言的 flash。不写 URL。
 // 首帧同步用英文（en 可由 ENGLISH_DEFAULTS 同步构造，无 import 等待），
 // 避免 SSR/客户端 hydration mismatch。
 // ============================================================
@@ -31,7 +34,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLangState(l);
     setLoading(true);
     try {
-      localStorage.setItem("site-language", l);
+      setClientCookie(LANG_COOKIE, l);
     } catch { /* noop */ }
     loadDict(l)
       .then((d) => setT(d))
@@ -42,10 +45,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  // 客户端挂载后从 localStorage 读取真实语言，避免 SSR/客户端不一致
+  // 客户端挂载后从 cookie 读取真实语言，避免 SSR/客户端不一致
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("site-language");
+      const stored = getClientCookie(LANG_COOKIE);
       if (stored && stored !== lang) {
         setLang(stored as Lang);
       }

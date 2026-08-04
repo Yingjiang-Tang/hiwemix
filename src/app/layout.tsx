@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { LanguageProvider } from "@/components/LanguageContext";
 import { AuthProvider } from "@/components/AuthContext";
 import { FavoritesProvider } from "@/components/FavoritesContext";
@@ -6,6 +7,8 @@ import Providers from "@/components/Providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import BackToTop from "@/components/BackToTop";
 import { Noto_Sans_SC, Noto_Sans_Arabic, Noto_Sans_Hebrew, Geist } from "next/font/google";
+import { LANGS } from "@/lib/i18n";
+import { LANG_COOKIE } from "@/lib/cookies";
 
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -24,14 +27,27 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+// 服务端读取语言 cookie：首屏直接输出正确 <html lang>，避免客户端再切换
+async function resolveLangCookie(): Promise<string> {
+  try {
+    const store = await cookies();
+    const stored = store.get(LANG_COOKIE)?.value;
+    if (stored && LANGS.some((l) => l.code === stored)) return stored;
+  } catch {
+    /* 构建期等场景 cookies() 不可用，回退默认 */
+  }
+  return "en";
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const lang = await resolveLangCookie();
   return (
     <html
-      lang="en"
+      lang={lang}
       suppressHydrationWarning
       className={cn("h-full", "antialiased", notoSansSC.variable, notoSansArabic.variable, notoSansHebrew.variable, "font-sans", geist.variable)}
     >
