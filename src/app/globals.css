@@ -215,18 +215,6 @@ body[data-bg-state="white"] {
   background: #ffffff !important;
 }
 
-/* ===== 认证页 — 纯白卡片 ===== */
-/* 移除液态玻璃毛玻璃效果，改回简洁纯白卡片 */
-.glass-card {
-  background: #ffffff;
-  box-shadow:
-    0 8px 24px -8px rgba(29, 111, 176, 0.2),
-    0 24px 48px -12px rgba(29, 111, 176, 0.25);
-  border: 1px solid rgba(29, 111, 176, 0.12);
-  position: relative;
-  overflow: hidden;
-}
-
 /* ===== 认证页 — 强制亮色主题（蓝白渐变背景 + 白色卡片） ===== */
 /* 项目默认暗色（html.dark），认证页需固定为亮色变量，否则卡片会随主题变深 */
 .auth-light {
@@ -476,94 +464,55 @@ html, body {
 /* ===== 配方抽屉移动端修复 =====
    手机（<768px）触屏上，抽屉若保持 fixed + 视口高度锁定 + 内层 overflow-auto，
    会形成"抽屉→左栏→表格"多层嵌套滚动，手指滑动被内层容器拦截导致划不动。
-   这里让抽屉在手机上脱离固定定位、内容随页面自然滚动，消除嵌套滚动。 */
-/* ===== 配方抽屉：移动端流式 + 桌面端全屏 =====
-   手机（<768px）触屏上，抽屉若保持 fixed + 视口高度锁定 + 内层 overflow-auto，
-   会形成"抽屉→左栏→表格"多层嵌套滚动，手指滑动被内层容器拦截导致划不动。
-   因此默认（移动端）让抽屉脱离固定定位、内容随页面自然滚动；
-   桌面端（≥768px）才固定为全屏抽屉。 */
-.formula-drawer,
-.formula-drawer[data-slot="sheet-content"] {
-  position: static !important;
-  inset: auto !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: auto !important;
-  min-height: 0 !important;
-  overflow: visible !important;
-  transform: none !important;
-  z-index: auto !important;
-  display: block !important;
-  box-shadow: none !important;
-  border: none !important;
-}
-
-/* 两栏改纵向堆叠 */
-.formula-drawer .md\:flex-row {
-  display: block !important;
-}
-.formula-drawer [class*="md:flex-[62.5%]"],
-.formula-drawer [class*="md:flex-[37.5%]"],
-.formula-drawer [class*="md:border-r"],
-.formula-drawer [class*="md:border-b-0"] {
-  flex: none !important;
-  border: none !important;
-  overflow: visible !important;
-}
-
-/* 左栏/右栏从滚动容器变为自然流式，表格不再被限高 */
-.formula-drawer .flex-1.overflow-auto,
-.formula-drawer .flex-shrink-0.overflow-auto {
-  overflow: visible !important;
-}
-.formula-drawer .sticky {
-  position: static !important;
-}
-
-/* 抽屉遮罩默认隐藏（抽屉为页面内联展示，不需要遮罩层） */
-.formula-drawer [data-slot="sheet-overlay"] {
-  display: none !important;
-}
-
-/* 桌面端：恢复全屏固定抽屉 */
-@media (min-width: 768px) {
+   移动端让抽屉脱离固定定位、内容随页面自然滚动，消除嵌套滚动。
+   桌面端（≥768px）由 FormulaDrawer 的 md: 响应式类接管为全屏抽屉。 */
+@media (max-width: 767.98px) {
   .formula-drawer,
   .formula-drawer[data-slot="sheet-content"] {
-    position: fixed !important;
-    inset: 0 !important;
-    width: 100vw !important;
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
     max-width: 100% !important;
-    height: 100vh !important;
+    height: auto !important;
     min-height: 0 !important;
-    overflow-y: auto !important;
-    z-index: 2000 !important;
-    display: flex !important;
-    flex-direction: column !important;
+    overflow: visible !important;
+    transform: none !important;
+    z-index: auto !important;
+    display: block !important;
+    box-shadow: none !important;
     border: none !important;
   }
 
+  /* 两栏改纵向堆叠 */
   .formula-drawer .md\:flex-row {
-    display: flex !important;
+    display: block !important;
   }
   .formula-drawer [class*="md:flex-[62.5%]"],
   .formula-drawer [class*="md:flex-[37.5%]"],
   .formula-drawer [class*="md:border-r"],
   .formula-drawer [class*="md:border-b-0"] {
-    flex: 1 1 auto !important;
-    border-right: 1px solid var(--color-border) !important;
-    overflow: auto !important;
+    flex: none !important;
+    border: none !important;
+    overflow: visible !important;
   }
-  .formula-drawer .sticky {
-    position: sticky !important;
-  }
+
+  /* 左栏/右栏从滚动容器变为自然流式，表格不再被限高 */
   .formula-drawer .flex-1.overflow-auto,
   .formula-drawer .flex-shrink-0.overflow-auto {
-    overflow: auto !important;
+    overflow: visible !important;
+  }
+  .formula-drawer .sticky {
+    position: static !important;
+  }
+
+  /* 抽屉遮罩隐藏（移动端抽屉为页面内联展示，不需要遮罩层） */
+  .formula-drawer [data-slot="sheet-overlay"] {
+    display: none !important;
   }
 }
 
-@media (max-width: 767.98px) {
-  /* 移动端打印也保持流式 */
+/* 移动端打印也保持流式 */
+@media print {
   .formula-drawer {
     position: static !important;
   }

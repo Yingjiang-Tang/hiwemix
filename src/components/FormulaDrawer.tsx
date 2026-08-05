@@ -180,7 +180,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   return (
     <>
       <Sheet open onOpenChange={(v) => { if (!v) handleClose(); }}>
-        <SheetContent side="right" className="formula-print-area formula-drawer p-0 gap-0 bg-card z-[2000]">
+        <SheetContent side="right" className="formula-print-area formula-drawer p-0 gap-0 bg-card z-[2000] md:!fixed md:!inset-0 md:!w-screen md:!max-w-none md:!h-screen md:!translate-x-0 md:!rounded-none md:!overflow-y-auto md:!z-[2000]">
           {/* Header Bar: 品牌/颜色代码/名称/元数据 + 操作按钮
               左内边距与下方配方栏 px-[60px] 对齐，标题左边缘与配方表格左边缘齐平 */}
           <div className="sticky top-0 z-10 border-b border-border bg-card pl-[60px] pr-[60px] py-5 sm:py-6">

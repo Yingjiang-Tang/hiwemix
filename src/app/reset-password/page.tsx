@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import TwoPanelLayout from "@/components/auth/TwoPanelLayout";
+import { AuthCard } from "@/components/auth/AuthCard";
+import { AuthPageLayout } from "@/components/auth/AuthPageLayout";
 import { createClient } from "@/lib/supabase/client";
 import { getEmailRedirectTo } from "@/lib/auth-redirect";
 import Link from "next/link";
@@ -173,9 +173,9 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <TwoPanelLayout>
-      <Card className="glass-card rounded-[26px] border-border/60 shadow-sm">
-        <CardContent className="mx-auto flex w-full max-w-[360px] flex-col gap-5 pt-6 pb-5">
+    <AuthPageLayout>
+      <AuthCard>
+        <div className="flex min-h-[700px] flex-col gap-5 p-6 pt-6 md:p-8">
           {/* Step 1: 输入邮箱 */}
           {step === "email" && (
             <>
@@ -316,14 +316,14 @@ export default function ResetPasswordPage() {
 
           {/* 底部链接 */}
           {step === "email" && (
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="mt-auto pt-6 text-center text-xs text-muted-foreground">
               <Link href="/login" className="font-medium text-primary hover:underline">
                 Back to sign in
               </Link>
             </p>
           )}
-        </CardContent>
-      </Card>
-    </TwoPanelLayout>
+        </div>
+      </AuthCard>
+    </AuthPageLayout>
   );
 }
