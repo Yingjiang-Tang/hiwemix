@@ -88,16 +88,27 @@
 }
 
 [data-header-theme="home"] {
-  /* 首页：透明背景 + 黑灰字，悬浮在 Hero 顶部白色渐变区 */
-  --header-bg: transparent;
+  /* 首页：白色背景 + 黑灰字（浅色模式） */
+  --header-bg: #ffffff;
   --header-text: #1f2937;
   --header-text-muted: rgba(31, 41, 55, 0.65);
-  --header-border: transparent;
+  --header-border: #e5e7eb;
   --header-hover-bg: rgba(31, 41, 55, 0.08);
-  /* 把白色 logo 染成品牌蓝 (#2487ca)，与黑灰文字形成对比 */
-  --header-logo-filter: brightness(0) saturate(100%) invert(43%) sepia(95%) saturate(405%) hue-rotate(176deg) brightness(94%) contrast(92%);
+  /* logo 已自带品牌色，直接显示原图 */
+  --header-logo-filter: none;
   --header-position: fixed;
-  --header-bottom-border: transparent;
+  --header-bottom-border: #e5e7eb;
+}
+
+/* 首页 Header 在暗色模式下：覆盖为暗色背景 + 浅色文字（自身声明优先级高于继承值） */
+.dark [data-header-theme="home"] {
+  --header-bg: var(--background);
+  --header-text: var(--foreground);
+  --header-text-muted: var(--muted-foreground);
+  --header-border: var(--border);
+  --header-hover-bg: rgba(255, 255, 255, 0.06);
+  --header-position: fixed;
+  --header-bottom-border: var(--border);
 }
 
 /* 导航链接 hover/激活 */
@@ -117,17 +128,60 @@
 }
 
 /* 首页 Header：右侧按钮统一黑灰线框风格 */
-[data-header-theme="home"] header a[href="/login"],
+/* 登录按钮：透明底 + 品牌蓝边框（全站统一） */
+.header-login-btn {
+  background: transparent;
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.header-login-btn:hover {
+  background: rgba(36, 135, 202, 0.08);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* 首页 Header：右侧其他按钮统一黑灰线框风格（登录按钮除外，走 .header-login-btn） */
 [data-header-theme="home"] header .header-action-btn {
   background: transparent !important;
   color: #1f2937 !important;
   border-color: rgba(31, 41, 55, 0.5) !important;
 }
-[data-header-theme="home"] header a[href="/login"]:hover,
 [data-header-theme="home"] header .header-action-btn:hover {
   background: rgba(31, 41, 55, 0.08) !important;
   border-color: #1f2937 !important;
   color: #1f2937 !important;
+}
+[data-header-theme="home"] header a[href="/login"] {
+  background: transparent !important;
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+[data-header-theme="home"] header a[href="/login"]:hover {
+  background: rgba(36, 135, 202, 0.08) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}
+
+/* 首页 Header 暗色模式：其他按钮反转为浅色文字线框（登录按钮保持品牌蓝） */
+.dark [data-header-theme="home"] header .header-action-btn {
+  background: transparent !important;
+  color: var(--header-text) !important;
+  border-color: var(--header-border) !important;
+}
+.dark [data-header-theme="home"] header .header-action-btn:hover {
+  background: var(--header-hover-bg) !important;
+  border-color: var(--header-text) !important;
+  color: var(--header-text) !important;
+}
+.dark [data-header-theme="home"] header a[href="/login"] {
+  background: transparent !important;
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+.dark [data-header-theme="home"] header a[href="/login"]:hover {
+  background: rgba(36, 135, 202, 0.08) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
 }
 
 /* ===== shadcn/ui semantic tokens ===== */

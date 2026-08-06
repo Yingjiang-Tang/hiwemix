@@ -65,8 +65,8 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
           transition: transitionStyle,
         }}
       >
-        <div className="mx-auto flex h-[79px] items-center justify-between px-6 sm:px-8 md:px-[60px]">
-          {/* Logo + 导航 左侧容器 */}
+        <div className="relative mx-auto flex h-[79px] items-center justify-between px-6 sm:px-8 md:px-[60px]">
+          {/* Logo 左侧容器 */}
           <div className="flex items-center gap-6 shrink-0">
           <a
             href="https://www.hiwe.com"
@@ -78,12 +78,12 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
               src="/hiwemix2-01.png"
               alt="HIWE MIX"
               className="h-5 w-auto object-contain block md:h-8 transition-all duration-[1.5s] ease-in-out"
-              style={{ filter: "var(--header-logo-filter)" }}
             />
           </a>
+          </div>
 
-          {/* 导航链接 左对齐紧随Logo */}
-          <div className="hidden md:flex">
+          {/* 导航链接 水平居中于 header */}
+          <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <div className="flex items-center gap-[34px]">
               {navItems.map((item) => {
                 const active = isActive(item.href);
@@ -103,7 +103,6 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
           </div>
 
           {/* 右侧操作区 */}
-          </div>
           <div className="flex items-center gap-3 shrink-0 z-[1]">
             {authUser ? (
               <>
@@ -134,7 +133,7 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
             ) : (
               <Link
                 href="/login"
-                className="inline-flex h-8 items-center rounded-lg bg-primary px-3 text-2xs font-medium text-white transition-all duration-[1.5s] ease-in-out"
+                className="header-login-btn inline-flex h-8 items-center rounded-lg border px-6 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
                 style={{ transition: transitionStyle }}
               >
                 {t.login}
