@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useLang } from "@/components/LanguageContext";
 import { useFavorites } from "@/components/FavoritesContext";
 import { colorSwatchStyle, cn } from "@/lib/utils";
+import { getColorPhotoCandidates } from "@/lib/color-photo";
 import type { FormulaTableRow } from "@/types";
 import { formatYearEntry } from "@/lib/db-formula";
 import { Spinner } from "@/components/ui/spinner";
@@ -34,7 +35,7 @@ function SectionTitle({ label, id }: { label: string; id: string }) {
   );
 }
 
-// ===== 子卡片组件：浮层内展示变体差异信息 =====
+// ===== 子卡片组件：浮层内展示变体差异信息，悬停时放大展示颜色照片 =====
 function VariantSubCard({
   row,
   onClick,
@@ -46,10 +47,16 @@ function VariantSubCard({
   const displayTitle = row.variant?.name || row.formula.version;
   const displayYear = row.variant?.year_range || (row.yearEntry ? formatYearEntry(row.yearEntry) : "");
   const displayMeta = `${row.formula.paint_system} | ${row.formula.formula_type}`;
+  // 颜色照片：差异化行优先专属图 {color_id}.jpg，否则回退 {code}.jpg；再失败回退纯色块
+  const photoCandidates = getColorPhotoCandidates(row.color);
+  const [photoIdx, setPhotoIdx] = useState(0);
+  const photoSrc = photoCandidates[Math.min(photoIdx, photoCandidates.length - 1)] ?? null;
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const usePhoto = !photoFailed && photoSrc != null;
 
   return (
     <div
-      className="group relative h-20 w-20 cursor-pointer overflow-hidden transition-all duration-300 ease-in-out active:scale-[0.95]"
+      className="group relative h-36 w-36 cursor-pointer overflow-hidden rounded-xl transition-all duration-300 ease-in-out active:scale-[0.95]"
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -61,28 +68,43 @@ function VariantSubCard({
       }}
       aria-label={`${displayTitle} ${displayYear}`}
     >
-      {/* 色块背景 */}
-      <div
-        className="absolute inset-0"
-        style={
-          hex ? colorSwatchStyle(hex) : { backgroundColor: "#d1d5db" }
-        }
-      />
+      {/* 颜色照片（存在则显示）或纯色块背景 */}
+      {usePhoto ? (
+        <Image
+          src={photoSrc}
+          alt={`${displayTitle} ${displayYear}`}
+          fill
+          sizes="144px"
+          className="absolute inset-0 object-cover"
+          onError={() => {
+            if (photoIdx < photoCandidates.length - 1) {
+              setPhotoIdx((i) => i + 1);
+            } else {
+              setPhotoFailed(true);
+            }
+          }}
+        />
+      ) : (
+        <div
+          className="absolute inset-0"
+          style={hex ? colorSwatchStyle(hex) : { backgroundColor: "#d1d5db" }}
+        />
+      )}
 
       {/* 悬停遮罩 */}
       <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
       {/* 变体差异信息 */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 p-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <p className="max-w-full truncate text-center font-mono text-xs font-bold text-white">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <p className="max-w-full truncate text-center font-mono text-base font-bold text-white">
           {displayTitle}
         </p>
         {displayYear && (
-          <p className="max-w-full truncate text-center text-[10px] text-white/80">
+          <p className="max-w-full truncate text-center text-xs text-white/80">
             {displayYear}
           </p>
         )}
-        <p className="max-w-full truncate text-center text-[9px] leading-tight text-white/70">
+        <p className="max-w-full truncate text-center text-[11px] leading-tight text-white/70">
           {displayMeta}
         </p>
       </div>
@@ -106,11 +128,13 @@ function GroupedColorCard({
   // 收藏以该颜色下的第一个配方为对象（与抽屉内收藏同一粒度）
   const favFormula = parent.formula;
   const isFav = isFavorite(favFormula.id);
-  // 颜色卡片照片：public/images/colors/<CODE>.jpg 存在则显示真实车漆照片，否则回退纯色块
-  // 文件名不允许含 "/"，故将 color_code 中的 "/" 去除后匹配（如 C2/45U -> C245U.jpg）
-  const photoSrc = `/images/colors/${parent.color.color_code.replace(/\//g, "").toUpperCase()}.jpg`;
+  // 颜色卡片照片：差异化行优先 {color_id}.jpg，否则回退 {CODE}.jpg；失败再回退纯色块
+  // （文件名不允许含 "/"，故将 color_code 中的 "/" 去除后大写，如 C2/45U -> C245U.jpg）
+  const photoCandidates = getColorPhotoCandidates(parent.color);
+  const [photoIdx, setPhotoIdx] = useState(0);
+  const photoSrc = photoCandidates[Math.min(photoIdx, photoCandidates.length - 1)] ?? null;
   const [photoFailed, setPhotoFailed] = useState(false);
-  const usePhoto = !photoFailed;
+  const usePhoto = !photoFailed && photoSrc != null;
   const [open, setOpen] = useState(false);
   const openTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -193,7 +217,14 @@ function GroupedColorCard({
           sizes="300px"
           className="absolute inset-0 object-cover"
           priority={false}
-          onError={() => setPhotoFailed(true)}
+          onError={() => {
+            // 差异化行优先专属图，加载失败时逐级回退到 {code}.jpg，再失败才退纯色块
+            if (photoIdx < photoCandidates.length - 1) {
+              setPhotoIdx((i) => i + 1);
+            } else {
+              setPhotoFailed(true);
+            }
+          }}
         />
       ) : (
         <div
@@ -281,11 +312,11 @@ function GroupedColorCard({
           side="bottom"
           align="start"
           sideOffset={8}
-          className="w-auto border border-border/60 bg-popover p-3 shadow-lg"
+          className="w-auto border border-border/60 bg-popover p-4 shadow-lg"
           onMouseEnter={handlePopoverEnter}
           onMouseLeave={handlePopoverLeave}
         >
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             {rows.map((row, idx) => (
               <VariantSubCard
                 key={idx}

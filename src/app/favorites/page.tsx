@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Heart, Search, RotateCcw, X } from "lucide-react";
 import { classifyColorFamily, COLOR_FAMILIES, type ColorFamily } from "@/lib/utils";
+import { getColorPhotoCandidates } from "@/lib/color-photo";
 import type { Color, Formula, SearchResult } from "@/types";
 
 // 复用首页的配方抽屉（懒加载）
@@ -24,20 +25,38 @@ const FormulaDrawer = dynamic(() => import("@/components/FormulaDrawer"), {
 const ALL_FAMILIES = "all";
 
 // 卡片背景：优先真实车漆照片，加载失败/无照片时回退纯色块
-function CardSwatch({ photoSrc, hex, alt }: { photoSrc: string | null; hex: string; alt: string }) {
+// photoCandidates 为空数组时直接回退纯色块
+function CardSwatch({
+  photoCandidates,
+  hex,
+  alt,
+}: {
+  photoCandidates: string[];
+  hex: string;
+  alt: string;
+}) {
   const [photoFailed, setPhotoFailed] = useState(false);
-  if (!photoSrc || photoFailed) {
+  const [photoIdx, setPhotoIdx] = useState(0);
+  const src = photoCandidates[Math.min(photoIdx, photoCandidates.length - 1)] ?? null;
+  if (photoCandidates.length === 0 || photoFailed || !src) {
     return <div className="absolute inset-0" style={{ backgroundColor: hex }} />;
   }
   return (
     <Image
-      src={photoSrc}
+      src={src}
       alt={alt}
       fill
       sizes="300px"
       className="absolute inset-0 object-cover"
       priority={false}
-      onError={() => setPhotoFailed(true)}
+      onError={() => {
+        // 差异化行优先专属图，加载失败时逐级回退到 {code}.jpg，再失败才退纯色块
+        if (photoIdx < photoCandidates.length - 1) {
+          setPhotoIdx((i) => i + 1);
+        } else {
+          setPhotoFailed(true);
+        }
+      }}
     />
   );
 }
@@ -206,9 +225,7 @@ export default function FavoritesPage() {
                 style={{ ["--card-delay" as string]: "0s" }}
               >
                 {filtered.map(({ snap, color, hex }) => {
-                  const photoSrc = color
-                    ? `/images/colors/${color.color_code.replace(/\//g, "").toUpperCase()}.jpg`
-                    : null;
+                  const photoCandidates = color ? getColorPhotoCandidates(color) : [];
                   return (
                     <div key={snap.formula_id} className="animate-card-row mb-[70px] w-[87.5%]">
                       {/* 圆角矩形卡片：色块/照片 + 圆角 + 边框，与整页卡片风格一致 */}
@@ -221,8 +238,8 @@ export default function FavoritesPage() {
                         aria-label={`${snap.color_code} ${snap.color_name}`}
                       >
                         <div className="relative aspect-square w-full">
-                          {photoSrc ? (
-                            <CardSwatch photoSrc={photoSrc} hex={hex} alt={`${snap.color_code} ${snap.color_name}`} />
+                          {photoCandidates.length > 0 ? (
+                            <CardSwatch photoCandidates={photoCandidates} hex={hex} alt={`${snap.color_code} ${snap.color_name}`} />
                           ) : (
                             <div className="absolute inset-0" style={{ backgroundColor: hex }} />
                           )}

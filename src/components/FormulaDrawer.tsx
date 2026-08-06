@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import type { SearchResult, Formula, FormulaComponent, ComponentGroup, YearEntry } from "@/types";
 import { colorSwatchStyle } from "@/lib/utils";
+import { getColorPhotoCandidates } from "@/lib/color-photo";
 import { formatYearEntry } from "@/lib/db-formula";
 import { useLang } from "@/components/LanguageContext";
 import { useFavorites } from "@/components/FavoritesContext";
@@ -78,6 +79,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   // 颜色照片加载失败时回退纯色块（与首页卡片同一套逻辑）
   const [photoFailed, setPhotoFailed] = useState(false);
+  const [photoIdx, setPhotoIdx] = useState(0);
 
   useEffect(() => {
     fetch("/api/brands").then((r) => r.ok ? r.json() : []).then((d) => setBrands(d)).catch(() => setBrands([]));
@@ -94,6 +96,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
       setHexInput(result.color.hex_preview);
       setActiveGroup("Pearl Paint");
       setPhotoFailed(false);
+      setPhotoIdx(0);
 
       // 配方查看事件（打开抽屉即记一次；附带品牌/色号/颜色名）
       const make = brands.find((m) => m.id === result.color.make_id)?.name ?? result.color.make_id;
@@ -135,8 +138,9 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   const origin = brands.find((m) => m.id === color.make_id)?.region ?? "-";
   const activeFormula = formulas[activeFormulaIdx];
   const previewColor = parseHexInput(hexInput, color.hex_preview);
-  // 颜色照片路径：public/images/colors/<CODE>.jpg（去掉 color_code 中的 "/"，与首页卡片一致）
-  const photoSrc = `/images/colors/${color.color_code.replace(/\//g, "").toUpperCase()}.jpg`;
+  // 颜色照片路径：差异化行优先 {color_id}.jpg，否则回退 {code}.jpg（去掉 "/" 后大写）
+  const photoCandidates = getColorPhotoCandidates(color);
+  const photoSrc = photoCandidates[Math.min(photoIdx, photoCandidates.length - 1)] ?? null;
 
   let displayedFormula: Formula | null = activeFormula ?? null;
   const isGroupedType = activeFormula?.formula_type === "Three Stages";
@@ -277,14 +281,21 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
               {/* 颜色预览：正方形，照片优先，加载失败回退纯色块（与首页卡片一致） */}
               <div className="px-[60px] py-[30px]">
                 <div className="relative aspect-square w-full overflow-hidden rounded-[35px] border border-border/60">
-                  {!photoFailed ? (
+                  {!photoFailed && photoSrc ? (
                     <Image
                       src={photoSrc}
                       alt={`${color.color_code} ${color.color_name}`}
                       fill
                       sizes="(max-width: 768px) 100vw, 37vw"
                       className="absolute inset-0 object-cover"
-                      onError={() => setPhotoFailed(true)}
+                      onError={() => {
+                        // 差异化行优先专属图，加载失败时逐级回退到 {code}.jpg，再失败才退纯色块
+                        if (photoIdx < photoCandidates.length - 1) {
+                          setPhotoIdx((i) => i + 1);
+                        } else {
+                          setPhotoFailed(true);
+                        }
+                      }}
                     />
                   ) : (
                     <div className="absolute inset-0" style={colorSwatchStyle(previewColor)} />
