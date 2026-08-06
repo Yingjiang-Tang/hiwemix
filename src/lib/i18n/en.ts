@@ -7,7 +7,7 @@ const dict_en = dict({
     heroTitlePrefix: "Find Your",
     heroTitleHighlight: "Perfect Match",
     heroBadge: "Professional Refinish Formula System",
-    heroSubtitle: "Formulate professional, classic, and premium finishes with HIWE toners and additives.\nMatched by brand, year, or color code in seconds.",
+    heroSubtitle: "Instant formula match by brand, year, or color code.",
     heroTrust1: "500,000+ Formulas",
     heroTrust2: "50+ Auto Brands",
     heroTrust3: "Global Paint Database",

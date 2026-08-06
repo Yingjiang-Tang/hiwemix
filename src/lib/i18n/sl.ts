@@ -7,7 +7,7 @@ const dict_sl = dict({
     heroTitlePrefix: "Poiščite svoje",
     heroTitleHighlight: "popolno ujemanje",
     heroBadge: "Profesionalni sistem formul za popravila laka",
-    heroSubtitle: "Zanesljiva platforma za mešanje barv za avtokleparske delavnice po vsem svetu. Poiščite natančne mešalne formule po znamki, letniku ali barvni kodi v nekaj sekundah.",
+    heroSubtitle: "Natančne mešalne formule po znamki, letniku ali barvni kodi.",
     heroTrust1: "500.000+ formul",
     heroTrust2: "50+ avtomobilskih znamk",
     heroTrust3: "Globalna baza barv",

@@ -7,7 +7,7 @@ const dict_tr = dict({
     heroTitlePrefix: "Bul",
     heroTitleHighlight: "kusursuz eşleşme",
     heroBadge: "Profesyonel Oto Boya Formül Sistemi",
-    heroSubtitle: "Dünya çapında kaporta atölyeleri için güvenilir boya formülü platformu. Marka, yıl veya renk koduna göre hassas karışım formüllerini saniyeler içinde bulun.",
+    heroSubtitle: "Marka, yıl veya renk koduna göre hassas karışım formülleri.",
     heroTrust1: "500.000+ Formül",
     heroTrust2: "50+ Otomobil Markası",
     heroTrust3: "Küresel Boya Veritabanı",

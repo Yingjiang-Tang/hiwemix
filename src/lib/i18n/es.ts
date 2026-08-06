@@ -7,7 +7,7 @@ const dict_es = dict({
     heroTitlePrefix: "Encuentra tu",
     heroTitleHighlight: "coincidencia perfecta",
     heroBadge: "Sistema profesional de fórmulas de retoque",
-    heroSubtitle: "Plataforma confiable de fórmulas de pintura para talleres de carrocería en todo el mundo. Encuentra fórmulas de mezcla precisas por marca, año o código de color en segundos.",
+    heroSubtitle: "Fórmulas precisas por marca, año o código de color.",
     heroTrust1: "500.000+ fórmulas",
     heroTrust2: "50+ marcas de auto",
     heroTrust3: "Base de datos global de pintura",

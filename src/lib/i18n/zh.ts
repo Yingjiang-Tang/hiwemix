@@ -7,7 +7,7 @@ const dict_zh = dict({
     heroTitlePrefix: "寻找你的",
     heroTitleHighlight: "完美匹配",
     heroBadge: "专业汽车修补漆配方系统",
-    heroSubtitle: "值得信赖的汽车调漆配方平台，服务全球车身维修车间。通过品牌、年份或颜色代码，数秒内即可精准匹配调漆配方。",
+    heroSubtitle: "品牌、年份、色码，即刻精准匹配。",
     heroTrust1: "50万+ 配方",
     heroTrust2: "50+ 汽车品牌",
     heroTrust3: "全球油漆数据库",

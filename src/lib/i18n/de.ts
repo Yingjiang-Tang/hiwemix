@@ -7,7 +7,7 @@ const dict_de = dict({
     heroTitlePrefix: "Finden Sie Ihr",
     heroTitleHighlight: "perfektes Match",
     heroBadge: "Professionelles Autolackier-Formelsystem",
-    heroSubtitle: "Vertrauenswürdige Lackmischplattform für Karosseriewerkstätten weltweit. Finden Sie präzise Mischformeln nach Marke, Baujahr oder Farbcode in Sekundenschnelle.",
+    heroSubtitle: "Präzise Mischformeln nach Marke, Baujahr oder Farbcode.",
     heroTrust1: "500.000+ Formeln",
     heroTrust2: "50+ Automarken",
     heroTrust3: "Globale Lackdatenbank",

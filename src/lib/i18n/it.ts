@@ -7,7 +7,7 @@ const dict_it = dict({
     heroTitlePrefix: "Trova la tua",
     heroTitleHighlight: "corrispondenza perfetta",
     heroBadge: "Sistema professionale di formule per ritocchi auto",
-    heroSubtitle: "Piattaforma affidabile di formule di verniciatura per carrozzerie di tutto il mondo. Trova formule di miscelazione precise per marca, anno o codice colore in pochi secondi.",
+    heroSubtitle: "Formule precise per marca, anno o codice colore.",
     heroTrust1: "500.000+ formule",
     heroTrust2: "50+ marche auto",
     heroTrust3: "Database vernici globale",

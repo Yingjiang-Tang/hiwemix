@@ -7,7 +7,7 @@ const dict_nl = dict({
     heroTitlePrefix: "Vind uw",
     heroTitleHighlight: "perfecte match",
     heroBadge: "Professioneel autoretouche formulesysteem",
-    heroSubtitle: "Vertrouwd platform voor lakmengformules voor carrosseriebedrijven wereldwijd. Vind nauwkeurige mengformules op merk, bouwjaar of kleurcode in seconden.",
+    heroSubtitle: "Nauwkeurige mengformules op merk, bouwjaar of kleurcode.",
     heroTrust1: "500.000+ formules",
     heroTrust2: "50+ automerken",
     heroTrust3: "Wereldwijde lakdatabase",
