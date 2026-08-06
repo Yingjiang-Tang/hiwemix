@@ -26,6 +26,8 @@ export function RegisterForm({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [facebookLoading, setFacebookLoading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
@@ -80,7 +82,7 @@ export function RegisterForm({
 
   // Google OAuth 登录
   async function handleGoogleLogin() {
-    setLoading(true);
+    setGoogleLoading(true);
     setError("");
     setInfo("");
     try {
@@ -93,17 +95,17 @@ export function RegisterForm({
       });
       if (oauthError) {
         setError(getErrorMessage(oauthError, t.oauthGoogleFailed));
-        setLoading(false);
+        setGoogleLoading(false);
       }
     } catch {
       setError(t.oauthUnavailable);
-      setLoading(false);
+      setGoogleLoading(false);
     }
   }
 
   // Facebook OAuth 登录
   async function handleFacebookLogin() {
-    setLoading(true);
+    setFacebookLoading(true);
     setError("");
     setInfo("");
     try {
@@ -116,11 +118,11 @@ export function RegisterForm({
       });
       if (oauthError) {
         setError(getErrorMessage(oauthError, t.oauthFacebookFailed));
-        setLoading(false);
+        setFacebookLoading(false);
       }
     } catch {
       setError(t.oauthUnavailable);
-      setLoading(false);
+      setFacebookLoading(false);
     }
   }
 
@@ -195,11 +197,11 @@ export function RegisterForm({
             <Button
               type="button"
               variant="outline"
-              disabled={loading}
+              disabled={loading || googleLoading}
               onClick={handleGoogleLogin}
               className="h-11 w-full rounded-xl text-sm font-medium text-foreground transition-all hover:scale-[1.01] hover:bg-muted/50"
             >
-              {loading ? (
+              {googleLoading ? (
                 <Spinner className="size-4" />
               ) : (
                 <>
@@ -230,11 +232,11 @@ export function RegisterForm({
             <Button
               type="button"
               variant="outline"
-              disabled={loading}
+              disabled={loading || facebookLoading}
               onClick={handleFacebookLogin}
               className="h-11 w-full rounded-xl text-sm font-medium text-foreground transition-all hover:scale-[1.01] hover:bg-muted/50"
             >
-              {loading ? (
+              {facebookLoading ? (
                 <Spinner className="size-4" />
               ) : (
                 <>
