@@ -37,6 +37,7 @@ export default function Footer({ isLightBackground = false }: { isLightBackgroun
   const navItems: { label: string; href: string }[] = [
     { label: t.navFormulaSearch, href: "/" },
     { label: t.navColorLibrary, href: "/color-library" },
+    { label: t.navFavorites, href: "/favorites" },
     { label: t.navTds, href: "/tds" },
   ];
 
