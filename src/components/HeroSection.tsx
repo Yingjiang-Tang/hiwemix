@@ -102,8 +102,7 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
       {/* ---- 内容层 ---- */}
       <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-center justify-center px-6 text-white -translate-y-[50px]">
         <h1
-          className="font-heading mt-6 text-center font-medium leading-[1.05] tracking-tight whitespace-nowrap"
-          style={{ fontSize: "80px" }}
+          className="hero-title-mobile font-heading mt-6 text-center font-medium leading-[1.1] tracking-tight text-[54px] md:leading-[1.05] md:text-[80px]"
         >
           <ShinyText
             text={`${t.heroTitlePrefix} ${t.heroTitleHighlight}`}
@@ -117,8 +116,8 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
           <button
             onClick={onExplore}
             type="button"
-          style={{ fontSize: "19px", fontWeight: 400 }}
-          className="group inline-flex items-center gap-2 rounded-full bg-transparent px-9 py-4 capitalize tracking-[0.15em] text-white transition-all duration-300 ease-out hover:bg-white/10 hover:scale-105 active:scale-95 font-[family-name:var(--font-sans)]"
+          style={{ fontSize: "19px", fontWeight: 300 }}
+          className="group inline-flex items-center gap-2 rounded-full bg-transparent px-9 py-4 capitalize tracking-[0.08em] text-white transition-all duration-300 ease-out hover:bg-white/10 hover:scale-105 active:scale-95 font-[family-name:var(--font-sans)]"
           >
             {t.heroCta}
             <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />

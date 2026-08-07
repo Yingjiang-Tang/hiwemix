@@ -114,15 +114,20 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
 
   const handleClose = useCallback(() => { onClose(); }, [onClose]);
 
+  // 打印结束清理：监听器在组件挂载时注册，确保 Chrome 中 afterprint 无论同步/异步派发都能收到
+  // （若在 window.print() 之后才注册，遇到同步派发的浏览器会错过事件导致 printing-formula 残留）
+  useEffect(() => {
+    function removePrintingMark() {
+      document.documentElement.classList.remove("printing-formula");
+    }
+    window.addEventListener("afterprint", removePrintingMark);
+    return () => window.removeEventListener("afterprint", removePrintingMark);
+  }, []);
+
   function handlePrint() {
     // 打印前标记：CSS 只打印抽屉内容，隐藏首页其余部分（打印按钮的 beforeprint 在 window.print 前触发）
     document.documentElement.classList.add("printing-formula");
     window.print();
-    // 打印对话框关闭后移除标记，恢复屏幕显示
-    window.addEventListener("afterprint", function restore() {
-      document.documentElement.classList.remove("printing-formula");
-      window.removeEventListener("afterprint", restore);
-    });
   }
 
   useEffect(() => {
@@ -186,18 +191,23 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
       <Sheet open onOpenChange={(v) => { if (!v) handleClose(); }}>
         <SheetContent side="right" className="formula-print-area formula-drawer p-0 gap-0 bg-card z-[2000] md:!fixed md:!inset-0 md:!w-screen md:!max-w-none md:!h-screen md:!translate-x-0 md:!rounded-none md:!overflow-y-auto md:!z-[2000]">
           {/* Header Bar: 品牌/颜色代码/名称/元数据 + 操作按钮
-              左内边距与下方配方栏 px-[60px] 对齐，标题左边缘与配方表格左边缘齐平 */}
-          <div className="sticky top-0 z-10 border-b border-border bg-card pl-[60px] pr-[60px] py-5 sm:py-6">
+              桌面端：Logo+标题+操作按钮单行，左内边距与配方栏 px-[60px] 对齐；
+              移动端：改两行——第一行 Logo(隐藏)+标题+关闭，第二行操作按钮 */}
+          <div className="sticky top-0 z-10 border-b border-border bg-card px-4 py-3 md:px-[60px] md:py-5">
+            {/* 第一行：品牌 Logo（仅桌面）+ 标题 + 关闭 */}
             <div className="flex items-center gap-3 sm:gap-4">
-              {/* 品牌 Logo */}
               <img
                 src="/hiwemix2-01.png"
                 alt="HIWE"
-                className="h-[26px] w-auto object-contain"
+                className="hidden md:block h-[26px] w-auto object-contain"
               />
-              {/* 标题：品牌 车型 | 配方代码 | 颜色名称 */}
+              {/* 标题：品牌 车型 | 配方代码 | 颜色名称
+                  移动端单行强制截断（nowrap+ellipsis），避免长车型名把 header 撑高 */}
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-[16px] font-extrabold leading-tight text-foreground sm:text-[20px] font-[family-name:var(--font-sans)]">
+                <h2
+                  className="text-[15px] font-extrabold leading-tight text-foreground sm:text-[20px] font-[family-name:var(--font-sans)]"
+                  style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                >
                   <span className="font-normal text-primary dark:text-white">{make}</span>
                   {color.car_model && (
                     <>
@@ -211,8 +221,8 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
                 </h2>
               </div>
 
-              {/* 右侧操作按钮：圆形图标按钮（Favorite/打印/复制），整体左移 10px */}
-              <div className="relative left-[-10px] flex items-center gap-2.5 flex-shrink-0">
+              {/* 桌面端操作按钮：行内圆形图标按钮（Favorite/打印/复制），整体左移 10px */}
+              <div className="hidden md:flex relative left-[-10px] items-center gap-2.5 flex-shrink-0">
                 <Button
                   onClick={handleToggleFavorite}
                   variant="outline"
@@ -247,7 +257,41 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
 
               {/* 关闭按钮：保持最右，不随按钮组左移 */}
               <Button onClick={handleClose} variant="ghost" size="icon-sm" className="ml-1 flex-shrink-0 size-[36px]">
-                <X className="size-[26px]" />
+                <X className="size-[24px] md:size-[26px]" />
+              </Button>
+            </div>
+
+            {/* 移动端操作按钮：第二行（Favorite/打印/复制） */}
+            <div className="mt-3 flex items-center gap-2.5 md:hidden">
+              <Button
+                onClick={handleToggleFavorite}
+                variant="outline"
+                size="icon"
+                className={`size-[38px] bg-transparent border-muted-foreground/30 rounded-full ${
+                  isFavorite(activeFormula?.id ?? "") ? "border-muted-foreground/30 bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+                aria-pressed={isFavorite(activeFormula?.id ?? "")}
+                aria-label={isFavorite(activeFormula?.id ?? "") ? t.favorited : t.favorite}
+              >
+                <Heart className={`size-[18px] ${isFavorite(activeFormula?.id ?? "") ? "fill-current" : ""}`} />
+              </Button>
+              <Button
+                onClick={handlePrint}
+                variant="outline"
+                size="icon"
+                className="size-[38px] rounded-full bg-transparent border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                aria-label={t.print}
+              >
+                <Printer className="size-[18px]" />
+              </Button>
+              <Button
+                onClick={handleCopy}
+                variant="outline"
+                size="icon"
+                className="size-[38px] rounded-full bg-transparent border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                aria-label={t.copy}
+              >
+                <Copy className="size-[18px]" />
               </Button>
             </div>
           </div>

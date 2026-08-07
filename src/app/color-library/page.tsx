@@ -206,7 +206,7 @@ function TonerSection({
       <SectionTitle label={label} id={`toner-category-${label}`} />
       {/* 段内网格：折叠时一行，展开时可多行；--card-delay 从 0 重置交错入场动画 */}
       <div
-        className="grid grid-cols-5 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10"
+        className="grid grid-cols-2 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10 sm:grid-cols-3 md:grid-cols-5"
         style={{ ["--card-delay" as string]: "0s" }}
       >
         {visibleToners.map((toner) => (
@@ -949,7 +949,7 @@ export default function TonerPage() {
         ) : (
           /* 单分类视图：平铺网格 */
           <div
-            className="grid grid-cols-5 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10"
+            className="grid grid-cols-2 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10 sm:grid-cols-3 md:grid-cols-5"
             style={{ ["--card-delay" as string]: "0s" }}
           >
             {filteredToners.map((toner) => (

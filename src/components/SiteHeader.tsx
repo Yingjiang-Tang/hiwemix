@@ -7,9 +7,8 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/components/LanguageContext";
-import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, Search, Palette, Heart, FileText } from "lucide-react";
 
 interface SiteHeaderProps {
   useHomeTheme?: boolean;
@@ -40,11 +39,11 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
     ? "all 1.5s ease-in-out"
     : "none";
 
-  const navItems: { label: string; href: string }[] = [
-    { label: t.navFormulaSearch, href: "/" },
-    { label: t.navColorLibrary, href: "/color-library" },
-    { label: t.navFavorites, href: "/favorites" },
-    { label: t.navTds, href: "/tds" },
+  const navItems: { label: string; href: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { label: t.navFormulaSearch, href: "/", icon: Search },
+    { label: t.navColorLibrary, href: "/color-library", icon: Palette },
+    { label: t.navFavorites, href: "/favorites", icon: Heart },
+    { label: t.navTds, href: "/tds", icon: FileText },
   ];
 
   const isActive = (href: string) =>
@@ -152,7 +151,7 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
               className="text-primary inline-flex size-9 items-center justify-center rounded-lg md:hidden"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >
-              {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+              {mobileMenuOpen ? <X className="size-6" /> : <Menu className="size-6" />}
             </button>
           </div>
         </div>
@@ -176,7 +175,13 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
             </button>
           </div>
 
-          <div className="flex-1 overflow-auto pt-[28px]">
+          {/* 顶部：语言切换 + 主题切换 */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+            <LanguageSwitcher transitionStyle="" />
+            <ThemeToggle />
+          </div>
+
+          <div className="flex-1 overflow-auto pt-[8px]">
             {navItems.map((item) => {
               const active = isActive(item.href);
               return (
@@ -184,38 +189,50 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
                   key={item.label}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`block mx-3 px-3 py-3 text-sm font-semibold transition-colors ${
+                  className={`flex items-center gap-3 mx-3 px-3 py-3 text-sm font-semibold transition-colors ${
                     active
     ? "bg-gray-800 text-white rounded-none"
                       : "text-foreground/80 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 hover:rounded-none"
                   }`}
                   aria-current={active ? "page" : undefined}
                 >
+                  <item.icon className="size-[18px] shrink-0" strokeWidth={1.75} />
                   {item.label}
                 </Link>
               );
             })}
           </div>
 
-          {authUser?.role === "admin" && (
-            <>
-              <Separator className="my-1" />
-              <Link
-                href="/admin/data"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block mx-3 px-3 py-3.5 rounded-xl text-sm font-semibold text-foreground/80 hover:bg-muted"
-              >
-                {t.navAdmin}
-              </Link>
-              <span className="block mx-3 px-3 py-3.5 rounded-xl text-sm text-foreground/80">
-                {authUser.email}
-              </span>
-             <Separator className="my-1" />
-           </>
-         )}
-          <div className="mt-auto flex items-center justify-end gap-3 px-3 py-3 border-t border-border">
-            <LanguageSwitcher transitionStyle="" />
-            <ThemeToggle />
+          {/* 底部：DataManagement / 用户名 / 退出，等宽居中 */}
+          <div className="mt-auto px-3 py-4">
+            <div className="mx-auto flex w-fit flex-col items-stretch gap-2.5">
+              {authUser?.role === "admin" && (
+                <>
+                  <Link
+                    href="/admin/data"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="rounded-xl border border-border px-6 py-2.5 text-center text-sm font-semibold text-foreground/80 hover:bg-muted"
+                  >
+                    {t.navAdmin}
+                  </Link>
+                  <span className="rounded-xl border border-border px-6 py-2.5 text-center text-sm text-foreground/80">
+                    {authUser.email}
+                  </span>
+                </>
+              )}
+              {authUser && (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    logout();
+                  }}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-500 px-6 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-red-600"
+                >
+                  <LogOut className="size-4" />
+                  {t.logout}
+                </button>
+              )}
+            </div>
           </div>
         </SheetContent>
       </Sheet>

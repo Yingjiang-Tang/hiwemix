@@ -455,6 +455,19 @@ html[lang="he"] body {
     color: #000;
     background: #fff;
   }
+
+  /* 配方抽屉打印分页：左栏配方表格在第 1 页，右栏颜色预览+信息强制从第 2 页开始 */
+  .formula-print-area [class*="md:flex-[37.5%]"] {
+    break-before: page;
+  }
+
+  /* 打印页颜色预览缩小 30%：预览方块宽度收窄到 70% 并居中（高度随 aspect-ratio 等比缩小），
+     仅打印媒体生效，屏幕显示不受影响 */
+  .formula-print-area [class*="aspect-square"] {
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
+  }
 }
 
 .scrollbar-hide {
@@ -559,9 +572,26 @@ html, body {
     position: static !important;
   }
 
-  /* 抽屉遮罩隐藏（移动端抽屉为页面内联展示，不需要遮罩层） */
-  .formula-drawer [data-slot="sheet-overlay"] {
+  /* 抽屉遮罩隐藏（移动端抽屉为页面内联展示，不需要遮罩层）
+     注意：Base UI 的 Sheet 遮罩经 FloatingPortal 渲染在 <body> 下的 portal 节点中，
+     DOM 顺序为 [InternalBackdrop, SheetOverlay, 抽屉]，即遮罩在抽屉【前】是兄弟节点，
+     故用 :has(+ .formula-drawer) 选中「紧邻抽屉之前的遮罩」，而非后代选择器 */
+  [data-slot="sheet-overlay"]:has(+ .formula-drawer),
+  [data-slot="sheet-overlay"]:has(~ .formula-drawer) {
     display: none !important;
+  }
+
+  /* 移动端内边距收紧：桌面端的 pl/pr-[60px] 在手机上过宽，内容被挤窄 */
+  .formula-drawer [class*="pl-[60px]"],
+  .formula-drawer [class*="pr-[60px]"],
+  .formula-drawer [class*="px-[60px]"] {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+  /* Header 栏纵向留白同步收紧 */
+  .formula-drawer .sticky.top-0 {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
   }
 }
 
@@ -577,10 +607,31 @@ html, body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ===== 移动端 Header 半透明毛玻璃 =====
+   仅 <768px 生效：Header 背景改为半透明 + 背景模糊，
+   页面滚动时可透出下方内容，桌面端保持原样。 */
+@media (max-width: 767.98px) {
+  header[data-header-theme] {
+    background-color: color-mix(in srgb, var(--header-bg) 78%, transparent) !important;
+    backdrop-filter: saturate(150%) blur(16px);
+    -webkit-backdrop-filter: saturate(150%) blur(16px);
+  }
+}
+
 /* 移动端字号基线覆盖（17px 在小屏偏大） */
 @media (max-width: 599px) {
   body {
     font-size: 15px;
+  }
+}
+
+/* Hero 首页标题移动端适配：桌面端（≥768px）强制单行 nowrap；手机端允许换行避免长文案（如俄语）横向溢出 */
+.hero-title-mobile {
+  white-space: normal;
+}
+@media (min-width: 768px) {
+  .hero-title-mobile {
+    white-space: nowrap;
   }
 }
 

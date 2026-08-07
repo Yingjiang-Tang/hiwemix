@@ -158,7 +158,7 @@ export default function FavoritesPage() {
           {/* 容器主体：搜索 + 色系圆点 → 卡片 */}
           <div className="flex flex-col items-center p-5 sm:p-6">
             {/* 顶部行：搜索框 + 色系圆点（两组之间留较大间距） */}
-            <div className="flex w-full max-w-[627px] flex-wrap items-center">
+            <div className="flex w-full max-w-[627px] flex-wrap items-center gap-y-3">
               <div className="relative min-w-[180px] flex-1">
                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -170,7 +170,7 @@ export default function FavoritesPage() {
               </div>
 
               {/* 色系圆点组：重置按钮 + 各色系，彼此紧邻 */}
-              <div className="ml-6 flex items-center gap-[0.75px]">
+              <div className="flex flex-wrap items-center gap-[0.75px] md:ml-6 md:flex-nowrap">
                 {/* 重置按钮：点击清除色系筛选（回到全部），替代原白色圆点 */}
                 <button
                   type="button"
@@ -221,7 +221,7 @@ export default function FavoritesPage() {
               </div>
             ) : (
               <div
-                className="grid grid-cols-5 justify-items-center gap-x-0 gap-y-0 px-0 pb-4"
+                className="grid grid-cols-2 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 sm:grid-cols-3 md:grid-cols-5"
                 style={{ ["--card-delay" as string]: "0s" }}
               >
                 {filtered.map(({ snap, color, hex }) => {

@@ -140,8 +140,9 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
     <div>
       {/* 总量控制栏 */}
       <div className="mb-4 flex flex-col flex-wrap items-stretch gap-2 rounded-xl border border-border/60 bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* 左侧：配方属性 */}
-        <span className="flex items-center gap-2 text-[15px] font-semibold text-foreground ml-[47px]">
+        {/* 左侧：配方属性
+            桌面端 ml-[47px] 对齐表格数字列；移动端去掉偏移靠左排列 */}
+        <span className="flex items-center gap-2 text-[15px] font-semibold text-foreground md:ml-[47px]">
           <span>{t.version} {formula.version}</span>
           <span aria-hidden="true">|</span>
           <span>{formula.paint_system}</span>
