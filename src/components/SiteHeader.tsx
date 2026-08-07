@@ -39,7 +39,7 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
     ? "all 1.5s ease-in-out"
     : "none";
 
-  const navItems: { label: string; href: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  const navItems: { label: string; href: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }[] = [
     { label: t.navFormulaSearch, href: "/", icon: Search },
     { label: t.navColorLibrary, href: "/color-library", icon: Palette },
     { label: t.navFavorites, href: "/favorites", icon: Heart },
