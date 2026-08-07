@@ -56,6 +56,8 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // 登录后拉取云端收藏，并与本地合并（本地去重后并入云端；同步完成后清空本地）
+  // 失败策略：单条上传失败 → 保留该条待下次登录重试；初始拉取失败 → 本次会话可重试。
+  // 已成功上传的项会从本地剔除，避免下次重复上传；只有全部成功才清空本地。
   useEffect(() => {
     if (!user) {
       setCloudFavs([]);
@@ -68,34 +70,50 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     async function sync() {
       try {
         const res = await fetch("/api/favorites");
-        const remote = res.ok ? (await res.json()) as FavoriteSnapshot[] : [];
+        if (!res.ok) throw new Error("fetch favorites failed");
+        const remote = (await res.json()) as FavoriteSnapshot[];
         const local = loadLocal();
 
-        // 本地有但云端没有的 → 上传到云端
+        // 本地有但云端没有的 → 上传到云端；逐个记录成功/失败
         const remoteIds = new Set(remote.map((f) => f.formula_id));
+        const pending: LocalFavorite[] = [];
         for (const lf of local) {
-          if (!remoteIds.has(lf.snapshot.formula_id)) {
-            try {
-              await fetch("/api/favorites", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(lf.snapshot),
-              });
-            } catch {
-              // ignore 单条上传失败
+          const fid = lf.snapshot.formula_id;
+          if (remoteIds.has(fid)) continue; // 云端已有，无需上传
+          try {
+            const up = await fetch("/api/favorites", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(lf.snapshot),
+            });
+            if (up.ok) {
+              remoteIds.add(fid); // 后续去重判断用
+            } else {
+              pending.push(lf); // 上传失败（4xx/5xx）保留本地
             }
+          } catch {
+            pending.push(lf); // 网络失败保留本地
           }
+        }
+
+        if (pending.length > 0) {
+          // 有失败的项：本地只保留失败的（已成功的剔除），下次登录时重试；不清空本地
+          saveLocal(pending);
+          setLocalFavs(pending);
+          syncedRef.current = false; // 供下次退出/重登时重新触发合并
+        } else {
+          // 全部成功：清空本地，避免下次重复上传
+          saveLocal([]);
+          setLocalFavs([]);
         }
 
         // 重新拉取合并后的云端列表
         const res2 = await fetch("/api/favorites");
         const merged = res2.ok ? (await res2.json()) as FavoriteSnapshot[] : remote;
         setCloudFavs(merged);
-        // 合并成功后清空本地，避免下次重复上传
-        saveLocal([]);
-        setLocalFavs([]);
       } catch {
-        // 网络失败时保留本地收藏，下次登录重试
+        // 初始拉取/合并失败：保留本地收藏，允许本次会话重试
+        syncedRef.current = false;
       }
     }
     sync();

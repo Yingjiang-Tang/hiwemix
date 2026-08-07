@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo, type CSSProperties, type FocusEvent } from "react";
 import type { Formula, FormulaComponent, FormulaType, ComponentGroup, Color, ColorVariant, YearEntry } from "@/types";
 import type { Toner, CarMake } from "@/types";
-import { generateFormulaId } from "@/lib/id-generator";
+import { generateUniqueFormulaId } from "@/lib/id-generator";
 import { hexToRgb, filterTonersBySystem, matchingToners, matchingColors } from "./formula-helpers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,7 +77,7 @@ export default function FormulasPanel() {
     return Math.abs(((percentageSums as { all: number }).all) - 100) < 0.01;
   }, [percentageSums, form.formula_type, components]);
 
-  useEffect(() => { if (!selectedId && !idManuallyEdited.current && form.color_id && form.version) setForm((prev) => ({ ...prev, id: generateFormulaId(form.color_id, form.variant_id, form.version) })); }, [form.color_id, form.variant_id, form.version, selectedId]);
+  useEffect(() => { if (!selectedId && !idManuallyEdited.current && form.color_id && form.version) setForm((prev) => ({ ...prev, id: generateUniqueFormulaId(form.color_id, form.variant_id, form.version, formulas.map((f) => f.id)) })); }, [form.color_id, form.variant_id, form.version, selectedId, formulas]);
 
   const fetchFormulas = useCallback(async () => { try { const res = await fetch("/api/admin/formulas"); if (res.ok) setFormulas(await res.json()); } catch {} setLoading(false); }, []);
   useEffect(() => {

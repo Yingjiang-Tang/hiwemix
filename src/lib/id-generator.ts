@@ -70,3 +70,23 @@ export function generateFormulaId(
   parts.push(version);
   return parts.map((p) => slugify(p)).filter(Boolean).join("_");
 }
+
+/**
+ * 生成不与现有配方冲突的配方 ID。
+ * 同颜色+版本可存在多个配方（如 Two Stages / Three Stages），
+ * 基础 ID 相同时追加 -2 / -3 后缀，避免 saveFormula 的 upsert 静默覆盖前一条。
+ */
+export function generateUniqueFormulaId(
+  colorId: string,
+  variantId: string,
+  version: string,
+  existingIds: Iterable<string>
+): string {
+  const base = generateFormulaId(colorId, variantId, version);
+  if (!base) return "";
+  const taken = existingIds instanceof Set ? existingIds : new Set(existingIds);
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base}-${n}`)) n++;
+  return `${base}-${n}`;
+}

@@ -135,7 +135,13 @@ export async function getFormulas(): Promise<Formula[]> {
     .select("*, formula_components(*)")
     .order("updated_at", { ascending: false });
   if (error) throw error;
-  const tonerMap = await getTonerMap();
+  // toner 目录拉取失败：本次回退空 map（不阻塞公式返回），缓存已清空、下次调用会重试
+  let tonerMap: Map<string, Toner>;
+  try {
+    tonerMap = await getTonerMap();
+  } catch {
+    tonerMap = new Map();
+  }
   return (data ?? []).map((row) => mapFormulaRow(row, tonerMap));
 }
 
@@ -173,7 +179,11 @@ function getTonerMap(): Promise<Map<string, Toner>> {
     _tonerMapVersion = version;
     _tonerMapPromise = getToners()
       .then((ts) => new Map(ts.map((t) => [t.code, t])))
-      .catch(() => new Map());
+      .catch((err) => {
+        // 失败不缓存：清空缓存，下次调用重新拉取，避免瞬时错误把目录毒化成永久空 Map
+        _tonerMapPromise = null;
+        throw err;
+      });
   }
   return _tonerMapPromise;
 }

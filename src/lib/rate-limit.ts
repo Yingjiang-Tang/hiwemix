@@ -27,9 +27,15 @@ function cleanup() {
 
 /** 从请求中提取客户端 IP */
 function getClientIP(req: NextRequest): string {
-  // Vercel / 反向代理透传的真实 IP
+  // 部署在 Vercel/可信反向代理后：代理会在 X-Forwarded-For 末尾追加真实客户端 IP，
+  // 客户端可伪造的值只会出现在前部。因此取最右侧一个，忽略伪造部分，
+  // 防止攻击者每请求改头绕过限流。裸 Node 无信任代理时此头不可信，需在边缘层过滤。
   const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
+  if (forwarded) {
+    const list = forwarded.split(",").map((s) => s.trim()).filter(Boolean);
+    const ip = list[list.length - 1];
+    if (ip) return ip;
+  }
   const realIp = req.headers.get("x-real-ip");
   if (realIp) return realIp;
   return "127.0.0.1";
