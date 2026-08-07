@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Edit, Trash2, Settings, Plus, ChevronUp, Eye } from "lucide-react";
+import { Search, Edit, Trash2, Settings, Plus, ChevronUp, ChevronDown, Eye } from "lucide-react";
 
 // 色母分类标签
 const TONER_CATEGORIES: { key: TonerCategory; label: string }[] = [
@@ -543,15 +543,15 @@ function ManagementModal({
           {/* 固定置顶 Header */}
           <div className="shrink-0 px-6 pt-3 mb-3">
             <DialogHeader>
-              <DialogTitle className="flex items-center justify-center gap-2 font-heading text-lg font-semibold text-foreground">
+              <DialogTitle className="flex items-center justify-center gap-2 font-heading text-lg font-semibold text-foreground manage-dialog-title">
                 <Settings className="size-5 text-foreground/70" />
                 色母管理中心
               </DialogTitle>
             </DialogHeader>
 
           {/* 搜索 + 添加按钮 */}
-          <div className="flex flex-col items-start justify-between gap-2 pt-5 sm:flex-row sm:items-center">
-            <div className="relative w-full sm:w-72">
+          <div className="manage-dialog-toolbar flex flex-col items-start justify-between gap-2 pt-5 sm:flex-row sm:items-center">
+            <div className="manage-dialog-toolbar-search relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="搜索色母代码、名称、分类..."
@@ -561,15 +561,16 @@ function ManagementModal({
               />
             </div>
             <div className="flex items-center gap-3">
-              <span className="whitespace-nowrap text-xs text-muted-foreground">
+              <span className="manage-dialog-count whitespace-nowrap text-xs text-muted-foreground">
                 共 {filteredRows.length} 条记录
               </span>
               <Button
                   variant="default"
                   onClick={() => setAddOpen(true)}
-                    className="inline-flex items-center justify-center h-8 rounded-[6px] text-2xs leading-none text-white"
+                    className="manage-dialog-add inline-flex items-center justify-center h-8 rounded-[6px] text-2xs leading-none text-white"
                 >
-                  添加色母
+                  <Plus className="manage-dialog-add-icon mr-1 size-4" />
+                  <span className="manage-dialog-add-label">添加色母</span>
               </Button>
             </div>
           </div>
@@ -752,6 +753,8 @@ export default function TonerPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const [activeCategory, setActiveCategory] = useState<TonerCategory | typeof ALL_CATEGORY>("2K_BASECOAT");
+  // 色母分类栏 mobile 端折叠/展开状态（默认折叠）
+  const [categoryExpanded, setCategoryExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [manageOpen, setManageOpen] = useState(false);
 
@@ -873,33 +876,50 @@ export default function TonerPage() {
       <div className="sticky top-[79px] z-30 border-b border-border bg-card px-6 py-5 sm:px-8 md:px-[60px]">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           {/* 左侧：分类 Tabs */}
-          <div className="-mx-2 overflow-x-auto px-2 scrollbar-hide sm:-mx-0 sm:px-0">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveCategory((v as TonerCategory | typeof ALL_CATEGORY) || "2K_BASECOAT")}>
-              <TabsList variant="default" className="group-data-horizontal/tabs:h-fit h-auto gap-1 rounded-none bg-transparent p-0">
-                {/* All：查看全部，按分类分组展示 */}
-                <TabsTrigger
-                  value={ALL_CATEGORY}
-                  className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted"
-                >
-                  All
-                  <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
-                    {toners.length}
-                  </Badge>
-                </TabsTrigger>
-                {TONER_CATEGORIES.filter((cat) => cat.key !== "SUPPLEMENTARY" || isAdmin).map((cat) => (
+          <div className="toner-tabs-wrap sm:-mx-0 sm:px-0">
+            {/* 手机端折叠头部（参考 SearchResults 品牌筛选栏样式） */}
+            <button
+              type="button"
+              onClick={() => setCategoryExpanded((v) => !v)}
+              className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium md:hidden"
+            >
+              <span className="text-foreground">
+                {activeCategory === ALL_CATEGORY
+                  ? "All"
+                  : (TONER_CATEGORIES.find((c) => c.key === activeCategory)?.label ?? activeCategory)}
+              </span>
+              <ChevronDown className={`size-4 transition-transform ${categoryExpanded ? "rotate-180" : ""}`} />
+            </button>
+
+            {/* Tabs 列表：手机端折叠隐藏，桌面端始终显示 */}
+            <div className={`toner-tabs-list ${categoryExpanded ? "block" : "hidden md:block"}`}>
+              <Tabs value={activeTab} onValueChange={(v) => setActiveCategory((v as TonerCategory | typeof ALL_CATEGORY) || "2K_BASECOAT")}>
+                <TabsList variant="default" className="toner-tabs-list-inner group-data-horizontal/tabs:h-fit h-auto w-full flex-wrap gap-1 rounded-none bg-transparent p-0">
+                  {/* All：查看全部，按分类分组展示 */}
                   <TabsTrigger
-                    key={cat.key}
-                    value={cat.key}
+                    value={ALL_CATEGORY}
                     className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted"
                   >
-                    {cat.label}
+                    All
                     <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
-                      {toners.filter((t) => t.category === cat.key).length}
+                      {toners.length}
                     </Badge>
                   </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
+                  {TONER_CATEGORIES.filter((cat) => cat.key !== "SUPPLEMENTARY" || isAdmin).map((cat) => (
+                    <TabsTrigger
+                      key={cat.key}
+                      value={cat.key}
+                      className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted"
+                    >
+                      {cat.label}
+                      <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
+                        {toners.filter((t) => t.category === cat.key).length}
+                      </Badge>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
 
           {/* 右侧：搜索框 + 管理按钮 */}
@@ -918,10 +938,10 @@ export default function TonerPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setManageOpen(true)}
-                className="inline-flex items-center justify-center h-9 shrink-0 rounded-lg gap-1.5 text-sm leading-none"
+                className="manage-page-btn inline-flex items-center justify-center h-9 shrink-0 rounded-lg gap-1.5 text-sm leading-none"
               >
-                <Settings className="size-4" />
-                管理色母
+                <Settings className="manage-page-btn-icon size-4" />
+                <span className="manage-page-btn-label">管理色母</span>
               </Button>
             )}
           </div>

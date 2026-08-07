@@ -8,7 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import BackToTop from "@/components/BackToTop";
 import { Noto_Sans_SC, Noto_Sans_Arabic, Noto_Sans_Hebrew, Geist } from "next/font/google";
 import { LANGS, type Lang } from "@/lib/i18n";
-import { LANG_COOKIE } from "@/lib/cookies";
+import { LANG_COOKIE, THEME_COOKIE } from "@/lib/cookies";
 
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -39,26 +39,36 @@ async function resolveLangCookie(): Promise<string> {
   return "en";
 }
 
+// 服务端读取主题 cookie：默认暗色，显式存了 light 才用亮色。
+// SSR 直接输出正确的 .dark class，替代防闪烁脚本（零闪烁、零警告）
+async function resolveThemeIsDark(): Promise<boolean> {
+  try {
+    const store = await cookies();
+    return store.get(THEME_COOKIE)?.value !== "light";
+  } catch {
+    return true;
+  }
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const lang = await resolveLangCookie();
+  const isDark = await resolveThemeIsDark();
   return (
     <html
       lang={lang}
       suppressHydrationWarning
-      className={cn("h-full", "antialiased", notoSansSC.variable, notoSansArabic.variable, notoSansHebrew.variable, "font-sans", geist.variable)}
+      className={cn(
+        "h-full",
+        "antialiased",
+        isDark && "dark",
+        notoSansSC.variable, notoSansArabic.variable, notoSansHebrew.variable, "font-sans", geist.variable
+      )}
     >
-      <head>
-        {/* 防深色模式闪烁：在 React 渲染前同步读取 localStorage 并应用 .dark class；默认暗色，仅当显式存了 light 时用亮色 */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('hiwemix-theme');if(t!=='light'){document.documentElement.classList.add('dark');}}catch(e){}})();`,
-          }}
-        />
-      </head>
+      <head />
       <body className="min-h-full">
         <TooltipProvider delay={300}>
           <Providers>

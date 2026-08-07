@@ -53,12 +53,15 @@ function SearchableSelect({
   onValueChange,
   options,
   className,
+  selectedClass,
 }: {
   placeholder: string;
   value: string;
   onValueChange: (v: string) => void;
   options: { value: string; label: string }[];
   className?: string;
+  // 移动端选中态样式覆盖（如选中时文字变蓝色）；桌面端默认不启用
+  selectedClass?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -94,7 +97,7 @@ function SearchableSelect({
             <span
               className={
                 selectedLabel
-                  ? "text-foreground"
+                  ? `text-foreground ${selectedClass ?? ""}`
                   : "text-muted-foreground"
               }
             >

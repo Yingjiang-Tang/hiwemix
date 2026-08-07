@@ -17,6 +17,11 @@ import { SearchSlash, ChevronUp, ChevronDown, Eye, Heart } from "lucide-react";
 // 品牌筛选「全部品牌」选项的值
 const ALL_MAKES = "all";
 
+// 品牌筛选 TabsTrigger 样式：桌面端保持原药丸选中底（bg-muted）；
+// brand-tab 类本身无样式，由 globals.css 移动端媒体查询覆盖选中态（去药丸框、文字变蓝）
+const brandTrigger =
+  "h-9 flex-none gap-1.5 rounded-full px-4 text-sm data-active:bg-muted brand-tab";
+
 export interface SearchResultsProps {
   rows: FormulaTableRow[];
   isLoading: boolean;
@@ -599,14 +604,14 @@ export default function SearchResults({
         <div className="flex min-w-0 flex-1">
           <Tabs value={activeMake} onValueChange={(v) => { setActiveMake(v); setFilterExpanded(false); }} className="w-full">
             <TabsList variant="default" className="group-data-horizontal/tabs:h-fit h-auto w-full flex-wrap justify-start gap-1 rounded-none bg-transparent p-0">
-              <TabsTrigger value={ALL_MAKES} className="h-9 flex-none gap-1.5 rounded-full px-4 text-sm data-active:bg-muted">
+              <TabsTrigger value={ALL_MAKES} className={brandTrigger}>
                 {t.allMakes}
                 <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
                   {rows.length}
                 </Badge>
               </TabsTrigger>
               {makeTabs.map((mk) => (
-                <TabsTrigger key={mk.value} value={mk.value} className="h-9 flex-none gap-1.5 rounded-full px-4 text-sm data-active:bg-muted">
+                <TabsTrigger key={mk.value} value={mk.value} className={brandTrigger}>
                   {mk.label}
                   <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
                     {mk.count}

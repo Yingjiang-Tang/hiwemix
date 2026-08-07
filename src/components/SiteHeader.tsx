@@ -65,25 +65,23 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
         }}
       >
         <div className="relative mx-auto flex h-[79px] items-center justify-between px-6 sm:px-8 md:px-[60px]">
-          {/* Logo 左侧容器 */}
+          {/* 左侧：Logo + 导航链接 作为一个整体 */}
           <div className="flex items-center gap-6 shrink-0">
-          <a
-            href="https://www.hiwe.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex shrink-0"
-          >
-            <img
-              src="/hiwemix2-01.png"
-              alt="HIWE MIX"
-              className="h-[28px] w-auto object-contain block md:h-8 transition-all duration-[1.5s] ease-in-out"
-            />
-          </a>
-          </div>
+            <a
+              href="https://www.hiwe.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex shrink-0"
+            >
+              <img
+                src="/hiwemix2-01.png"
+                alt="HIWE MIX"
+                className="h-[28px] w-auto object-contain block md:h-8 transition-all duration-[1.5s] ease-in-out"
+              />
+            </a>
 
-          {/* 导航链接 水平居中于 header */}
-          <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <div className="flex items-center gap-[34px]">
+            {/* 导航链接 紧跟 Logo 右侧 */}
+            <nav className="hidden md:flex items-center gap-[34px]">
               {navItems.map((item) => {
                 const active = isActive(item.href);
                 return (
@@ -98,11 +96,11 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
                   </Link>
                 );
               })}
-            </div>
+            </nav>
           </div>
 
           {/* 右侧操作区 */}
-          <div className="flex items-center gap-3 shrink-0 z-[1]">
+          <div className="flex items-center gap-3 shrink-0 ml-auto z-[1]">
             {authUser ? (
               <>
                 {authUser.role === "admin" && (
@@ -114,10 +112,12 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
                     >
                       {t.navAdmin}
                     </Link>
-                    <span className="header-action-btn inline-flex h-8 items-center rounded-lg border border-border px-3 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
+                    <span
+                      title={authUser.email}
+                      className="header-action-btn inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-xs font-semibold uppercase transition-all duration-[1.5s] ease-in-out"
                       style={{ transition: transitionStyle }}
                     >
-                      {authUser.email}
+                      {authUser.email.charAt(0)}
                     </span>
                   </div>
                 )}
@@ -215,8 +215,11 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
                   >
                     {t.navAdmin}
                   </Link>
-                  <span className="rounded-xl border border-border px-6 py-2.5 text-center text-sm text-foreground/80">
-                    {authUser.email}
+                  <span
+                    title={authUser.email}
+                    className="mx-auto flex size-9 items-center justify-center rounded-full border border-border text-sm font-semibold uppercase text-foreground/80"
+                  >
+                    {authUser.email.charAt(0)}
                   </span>
                 </>
               )}

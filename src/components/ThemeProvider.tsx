@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { setClientCookie, getClientCookie } from "@/lib/cookies";
 
 type Theme = "light" | "dark";
 
@@ -16,7 +17,8 @@ const STORAGE_KEY = "hiwemix-theme";
 
 function readStoredTheme(): Theme | null {
   if (typeof window === "undefined") return null;
-  const v = window.localStorage.getItem(STORAGE_KEY);
+  // 优先 localStorage（老逻辑兼容）；其次 cookie（SSR 写入）
+  const v = window.localStorage.getItem(STORAGE_KEY) ?? getClientCookie(STORAGE_KEY);
   if (v === "light" || v === "dark") return v;
   return null;
 }
@@ -36,6 +38,12 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     if (stored) {
       setThemeState(stored);
       applyThemeClass(stored);
+      // 把主题同步为 cookie：让后续 SSR 首屏直接输出正确主题，消除防闪烁脚本依赖
+      try {
+        if (getClientCookie(STORAGE_KEY) === null) setClientCookie(STORAGE_KEY, stored);
+      } catch {
+        /* 静默降级 */
+      }
     } else {
       applyThemeClass("dark");
     }
@@ -46,8 +54,9 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     applyThemeClass(t);
     try {
       window.localStorage.setItem(STORAGE_KEY, t);
+      setClientCookie(STORAGE_KEY, t);
     } catch {
-      /* localStorage unavailable, silently degrade */
+      /* localStorage 不可用时静默降级 */
     }
   };
 

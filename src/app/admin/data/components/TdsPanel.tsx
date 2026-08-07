@@ -289,9 +289,9 @@ export default function TdsPanel() {
         </Button>
       </div>
 
-      {/* 列表 */}
+      {/* 列表 — 移动端表格舒展到自然列宽，容器内横向滑动；桌面端 md:min-w-0 保持 w-full 原样 */}
       <div className="overflow-x-auto rounded-lg border border-border">
-        <Table>
+        <Table className="min-w-max md:min-w-0">
           <TableHeader>
             <TableRow className="bg-muted/80">
               <TableHead className="w-[100px] py-2.5 text-center text-xs font-semibold uppercase text-muted-foreground">

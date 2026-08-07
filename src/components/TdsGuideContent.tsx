@@ -184,7 +184,7 @@ export default function TdsGuideContent({ guide, onBack }: TdsGuideContentProps)
   }
 
   return (
-    <div className="flex h-full min-h-0">
+    <div className="tds-guide-content flex h-full min-h-0">
       {/* 左栏：正文（容器内滚动） */}
       <div ref={scrollRef} className="flex-1 min-w-0 overflow-y-auto">
         <div className="px-6 py-5 sm:px-8 md:px-[60px] md:py-8">
@@ -194,7 +194,7 @@ export default function TdsGuideContent({ guide, onBack }: TdsGuideContentProps)
               <button
                 type="button"
                 onClick={onBack}
-                className="mb-4 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary"
+                className="tds-content-back-btn mb-4 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary"
               >
                 <ChevronLeft className="size-3" />
                 {t.tdsBackToList}

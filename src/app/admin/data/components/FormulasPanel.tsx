@@ -55,6 +55,8 @@ export default function FormulasPanel() {
   const [tonerDropdownFor, setTonerDropdownFor] = useState<number | null>(null);
   const [tonerQuery, setTonerQuery] = useState("");
   const tonerBlurRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 移动端：色母下拉用 fixed 定位（脱离表格横向滚动容器，避免被 overflow 裁剪）
+  const [tonerDropdownPos, setTonerDropdownPos] = useState<{ left: number; top: number; width: number } | null>(null);
 
   const percentageSums = useMemo(() => {
     const filled = components.filter((c) => c.toner_code.trim() !== "");
@@ -183,8 +185,10 @@ export default function FormulasPanel() {
           <Button onClick={() => addComponent(group)} variant="outline" size="sm" className="rounded-lg text-sm"><Plus className="size-4" /> 添加色母</Button>
         </div>
 
-        <div className="[&_div[data-slot='table-container']]:overflow-visible rounded-lg border border-border max-h-none">
-          <Table>
+        {/* 移动端：表格固定最小宽度实现横向滑动（百分比列宽下用 min-w-max 撑开不可控，故用固定 px）；
+            色母下拉用 fixed 定位避免被裁剪；桌面端：md:overflow-visible + md:min-w-0 保持原样 */}
+        <div className="max-md:[&_div[data-slot='table-container']]:overflow-x-auto md:[&_div[data-slot='table-container']]:overflow-visible rounded-lg border border-border max-h-none">
+          <Table className="min-w-[760px] md:min-w-0">
             <TableHeader>
               <TableRow className="bg-muted/80">
                 <TableHead className="w-[22%] py-2 text-xs font-semibold text-muted-foreground uppercase">色母编号</TableHead>
@@ -206,15 +210,26 @@ export default function FormulasPanel() {
                       <input
                         type="text" value={c.toner_code}
                         onChange={(e) => { updateComponent(globalIndex, "toner_code", e.target.value); setTonerQuery(e.target.value); setTonerDropdownFor(globalIndex); }}
-                        onFocus={(e) => { setTonerQuery(e.target.value); setTonerDropdownFor(globalIndex); }}
-                        onBlur={() => { tonerBlurRef.current = setTimeout(() => setTonerDropdownFor(null), 180); }}
+                        onFocus={(e) => {
+                          setTonerQuery(e.target.value); setTonerDropdownFor(globalIndex);
+                          // 仅移动端：记录输入框位置用于 fixed 定位下拉（脱离横向滚动容器裁剪）；
+                          // 桌面端容器 overflow-visible，下拉保持原 absolute 定位
+                          if (window.matchMedia("(max-width: 767px)").matches) {
+                            const r = e.currentTarget.getBoundingClientRect();
+                            setTonerDropdownPos({ left: r.left, top: r.bottom, width: r.width });
+                          }
+                        }}
+                        onBlur={() => { tonerBlurRef.current = setTimeout(() => { setTonerDropdownFor(null); setTonerDropdownPos(null); }, 180); }}
                         className={INPUT_CLASS}
                       />
                       {tonerDropdownFor === globalIndex && (() => {
                         const hits = matchingToners(tonerQuery, tonerPool);
                         if (hits.length === 0) return null;
                         return (
-                          <div className="absolute left-2 right-2 top-full z-50 mt-1 max-h-40 overflow-auto rounded-lg border border-border bg-card shadow-lg">
+                          <div
+                            className="absolute left-2 right-2 top-full z-50 mt-1 max-h-40 overflow-auto rounded-lg border border-border bg-card shadow-lg md:left-2 md:right-2 md:top-full"
+                            style={tonerDropdownPos ? { position: "fixed", left: tonerDropdownPos.left, top: tonerDropdownPos.top, width: tonerDropdownPos.width } : undefined}
+                          >
                             {hits.map((t) => (
                               <button
                                 key={t.code}

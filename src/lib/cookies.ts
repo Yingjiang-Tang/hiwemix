@@ -4,6 +4,8 @@
 
 export const LANG_COOKIE = "site-language";
 export const VISITOR_COOKIE = "hiwe_visitor_id";
+// 主题存 cookie 而非仅 localStorage：让 SSR 能读到主题，首屏直接输出正确 .dark class，无需防闪烁脚本
+export const THEME_COOKIE = "hiwemix-theme";
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 年
 

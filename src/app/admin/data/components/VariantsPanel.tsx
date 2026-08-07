@@ -69,7 +69,7 @@ export default function VariantsPanel() {
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">
-        <Table>
+        <Table className="min-w-max md:min-w-0">
           <TableHeader>
             <TableRow className="bg-muted/80">
               <TableHead className="w-[120px] py-2.5 text-xs font-semibold text-muted-foreground uppercase text-center">ID</TableHead>

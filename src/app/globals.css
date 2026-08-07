@@ -536,18 +536,27 @@ html, body {
 @media (max-width: 767.98px) {
   .formula-drawer,
   .formula-drawer[data-slot="sheet-content"] {
-    position: static !important;
-    inset: auto !important;
+    /* 移动端抽屉：保留 fixed 全屏覆盖与遮罩（与桌面端一致），避免与下方搜索结果同框显示 */
+    position: fixed !important;
+    inset: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    height: auto !important;
+    height: 100dvh !important;
     min-height: 0 !important;
-    overflow: visible !important;
     transform: none !important;
-    z-index: auto !important;
-    display: block !important;
+    z-index: 2000 !important;
+    display: flex !important;
     box-shadow: none !important;
     border: none !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* 抽屉容器允许纵向滚动，避免内部被 overflow:hidden 截断 */
+  .formula-drawer > .flex.flex-col {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: 100% !important;
   }
 
   /* 两栏改纵向堆叠 */
@@ -563,22 +572,14 @@ html, body {
     overflow: visible !important;
   }
 
-  /* 左栏/右栏从滚动容器变为自然流式，表格不再被限高 */
+  /* 抽屉内左右栏允许内部滚动 */
   .formula-drawer .flex-1.overflow-auto,
   .formula-drawer .flex-shrink-0.overflow-auto {
-    overflow: visible !important;
+    overflow: auto !important;
+    max-height: none !important;
   }
   .formula-drawer .sticky {
-    position: static !important;
-  }
-
-  /* 抽屉遮罩隐藏（移动端抽屉为页面内联展示，不需要遮罩层）
-     注意：Base UI 的 Sheet 遮罩经 FloatingPortal 渲染在 <body> 下的 portal 节点中，
-     DOM 顺序为 [InternalBackdrop, SheetOverlay, 抽屉]，即遮罩在抽屉【前】是兄弟节点，
-     故用 :has(+ .formula-drawer) 选中「紧邻抽屉之前的遮罩」，而非后代选择器 */
-  [data-slot="sheet-overlay"]:has(+ .formula-drawer),
-  [data-slot="sheet-overlay"]:has(~ .formula-drawer) {
-    display: none !important;
+    position: sticky !important;
   }
 
   /* 移动端内边距收紧：桌面端的 pl/pr-[60px] 在手机上过宽，内容被挤窄 */
@@ -607,21 +608,183 @@ html, body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* ===== 移动端 Header 半透明毛玻璃 =====
-   仅 <768px 生效：Header 背景改为半透明 + 背景模糊，
-   页面滚动时可透出下方内容，桌面端保持原样。 */
+/* ===== 移动端品牌筛选：选中品牌时移除药丸框，改为蓝色文字 =====
+   仅 <768px 生效：覆盖 TabsTrigger 激活态的底色/圆角/阴影，
+   桌面端（≥768px）保持原药丸选中底不变。 */
 @media (max-width: 767.98px) {
-  header[data-header-theme] {
-    background-color: color-mix(in srgb, var(--header-bg) 78%, transparent) !important;
-    backdrop-filter: saturate(150%) blur(16px);
-    -webkit-backdrop-filter: saturate(150%) blur(16px);
+  .brand-tab[data-active] {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    color: var(--primary) !important;
+  }
+  .brand-tab[data-active] [slot="badge"] {
+    background-color: transparent !important;
+    color: var(--primary) !important;
   }
 }
 
+/* ===== 移动端 Footer 文字缩小 2px =====
+   仅 <768px 生效：覆盖 footer 内导航链接与版权文字字号（-2px），
+   桌面端（≥768px）保持原样。 */
+@media (max-width: 767.98px) {
+  .site-footer .text-2xs {
+    font-size: calc(0.8125rem - 2px);
+  }
+
+  /* 导航标签间距缩小 12px（gap-4 = 1rem → calc(1rem - 12px)） */
+  .site-footer nav {
+    gap: calc(1rem - 12px);
+  }
+  /* 分隔符所在的 span 内部 gap 与 nav 一致，保证分隔符居中于左右两个标签 */
+  .site-footer nav > span {
+    gap: calc(1rem - 12px);
+  }
+}
+
+/* Header 背景：桌面端与移动端统一为不透明纯色（移除移动端半透明毛玻璃） */
 /* 移动端字号基线覆盖（17px 在小屏偏大） */
 @media (max-width: 599px) {
   body {
     font-size: 15px;
+  }
+}
+
+/* ===== 移动端配方表格：横向滚动 + 列间距 =====
+   桌面端（≥md）维持 table-fixed 等宽布局不变；
+   移动端：表格容器允许横向滚动，列最小宽度撑开避免文本重叠，
+   各列通过 min-width + 内边距保证文字有呼吸空间。 */
+@media (max-width: 767.98px) {
+  /* 替换桌面端的 table-fixed 等宽分配，让列按内容需要展开 */
+  .formula-drawer .table-fixed,
+  .formula-drawer [data-slot="table"] {
+    table-layout: auto !important;
+    width: max-content !important;
+    min-width: 100% !important;
+  }
+
+  /* 列最小宽度：避免文本被 truncate/重叠 */
+  .formula-drawer [data-slot="table"] th,
+  .formula-drawer [data-slot="table"] td {
+    min-width: 92px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  /* 第一列（toner code）可以窄一点 */
+  .formula-drawer [data-slot="table"] th:nth-child(1),
+  .formula-drawer [data-slot="table"] td:nth-child(1) {
+    min-width: 80px !important;
+  }
+  /* 最后一列（mass tone 色块）保持窄 */
+  .formula-drawer [data-slot="table"] th:nth-child(5),
+  .formula-drawer [data-slot="table"] td:nth-child(5) {
+    min-width: 64px !important;
+  }
+}
+
+/* ===== 移动端：管理色母弹窗 — 隐藏标题 + 添加按钮变圆形加号 =====
+   仅 <768px 生效：桌面端（≥768px）保持原标题 + 「添加色母」文字按钮。 */
+@media (max-width: 767.98px) {
+  .manage-dialog-title {
+    display: none !important;
+  }
+
+  /* 「共 N 条记录」统计也隐藏，保持右侧只剩圆形加号按钮 */
+  .manage-dialog-count {
+    display: none !important;
+  }
+
+  /* 添加按钮：圆形 + 蓝底 + 白加号 */
+  .manage-dialog-add {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    border-radius: 9999px !important;
+    flex-shrink: 0 !important;
+  }
+  .manage-dialog-add-icon {
+    margin: 0 !important;
+    color: #ffffff !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+  .manage-dialog-add-label {
+    display: none !important;
+  }
+}
+
+/* ===== 移动端：色母库页面 -「管理色母」按钮变圆形加号 =====
+   仅 <768px 生效：桌面端（≥768px）保持原 outline 按钮 + Settings + 文字。
+   搜索框保持 w-full 自适应长度，圆形按钮 shrink-0 不挤压。 */
+@media (max-width: 767.98px) {
+  .manage-page-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    border-radius: 9999px !important;
+    flex-shrink: 0 !important;
+  }
+  .manage-page-btn-icon {
+    margin: 0 !important;
+  }
+  .manage-page-btn-label {
+    display: none !important;
+  }
+}
+
+/* ===== 移动端：TDS 页面 Sheet 抽屉顶部内边距 — 避免被 Header 遮挡 =====
+   仅 <768px 生效：Header 高 79px + layout pt-[84px]，所以抽屉内容需要 ≥88px 顶部 padding 才能避开 Header。
+   桌面端（≥768px）保持 pt-14 默认值。 */
+@media (max-width: 767.98px) {
+  .tds-sheet-inner {
+    padding-top: 88px !important;
+  }
+
+  /* 抽屉顶部 "Documents" 分组标签 — 抽屉内已有 SheetClose 标题，移除冗余 */
+  .tds-section-label {
+    display: none !important;
+  }
+
+  /* 移动端详情视图：二级返回栏已有箭头，隐藏内容内的「← Back to all documents」按钮 */
+  .tds-content-back-btn {
+    display: none !important;
+  }
+}
+
+/* ===== 移动端：管理色母弹窗内「搜索 + 添加按钮」一行水平排列 =====
+   仅 <768px 生效：搜索框 flex-1 自适应撑开，圆形加号按钮紧跟其右；
+   桌面端（≥768px）保持原 sm:flex-row + sm:w-72 不变。 */
+@media (max-width: 767.98px) {
+  /* 弹窗顶部容器：搜索行强制水平排列 */
+  .manage-dialog-toolbar {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  /* 搜索框 wrapper 占满剩余空间 */
+  .manage-dialog-toolbar-search {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+  }
+}
+
+/* ===== 移动端：色母库分类筛选 — 与 SearchResults 品牌筛选栏一致 =====
+   仅 <768px 生效：选中态去药丸底、文字变蓝；桌面端（≥768px）保持药丸底不变。 */
+@media (max-width: 767.98px) {
+  .toner-tabs-list [data-slot="tabs-trigger"][data-active] {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    color: var(--primary) !important;
+  }
+  .toner-tabs-list [data-slot="tabs-trigger"][data-active] [slot="badge"] {
+    background-color: transparent !important;
+    color: var(--primary) !important;
   }
 }
 

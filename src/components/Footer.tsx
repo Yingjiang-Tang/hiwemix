@@ -43,7 +43,7 @@ export default function Footer({ isLightBackground = false }: { isLightBackgroun
 
   return (
     <footer
-      className="relative h-[150px] w-full"
+      className="site-footer relative h-[150px] w-full"
       style={{ backgroundColor: "transparent" }}
     >
       {/* 三排内容：图标 → 导航链接 → 版权声明 */}

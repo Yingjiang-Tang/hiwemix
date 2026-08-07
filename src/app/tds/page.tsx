@@ -6,7 +6,7 @@ import { pickText } from "@/lib/i18n";
 import { trackPageView } from "@/lib/analytics";
 import type { Guide, GuideCategory, DocType } from "@/types";
 import { Input } from "@/components/ui/input";
-import { Search, FileText } from "lucide-react";
+import { Search, FileText, ChevronLeft } from "lucide-react";
 import TdsSidebar from "@/components/TdsSidebar";
 import TdsGuideContent from "@/components/TdsGuideContent";
 import { cn } from "@/lib/utils";
@@ -68,21 +68,29 @@ export default function TdsIndexPage() {
     }
   }, [filteredGuides, selectedGuideId]);
 
+  // 移动端：选中文档后是否进入详情页模式（用选中 id 驱动，避免 guides 异步加载时 selectedGuide 短暂为 null）
+  const mobileDetailMode = !!selectedGuideId;
+
   return (
     <div className="flex flex-1 flex-col lg:flex-row">
-      {/* 左栏：分类菜单 */}
-      <TdsSidebar
-        categories={categories}
-        guides={guides}
-        selectedCategory={selectedCategory}
-        selectedDocType={selectedDocType}
-        onSelectCategory={setSelectedCategory}
-        onSelectDocType={setSelectedDocType}
-      />
+      {/* 左栏：分类菜单 — 移动端进入详情页时隐藏 */}
+      <div className={cn(mobileDetailMode && "hidden lg:block")}>
+        <TdsSidebar
+          categories={categories}
+          guides={guides}
+          selectedCategory={selectedCategory}
+          selectedDocType={selectedDocType}
+          onSelectCategory={setSelectedCategory}
+          onSelectDocType={setSelectedDocType}
+        />
+      </div>
 
 
-      {/* 中栏：文档列表 */}
-      <div className="border-b border-border bg-background pt-8 pr-5 pb-5 pl-5 lg:w-[320px] lg:flex-shrink-0 lg:border-b-0 lg:border-r lg:overflow-y-auto lg:h-[calc(100vh-84px)] lg:sticky lg:top-[84px]">
+      {/* 中栏：文档列表 — 移动端进入详情页时隐藏 */}
+      <div className={cn(
+        "border-b border-border bg-background pt-8 pr-5 pb-5 pl-5 lg:w-[320px] lg:flex-shrink-0 lg:border-b-0 lg:border-r lg:overflow-y-auto lg:h-[calc(100vh-84px)] lg:sticky lg:top-[84px]",
+        mobileDetailMode && "hidden lg:flex"
+      )}>
         <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -138,8 +146,8 @@ export default function TdsIndexPage() {
         </div>
       </div>
 
-      {/* 右栏：详情内容 / 欢迎提示 */}
-      <div className="flex min-h-0 flex-1 flex-col lg:h-[calc(100vh-84px)] lg:sticky lg:top-[84px]">
+      {/* 右栏：详情内容 / 欢迎提示（桌面端） */}
+      <div className="hidden lg:flex min-h-0 flex-1 flex-col lg:h-[calc(100vh-84px)] lg:sticky lg:top-[84px]">
         {selectedGuide ? (
           <TdsGuideContent
             guide={selectedGuide}
@@ -155,6 +163,35 @@ export default function TdsIndexPage() {
               </p>
             </div>
           </div>
+        )}
+      </div>
+
+      {/* 移动端：选中文档时切换为详情视图（含返回栏 + 详情内容） */}
+      <div className={cn("lg:hidden", mobileDetailMode ? "flex flex-1 flex-col" : "hidden")}>
+        {selectedGuide && (
+          <>
+            {/* 二级返回栏 */}
+            <div className="tds-detail-backbar flex items-center gap-2 border-b border-border bg-background px-4 py-3">
+              <button
+                type="button"
+                onClick={() => setSelectedGuideId(null)}
+                aria-label="Back to documents"
+                className="inline-flex size-9 items-center justify-center rounded-lg text-foreground hover:bg-muted"
+              >
+                <ChevronLeft className="size-6" />
+              </button>
+              <span className="truncate text-sm font-semibold text-foreground">
+                {pickText(lang, selectedGuide.title, selectedGuide.titleZh)}
+              </span>
+            </div>
+            {/* 详情内容：占满剩余空间，可滚动 */}
+            <div className="flex-1 overflow-y-auto">
+              <TdsGuideContent
+                guide={selectedGuide}
+                onBack={() => setSelectedGuideId(null)}
+              />
+            </div>
+          </>
         )}
       </div>
     </div>

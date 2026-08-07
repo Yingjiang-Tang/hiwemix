@@ -84,30 +84,37 @@ export default function DataManagementPage() {
     <div className="min-h-screen overflow-x-clip bg-background">
       <SiteHeader />
 
-      {/* 移动端浮动按钮 */}
-      <button
-        onClick={() => setMobileNavOpen((v) => !v)}
-        aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
-        className="fixed right-4 top-20 z-[1250] inline-flex size-9 items-center justify-center rounded-lg border border-border bg-card shadow-sm md:hidden"
-      >
-        <Menu className="size-5" />
-      </button>
+      {/* 移动端：Header 下方独立一栏放汉堡菜单按钮（样式对齐 TDS 面板） */}
+      {/* pt-[84px] 避开固定定位的 Header（79px 高），与 tds/layout 的间距一致，否则栏会被 Header 盖住 */}
+      <div className="pt-[84px] md:hidden">
+        <div className="flex items-center gap-2 border-b border-border bg-background px-4 py-3">
+          <button
+            onClick={() => setMobileNavOpen((v) => !v)}
+            aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
+            className="inline-flex size-9 items-center justify-center rounded-lg text-foreground"
+          >
+            <Menu className="size-6" />
+          </button>
+          <span className="text-sm font-semibold text-foreground">数据管理</span>
+        </div>
+      </div>
 
-      <div className="flex pt-[84px]">
+      <div className="flex pt-0 md:pt-[84px]">
         {/* 桌面端侧边栏 */}
         <aside className="hidden md:block w-[224px] flex-shrink-0 border-r border-border bg-card h-[calc(100vh-64px)] sticky top-16 overflow-y-auto">
           <SideNav activeTab={activeTab} onSelect={setActiveTab} />
         </aside>
 
         {/* 移动端 Sheet 侧边栏 */}
+        {/* z-50（默认）低于固定 Header 的 z-1100，Header 始终保持在最顶层可见；pt-[136px] 向下让出 Header(79px)+汉堡栏(约57px) */}
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-          <SheetContent side="left" className="w-[224px] p-0 pt-12">
+          <SheetContent side="left" className="w-[224px] p-0 pt-[136px]">
             <SideNav activeTab={activeTab} onSelect={setActiveTab} onClose={() => setMobileNavOpen(false)} />
           </SheetContent>
         </Sheet>
 
-        {/* 右侧主区 */}
-        <main className="flex-1 min-h-[calc(100vh-64px)] px-6 py-6 sm:px-8 md:px-[60px]">
+        {/* 右侧主区 — min-w-0：允许 flex 子项收缩到视口宽，表格才能在自己的容器内横向滚动（否则 min-w-max 的表格会把 main 撑宽被外层 clip 裁剪） */}
+        <main className="min-w-0 flex-1 min-h-[calc(100vh-64px)] px-6 py-6 sm:px-8 md:px-[60px]">
           {activeTab === "brands" && <BrandsPanel />}
           {activeTab === "colors" && <ColorsPanel />}
           {activeTab === "variants" && <VariantsPanel />}
