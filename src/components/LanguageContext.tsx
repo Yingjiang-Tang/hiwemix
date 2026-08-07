@@ -25,10 +25,19 @@ interface LanguageContextValue {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("en");
+export function LanguageProvider({ children, initialLang = "en" }: { children: ReactNode; initialLang?: Lang }) {
+  const [lang, setLangState] = useState<Lang>(initialLang);
   const [t, setT] = useState<I18nDict>(ENGLISH_DEFAULTS);
   const [loading, setLoading] = useState(false);
+
+  // SSR 已解析出 cookie 语言（layout 传入 initialLang）：挂载后立即加载对应字典，
+  // 避免首屏固定英文后再翻折（客户端无 cookie 时由下方 effect 兜底）
+  useEffect(() => {
+    if (initialLang !== "en") {
+      loadDict(initialLang).then((d) => setT(d)).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const setLang = useCallback((l: Lang) => {
     setLangState(l);

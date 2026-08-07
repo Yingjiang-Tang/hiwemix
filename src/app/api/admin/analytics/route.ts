@@ -28,8 +28,8 @@ export async function GET(req: NextRequest) {
     getDailyPageViews(days),
     getUniqueVisitors(days),
     getEventTypeCounts(days),
-    getTopSearches(20),
-    getTopFormulaViews(20),
+    getTopSearches(20, days),
+    getTopFormulaViews(20, days),
   ]);
 
   return NextResponse.json({

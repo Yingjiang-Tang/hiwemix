@@ -49,16 +49,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "缺少 formula_id" }, { status: 400 });
     }
 
-    const saved = await addUserFavorite(user.id, {
-      formula_id: body.formula_id,
-      color_code: body.color_code ?? "",
-      color_name: body.color_name ?? "",
-      make_name: body.make_name ?? "",
-      formula_type: body.formula_type ?? "",
-      paint_system: body.paint_system ?? "",
-      version: body.version ?? "",
-    });
-    return NextResponse.json(saved, { status: 201 });
+    try {
+      const saved = await addUserFavorite(user.id, {
+        formula_id: body.formula_id,
+        color_code: body.color_code ?? "",
+        color_name: body.color_name ?? "",
+        make_name: body.make_name ?? "",
+        formula_type: body.formula_type ?? "",
+        paint_system: body.paint_system ?? "",
+        version: body.version ?? "",
+      });
+      return NextResponse.json(saved, { status: 201 });
+    } catch (e: unknown) {
+      const msg = extractError(e);
+      if (msg.includes("formula not found")) {
+        return NextResponse.json({ error: "配方不存在" }, { status: 400 });
+      }
+      throw e;
+    }
   } catch (e: unknown) {
     const msg = extractError(e);
     console.error("[POST /api/favorites]", msg);

@@ -7,7 +7,7 @@ import Providers from "@/components/Providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import BackToTop from "@/components/BackToTop";
 import { Noto_Sans_SC, Noto_Sans_Arabic, Noto_Sans_Hebrew, Geist } from "next/font/google";
-import { LANGS } from "@/lib/i18n";
+import { LANGS, type Lang } from "@/lib/i18n";
 import { LANG_COOKIE } from "@/lib/cookies";
 
 import "./globals.css";
@@ -62,7 +62,7 @@ export default async function RootLayout({
       <body className="min-h-full">
         <TooltipProvider delay={300}>
           <Providers>
-          <LanguageProvider>
+          <LanguageProvider initialLang={lang as Lang}>
             <AuthProvider>
               <FavoritesProvider>
                 {children}

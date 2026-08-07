@@ -38,6 +38,15 @@ export async function getUserFavorites(userId: string): Promise<UserFavorite[]> 
 
 /** 新增收藏（幂等：同 user+formula 已存在则直接返回现有记录） */
 export async function addUserFavorite(userId: string, snapshot: FavoriteSnapshot): Promise<UserFavorite> {
+  // 服务端校验 formula 真实存在：避免伪造 formula_id 触发 FK 500，也避免收藏幽灵配方
+  const { data: formulaRow, error: formulaErr } = await getSupabaseAdmin()
+    .from("formulas")
+    .select("id")
+    .eq("id", snapshot.formula_id)
+    .maybeSingle();
+  if (formulaErr) throw new Error(formulaErr.message || "query formula failed");
+  if (!formulaRow) throw new Error("formula not found");
+
   const { data, error } = await getSupabaseAdmin()
     .from("user_favorites")
     .upsert(

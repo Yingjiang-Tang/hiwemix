@@ -20,11 +20,16 @@ export async function getUserFromSupabase(): Promise<SupabaseAuthUser | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.id) return null;
 
-  const { data: profile } = await getSupabaseAdmin()
+  const { data: profile, error } = await getSupabaseAdmin()
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
+
+  // 查询失败（网络/RLS 等）抛错而非静默当普通用户，避免把管理员瞬时降级成 user
+  if (error) {
+    throw new Error("load profile failed: " + error.message);
+  }
 
   return {
     id: user.id,
@@ -59,8 +64,17 @@ export function requireSupabaseAdmin(user: SupabaseAuthUser): NextResponse | nul
 export async function checkSupabaseAdmin(): Promise<
   { user: SupabaseAuthUser; error: null } | { user: null; error: NextResponse }
 > {
-  const { user, error } = await requireSupabaseAuth();
-  if (error) return { user: null, error };
+  let user: SupabaseAuthUser | null;
+  try {
+    const authRes = await requireSupabaseAuth();
+    if (authRes.error) return { user: null, error: authRes.error };
+    user = authRes.user;
+  } catch (e) {
+    // profile 查询失败（网络/瞬时）不可降级为普通用户：返回结构化 500，管理端可重试
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[checkSupabaseAdmin] load profile failed:", msg);
+    return { user: null, error: NextResponse.json({ error: "服务器内部错误" }, { status: 500 }) };
+  }
   const adminErr = requireSupabaseAdmin(user);
   if (adminErr) return { user: null, error: adminErr };
   return { user, error: null };

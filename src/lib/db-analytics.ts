@@ -71,12 +71,13 @@ export async function getDailyPageViews(days: number): Promise<{ date: string; c
   return result;
 }
 
-/** 热门搜索（按事件数据中的关键词聚合，Top N） */
-export async function getTopSearches(limit = 20): Promise<{ label: string; count: number }[]> {
+/** 热门搜索（按事件数据中的关键词聚合，Top N；限定最近 days 天，避免只取最近 5000 条漏掉历史热词） */
+export async function getTopSearches(limit = 20, days = 14): Promise<{ label: string; count: number }[]> {
   const { data, error } = await getSupabaseAdmin()
     .from("analytics_events")
     .select("event_data")
     .eq("event_type", "search")
+    .gte("created_at", new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
     .order("created_at", { ascending: false })
     .limit(5000);
   if (error) return [];
@@ -98,12 +99,13 @@ export async function getTopSearches(limit = 20): Promise<{ label: string; count
     .slice(0, limit);
 }
 
-/** 热门查看的配方（按 color 维度聚合，Top N） */
-export async function getTopFormulaViews(limit = 20): Promise<{ label: string; count: number }[]> {
+/** 热门查看的配方（按 color 维度聚合，Top N；限定最近 days 天） */
+export async function getTopFormulaViews(limit = 20, days = 14): Promise<{ label: string; count: number }[]> {
   const { data, error } = await getSupabaseAdmin()
     .from("analytics_events")
     .select("event_data")
     .eq("event_type", "formula_view")
+    .gte("created_at", new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
     .order("created_at", { ascending: false })
     .limit(5000);
   if (error) return [];

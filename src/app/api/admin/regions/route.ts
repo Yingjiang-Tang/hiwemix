@@ -34,7 +34,12 @@ export async function POST(req: NextRequest) {
   const { error: authError } = await checkSupabaseAdmin();
   if (authError) return authError;
 
-  const body = (await req.json()) as { code?: string };
+  let body: { code?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
+  }
   if (!body.code || !body.code.trim()) {
     return NextResponse.json({ error: "缺少产地代码" }, { status: 400 });
   }
@@ -79,7 +84,12 @@ export async function DELETE(req: NextRequest) {
   const { error: authError } = await checkSupabaseAdmin();
   if (authError) return authError;
 
-  const body = (await req.json()) as { code?: string };
+  let body: { code?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
+  }
   if (!body.code) {
     return NextResponse.json({ error: "缺少产地代码" }, { status: 400 });
   }
