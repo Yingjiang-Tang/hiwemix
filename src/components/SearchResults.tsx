@@ -12,7 +12,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { SearchSlash, ChevronUp, Eye, Heart } from "lucide-react";
+import { SearchSlash, ChevronUp, ChevronDown, Eye, Heart } from "lucide-react";
 
 // 品牌筛选「全部品牌」选项的值
 const ALL_MAKES = "all";
@@ -240,9 +240,9 @@ function GroupedColorCard({
         <div className="pointer-events-none absolute bottom-2 right-2 z-10">
           <Badge variant="default" className="text-xs shadow-lg">
             +{rows.length - 1}
-          </Badge>
-        </div>
-      )}
+         </Badge>
+       </div>
+     )}
     </div>
   );
 
@@ -473,6 +473,8 @@ export default function SearchResults({
   const { t } = useLang();
   // 品牌筛选：默认「全部品牌」，选中某个品牌后只显示该品牌的分段
   const [activeMake, setActiveMake] = useState<string>(ALL_MAKES);
+  // 手机端：品牌筛选栏折叠/展开
+  const [filterExpanded, setFilterExpanded] = useState(false);
 
   // sticky 品牌筛选栏吸附状态：卡片顶部顶到 Header 底部（79px）时，上方两角变直角贴住 Header；离开吸附恢复圆角
   const [barStuck, setBarStuck] = useState(false);
@@ -572,16 +574,30 @@ export default function SearchResults({
 
   return (
     <div>
-      {/* 品牌筛选栏：All + 各品牌（与配方搜索面板同款圆角卡片样式），滚动吸附在 Header 下方；吸附时上方两角变直角贴住 Header，回到顶部恢复圆角 */}
+      {/* 品牌筛选栏：手机端点按展开，自动折叠 */}
       <div
         ref={barRef}
         className={cn(
-          "sticky top-[79px] z-30 rounded-xl bg-card p-6 ring-1 ring-border shadow-[var(--shadow-level-1)]",
+          "sticky top-[79px] z-30 rounded-xl bg-card ring-1 ring-border shadow-[var(--shadow-level-1)] md:p-6",
           barStuck && "rounded-t-none border-t-0"
         )}
       >
+        {/* 手机端折叠头部 */}
+        <button
+          type="button"
+          onClick={() => setFilterExpanded((v) => !v)}
+          className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium md:hidden"
+        >
+          <span className="text-foreground">
+            {activeMake === ALL_MAKES ? t.allMakes : activeMake}
+          </span>
+          <ChevronDown className={cn("size-4 transition-transform", filterExpanded && "rotate-180")} />
+        </button>
+
+        {/* Tabs 列表：手机端折叠隐藏，桌面端始终显示 */}
+        <div className={cn(filterExpanded ? "block" : "hidden md:block")}>
         <div className="flex min-w-0 flex-1">
-          <Tabs value={activeMake} onValueChange={(v) => setActiveMake(v)} className="w-full">
+          <Tabs value={activeMake} onValueChange={(v) => { setActiveMake(v); setFilterExpanded(false); }} className="w-full">
             <TabsList variant="default" className="group-data-horizontal/tabs:h-fit h-auto w-full flex-wrap justify-start gap-1 rounded-none bg-transparent p-0">
               <TabsTrigger value={ALL_MAKES} className="h-9 flex-none gap-1.5 rounded-full px-4 text-sm data-active:bg-muted">
                 {t.allMakes}
@@ -598,7 +614,8 @@ export default function SearchResults({
                 </TabsTrigger>
               ))}
             </TabsList>
-          </Tabs>
+         </Tabs>
+        </div>
         </div>
       </div>
 

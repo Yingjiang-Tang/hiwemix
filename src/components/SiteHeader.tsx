@@ -77,7 +77,7 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
             <img
               src="/hiwemix2-01.png"
               alt="HIWE MIX"
-              className="h-5 w-auto object-contain block md:h-8 transition-all duration-[1.5s] ease-in-out"
+              className="h-[28px] w-auto object-contain block md:h-8 transition-all duration-[1.5s] ease-in-out"
             />
           </a>
           </div>
@@ -133,22 +133,23 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
             ) : (
               <Link
                 href="/login"
-                className="header-login-btn inline-flex h-8 items-center rounded-lg border px-6 text-2xs font-medium transition-all duration-[1.5s] ease-in-out"
+                className="inline-flex items-center rounded-md bg-transparent text-foreground border border-gray-300 dark:border-gray-600 font-medium transition-all duration-[1.5s] ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800 h-[30px] px-5 text-2xs"
                 style={{ transition: transitionStyle }}
               >
                 {t.login}
               </Link>
             )}
 
-            <LanguageSwitcher transitionStyle={transitionStyle} />
+            <div className="hidden md:flex items-center gap-3">
+              <LanguageSwitcher transitionStyle={transitionStyle} />
 
-            <ThemeToggle />
+              <ThemeToggle />
+            </div>
 
             {/* 移动端汉堡按钮 */}
             <button
               onClick={() => setMobileMenuOpen((o) => !o)}
-              className="inline-flex size-9 items-center justify-center rounded-lg md:hidden"
-              style={{ color: "var(--header-text)", transition: transitionStyle }}
+              className="text-primary inline-flex size-9 items-center justify-center rounded-lg md:hidden"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >
               {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
@@ -159,7 +160,7 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
 
       {/* 移动端导航 Sheet */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="right" className="w-[min(80vw,320px)] p-0">
+        <SheetContent side="right" className="w-[min(80vw,320px)] p-0 flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <img
               src="/hiwemix2-01.png"
@@ -175,7 +176,7 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
             </button>
           </div>
 
-          <div className="pt-2">
+          <div className="flex-1 overflow-auto pt-[28px]">
             {navItems.map((item) => {
               const active = isActive(item.href);
               return (
@@ -183,10 +184,10 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
                   key={item.label}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`block mx-3 px-3 py-3.5 rounded-xl text-sm font-semibold transition-colors ${
+                  className={`block mx-3 px-3 py-3 text-sm font-semibold transition-colors ${
                     active
-                      ? "bg-blue-50 text-primary font-semibold"
-                      : "text-foreground/80 hover:bg-muted"
+    ? "bg-gray-800 text-white rounded-none"
+                      : "text-foreground/80 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 hover:rounded-none"
                   }`}
                   aria-current={active ? "page" : undefined}
                 >
@@ -209,9 +210,13 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
               <span className="block mx-3 px-3 py-3.5 rounded-xl text-sm text-foreground/80">
                 {authUser.email}
               </span>
-              <Separator className="my-1" />
-            </>
-          )}
+             <Separator className="my-1" />
+           </>
+         )}
+          <div className="mt-auto flex items-center justify-end gap-3 px-3 py-3 border-t border-border">
+            <LanguageSwitcher />
+            <ThemeToggle />
+          </div>
         </SheetContent>
       </Sheet>
     </>

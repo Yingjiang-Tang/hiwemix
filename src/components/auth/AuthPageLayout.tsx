@@ -11,7 +11,7 @@ export function AuthPageLayout({ children }: { children: React.ReactNode }) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="HIWE MIX"
-        className="absolute left-6 top-6 z-20 lg:left-10 lg:top-8"
+        className="absolute left-1/2 top-[35px] z-20 -translate-x-1/2 lg:left-10 lg:top-8 lg:translate-x-0"
       >
         <Image
           src="/hiwemix2-01.png"
@@ -22,7 +22,7 @@ export function AuthPageLayout({ children }: { children: React.ReactNode }) {
         />
       </a>
 
-      <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
+      <div className="flex min-h-svh flex-col items-center justify-center bg-muted px-6 pb-6 pt-24 md:p-10">
         <div className="w-full max-w-sm md:max-w-4xl">{children}</div>
       </div>
     </div>
