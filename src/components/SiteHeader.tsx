@@ -214,7 +214,7 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
            </>
          )}
           <div className="mt-auto flex items-center justify-end gap-3 px-3 py-3 border-t border-border">
-            <LanguageSwitcher />
+            <LanguageSwitcher transitionStyle="" />
             <ThemeToggle />
           </div>
         </SheetContent>
