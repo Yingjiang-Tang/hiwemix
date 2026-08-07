@@ -247,6 +247,8 @@ function mapFormulaRow(row: Record<string, unknown>, tonerMap?: Map<string, Tone
     if (c.density != null) comp.density = Number(c.density);
     // 色母目录 hex 优先（改 toner 颜色后所有配方实时同步）；组件自带 rgb 仅兜底
     const toner = tonerMap ? findToner(tonerMap, String(c.toner_code ?? "")) : undefined;
+    // 附带色母分类：供 density 换算按分类典型密度（L2）取值
+    if (toner?.category) comp.tonerCategory = toner.category;
     const ownRgb =
       c.rgb_r != null && c.rgb_g != null && c.rgb_b != null
         ? { rgb_r: Number(c.rgb_r) || 0, rgb_g: Number(c.rgb_g) || 0, rgb_b: Number(c.rgb_b) || 0 }
@@ -302,20 +304,66 @@ export async function deleteBrand(id: string): Promise<void> {
 // --- Formula Types ---
 
 export async function saveFormulaType(variant: ColorVariant, originalId?: string): Promise<ColorVariant> {
-  // 如果 ID 发生了变更，先删除旧记录再插入新记录
+  // 如果 ID 发生了变更：先把所有引用迁移到新 ID，再删除旧记录。
+  // 引用它的表：color_variant_map（颜色-变体关联）、formulas（配方）、
+  // color_variants（变体真名/年份，FK 目标）。顺序迁移后删除 formula_types 旧行，
+  // 保证重命名后旧变体不残留、新变体不悬空。
   if (originalId && originalId !== variant.id) {
+    // 1. 在 color_variants 中建立新 ID 行（沿用旧行真名，待下方 upsert 用新名覆盖）
+    const { error: cvErr } = await getSupabaseAdmin()
+      .from("color_variants")
+      .upsert({
+        id: variant.id,
+        name: variant.name,
+        year_range: variant.year_range ?? "",
+      });
+    if (cvErr) throw new Error("create new color_variant failed: " + cvErr.message);
+
+    // 2. 迁移 color_variant_map（多对多关联）
+    const { error: mapErr } = await getSupabaseAdmin()
+      .from("color_variant_map")
+      .update({ variant_id: variant.id })
+      .eq("variant_id", originalId);
+    if (mapErr) throw new Error("relink color_variant_map failed: " + mapErr.message);
+
+    // 3. 迁移 formulas.variant_id（ON DELETE SET NULL，不迁移会在删旧行时把配方置空）
+    const { error: fErr } = await getSupabaseAdmin()
+      .from("formulas")
+      .update({ variant_id: variant.id })
+      .eq("variant_id", originalId);
+    if (fErr) throw new Error("relink formulas failed: " + fErr.message);
+
+    // 4. 删除旧 color_variants 行（此时已无引用）
+    const { error: delCvErr } = await getSupabaseAdmin()
+      .from("color_variants")
+      .delete()
+      .eq("id", originalId);
+    if (delCvErr) throw new Error("delete old color_variant failed: " + delCvErr.message);
+
+    // 5. 最后删除旧 formula_types 行
     const { error: delErr } = await getSupabaseAdmin()
       .from("formula_types")
       .delete()
       .eq("id", originalId);
-    if (delErr) throw delErr;
+    if (delErr) throw new Error("delete old formula_type failed: " + delErr.message);
   }
   const { data, error } = await getSupabaseAdmin()
     .from("formula_types")
-    .upsert({ id: variant.id, name: variant.name, year_range: variant.year_range })
+    .upsert({ id: variant.id, name: variant.name, year_range: variant.year_range ?? "" })
     .select()
     .single();
   if (error) throw error;
+  // 同步 color_variants 的新 ID 行名（若无 ID 变更，name/year_range 变化也要反映到 color_variants）
+  if (!originalId || originalId === variant.id) {
+    const { error: syncErr } = await getSupabaseAdmin()
+      .from("color_variants")
+      .upsert({
+        id: variant.id,
+        name: variant.name,
+        year_range: variant.year_range ?? "",
+      });
+    if (syncErr) throw new Error("sync color_variant failed: " + syncErr.message);
+  }
   return data as ColorVariant;
 }
 

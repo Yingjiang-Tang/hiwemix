@@ -53,6 +53,7 @@ export interface FormulaComponent {
   percentage: number      // 在总配方中的百分比，例如 45.5
   grams_per_100g: number  // 每 100g 总漆的用量克数
   density?: number        // 密度
+  tonerCategory?: TonerCategory  // 色母分类（mapFormulaRow 从色母目录派生，供密度换算用）
   rgb_r?: number          // RGB Red
   rgb_g?: number          // RGB Green
   rgb_b?: number          // RGB Blue

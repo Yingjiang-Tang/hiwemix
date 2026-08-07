@@ -23,9 +23,11 @@ export function densityForCategory(category: TonerCategory | undefined): number 
   return FALLBACK_DENSITY;
 }
 
-/** 单个组件的有效密度：自带 density 优先（L1），否则按分类典型值（L2→L3） */
+/** 单个组件的有效密度：自带 density 优先（L1），否则按组件携带的分类（L2），最后按回调分类（L2）或兜底（L3） */
 export function componentDensity(comp: FormulaComponent, categoryOf?: (code: string) => TonerCategory | undefined): number {
   if (comp.density != null && comp.density > 0) return comp.density;
+  const byComp = densityForCategory(comp.tonerCategory);
+  if (byComp !== FALLBACK_DENSITY) return byComp;
   return densityForCategory(categoryOf?.(comp.toner_code));
 }
 

@@ -27,7 +27,7 @@ export default function FormulasPanel() {
   const [brands, setBrands] = useState<CarMake[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [form, setForm] = useState({ id: "", color_id: "", version: "v1", paint_system: "2K" as Formula["paint_system"], formula_type: AUTO_2K_TYPE, notes: "", year: undefined as number | undefined });
+  const [form, setForm] = useState({ id: "", color_id: "", variant_id: "", version: "v1", paint_system: "2K" as Formula["paint_system"], formula_type: AUTO_2K_TYPE, notes: "", year: undefined as number | undefined });
   const [components, setComponents] = useState<FormulaComponent[]>([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -77,7 +77,7 @@ export default function FormulasPanel() {
     return Math.abs(((percentageSums as { all: number }).all) - 100) < 0.01;
   }, [percentageSums, form.formula_type, components]);
 
-  useEffect(() => { if (!selectedId && !idManuallyEdited.current && form.color_id && form.version) setForm((prev) => ({ ...prev, id: generateFormulaId(form.color_id, "", form.version) })); }, [form.color_id, form.version, selectedId]);
+  useEffect(() => { if (!selectedId && !idManuallyEdited.current && form.color_id && form.version) setForm((prev) => ({ ...prev, id: generateFormulaId(form.color_id, form.variant_id, form.version) })); }, [form.color_id, form.variant_id, form.version, selectedId]);
 
   const fetchFormulas = useCallback(async () => { try { const res = await fetch("/api/admin/formulas"); if (res.ok) setFormulas(await res.json()); } catch {} setLoading(false); }, []);
   useEffect(() => {
@@ -94,7 +94,7 @@ export default function FormulasPanel() {
 
   function selectFormula(formula: Formula) {
     setSelectedId(formula.id);
-    setForm({ id: formula.id, color_id: formula.color_id, version: formula.version, paint_system: formula.paint_system, formula_type: formula.formula_type, notes: formula.notes, year: formula.year });
+    setForm({ id: formula.id, color_id: formula.color_id, variant_id: formula.variant_id, version: formula.version, paint_system: formula.paint_system, formula_type: formula.formula_type, notes: formula.notes, year: formula.year });
     setComponents(formula.components.map((c) => ({ ...c, grams_per_100g: c.percentage })));
     setPctInputs({});
     setError(""); setMessage("");
@@ -104,7 +104,7 @@ export default function FormulasPanel() {
   }
 
   function newFormula() {
-    setSelectedId(null); setForm({ id: "", color_id: "", version: "v1", paint_system: "2K", formula_type: AUTO_2K_TYPE, notes: "", year: undefined });
+    setSelectedId(null); setForm({ id: "", color_id: "", variant_id: "", version: "v1", paint_system: "2K", formula_type: AUTO_2K_TYPE, notes: "", year: undefined });
     setComponents([]); setPctInputs({}); setError(""); setMessage(""); setColorQuery(""); setAvailableYears([]); idManuallyEdited.current = false;
   }
 
@@ -146,7 +146,8 @@ export default function FormulasPanel() {
     setError(""); setMessage("");
     if (!form.id || !form.color_id) { setError("配方 ID 和关联颜色不能为空"); return; }
     const comps = components.filter((c) => c.toner_code.trim()).map((c) => ({ ...c, grams_per_100g: c.percentage }));
-    const payload: Formula = { ...form, variant_id: "", components: comps, updated_at: "", year: form.year };
+    // 变体保留：selectFormula 已把已有 variant_id 写进 form；新建时由用户选择（不选则为 "" → null）
+    const payload: Formula = { ...form, variant_id: form.variant_id, components: comps, updated_at: "", year: form.year };
     try {
       const res = await fetch("/api/admin/formulas", { method: selectedId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (res.ok) { setMessage("保存成功"); fetchFormulas(); setSelectedId(payload.id); }
@@ -319,7 +320,7 @@ export default function FormulasPanel() {
                 {matchingColors(colorQuery, colors, brands).map((c) => {
                   const bName = brandMap.get(c.make_id) ?? c.make_id;
                   return (
-                    <button key={c.id} onMouseDown={() => { setForm((prev) => ({ ...prev, color_id: c.id, year: undefined })); setColorQuery(`${c.color_code} - ${c.color_name} (${bName})`); setColorDropdownOpen(false); setAvailableYears(c.years || []); }}
+                    <button key={c.id} onMouseDown={() => { setForm((prev) => ({ ...prev, color_id: c.id, variant_id: "", year: undefined })); setColorQuery(`${c.color_code} - ${c.color_name} (${bName})`); setColorDropdownOpen(false); setAvailableYears(c.years || []); }}
                       className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted">
                       <div className="size-5 rounded border border-border" style={{ backgroundColor: c.hex_preview }} />
                       <span className="font-medium">{c.color_code}</span>
@@ -336,6 +337,17 @@ export default function FormulasPanel() {
             <Select value={form.year?.toString() || ""} onValueChange={(v) => setForm({ ...form, year: v ? parseInt(v, 10) : undefined })} disabled={!form.color_id}>
               <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue placeholder="所有年份" /></SelectTrigger>
               <SelectContent>{expandedYears.map((y) => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-sm font-medium text-foreground/80">关联变体</Label>
+            <Select value={form.variant_id} onValueChange={(v) => setForm({ ...form, variant_id: v || "" })}>
+              <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue placeholder="不关联变体" /></SelectTrigger>
+              <SelectContent>
+                {(colors.find((c) => c.id === form.color_id)?.variants ?? []).map((v) => (
+                  <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
           <div className="flex flex-col gap-1.5">
