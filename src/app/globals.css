@@ -3,6 +3,39 @@
 @import "shadcn/tailwind.css";
 @plugin "@tailwindcss/typography";
 
+/*
+ * ===== Z-Index 层级规范 =====
+ * 全局叠加层从低到高的统一尺度（数字越大越靠前）：
+ *
+ *   z-50     Sheet / Dialog 遮罩层 + Sheet 内容（Base UI 默认）
+ *   z-[100]   Dropdown / Popover 弹出内容
+ *   z-[200]   Sticky 元素（表格表头等）
+ *   z-[1100]  SiteHeader（fixed 定位，需高于所有页面内容）
+ *   z-[1300]  Dialog 模态框（高于 Header）
+ *   z-[2000]  FormulaDrawer 全屏 Sheet + Toast 通知
+ *   z-[2100]  Select 下拉内容（最高，覆盖一切）
+ *
+ * 新增叠加层时请在此尺度中选择合适的层级，避免随意使用任意值。
+ *
+ * ===== 移动端响应式 =====
+ * 项目使用 CSS-only 响应式（无 JS 视口检测 hook），两条通道：
+ *   1. 组件 JSX 中的 max-md: / md: / lg: 前缀（mobile-first，推荐新代码使用）
+ *   2. 下方的 @media 块用于深层后代选择器覆盖（复杂布局无法用 Tailwind 表达时使用）
+ *
+ * 注意：仅在"需要覆盖 Tailwind 无法表达的深层嵌套选择器"时才新增 @media 块。
+ *
+ * 断点约定（Tailwind v4 CSS-first，对应 @theme inline 中的默认断点）：
+ *   sm:  640px+  小屏以上
+ *   md:  768px+  平板/桌面
+ *   lg:  1024px+ 宽桌面
+ *   对应的 max-* variant（如 max-md:）表示"低于该断点"，即移动端专用样式。
+ *
+ * 容器内边距阶梯（全站约定）：
+ *   移动端: px-6 (24px)
+ *   sm 以上: sm:px-8 (32px)
+ *   md 以上: md:px-[60px] (60px)
+ */
+
 @custom-variant dark (&:is(.dark *));
 
 /* ===== Login page — Apple-style fluid gradient (left 40% panel) ===== */
@@ -13,30 +46,6 @@
     radial-gradient(ellipse 60% 80% at 50% 50%, rgba(36, 135, 202, 0.6) 0%, transparent 70%),
     linear-gradient(135deg, #2487ca 0%, #3a9de0 50%, #6366F1 100%);
   background-blend-mode: screen, screen, screen, normal;
-}
-
-.fluid-blob {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 320px;
-  height: 320px;
-  margin: -160px 0 0 -160px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.18) 0%, transparent 70%);
-  border-radius: 50%;
-  filter: blur(40px);
-  pointer-events: none;
-  animation: fluid-blob-float 8s ease-in-out infinite;
-}
-
-@keyframes fluid-blob-float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33%      { transform: translate(-30px, -40px) scale(1.05); }
-  66%      { transform: translate(40px, 30px) scale(0.95); }
-}
-
-@media (max-width: 1023px) {
-  .fluid-blob { width: 200px; height: 200px; margin: -100px 0 0 -100px; }
 }
 
 :root {
@@ -76,8 +85,9 @@
 
 /* ===== Header theme — CSS 变量驱动双态 ===== */
 :root {
-  /* 默认（内页）：白底深字 */
-  --header-bg: #ffffff;
+  /* 默认（内页）：半透明背景 + 毛玻璃 */
+  --header-bg: rgba(255, 255, 255, 0.88);
+  --header-backdrop: blur(12px);
   --header-text: #1f2937;
   --header-text-muted: #6b7280;
   --header-border: #e5e7eb;
@@ -88,8 +98,9 @@
 }
 
 [data-header-theme="home"] {
-  /* 首页：白色背景 + 黑灰字（浅色模式） */
-  --header-bg: #ffffff;
+  /* 首页：半透明背景 + 毛玻璃 */
+  --header-bg: rgba(255, 255, 255, 0.88);
+  --header-backdrop: blur(12px);
   --header-text: #1f2937;
   --header-text-muted: rgba(31, 41, 55, 0.65);
   --header-border: #e5e7eb;
@@ -100,9 +111,9 @@
   --header-bottom-border: #e5e7eb;
 }
 
-/* 首页 Header 在暗色模式下：覆盖为暗色背景 + 浅色文字（自身声明优先级高于继承值） */
+/* 首页 Header 在暗色模式下：半透明暗色背景 + 浅色文字（自身声明优先级高于继承值） */
 .dark [data-header-theme="home"] {
-  --header-bg: var(--background);
+  --header-bg: rgba(28, 28, 31, 0.88);
   --header-text: var(--foreground);
   --header-text-muted: var(--muted-foreground);
   --header-border: var(--border);
@@ -391,20 +402,24 @@ html[lang="he"] body {
     display: none !important;
   }
 
-  header, aside, footer, nav, button, [aria-hidden="true"], .mobile-fab, script, style {
+  /* 隐藏页头/侧栏/按钮等非配方内容（scope 与 .printing-formula 一致，
+     用 html.printing-formula 限定，避免影响未来其他页面的打印需求） */
+  html.printing-formula header,
+  html.printing-formula aside,
+  html.printing-formula footer,
+  html.printing-formula nav {
     display: none !important;
   }
 
-  body > *:not(script):not(style) {
-    display: block !important;
-    max-width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
+  body {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #000;
+    background: #fff;
   }
 
   /* 配方抽屉打印：fixed 容器改为 static，溢出内容全部展开跨页流动 */
-  .formula-print-area,
-  .formula-print-area [data-slot="sheet-content"] {
+  .formula-print-area {
     position: static !important;
     transform: none !important;
     width: auto !important;
@@ -421,8 +436,15 @@ html[lang="he"] body {
     display: block !important;
   }
 
-  .formula-print-area [data-slot="sheet-overlay"] {
+  /* 打印时隐藏遮罩层（overlay 是 drawer 的兄弟节点，不在 .formula-print-area 内部，
+     需要通过 portal 选择器定位） */
+  [data-slot="sheet-portal"] [data-slot="sheet-overlay"] {
     display: none !important;
+  }
+
+  /* 移动端抽屉在打印媒体也保持流式（不用 fixed 定位） */
+  .formula-drawer {
+    position: static !important;
   }
 
   /* 抽屉内部两栏打印时改纵向堆叠 */
@@ -449,13 +471,6 @@ html[lang="he"] body {
     display: none !important;
   }
 
-  body {
-    font-size: 12px;
-    line-height: 1.5;
-    color: #000;
-    background: #fff;
-  }
-
   /* 配方抽屉打印分页：左栏配方表格在第 1 页，右栏颜色预览+信息强制从第 2 页开始 */
   .formula-print-area [class*="md:flex-[37.5%]"] {
     break-before: page;
@@ -470,44 +485,9 @@ html[lang="he"] body {
   }
 }
 
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
 /* 标题折行优化：在词边界换行，避免单词被拆成两行 */
 h1, h2, h3 {
   text-wrap: balance;
-}
-
-/* ===== 响应式全局工具类 ===== */
-
-/* 移动端表格横向滚动 */
-.table-responsive-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x pan-y;
-}
-.table-responsive-scroll table {
-  min-width: 600px;
-}
-
-/* 移动端安全内边距 */
-@media (max-width: 599px) {
-  .mobile-safe-x {
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-}
-
-/* 移动端隐藏低优先级列 */
-@media (max-width: 899px) {
-  .hide-on-mobile {
-    display: none !important;
-  }
 }
 
 /* ===== 全局响应式补充 ===== */
@@ -517,15 +497,6 @@ h1, h2, h3 {
    创建新的滚动上下文导致 body 无法垂直滚动 */
 html, body {
   overflow-x: clip;
-}
-
-/* 隐藏滚动条但保留滚动能力 */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }
 
 /* ===== 配方抽屉移动端修复 =====
@@ -582,9 +553,7 @@ html, body {
     position: sticky !important;
   }
 
-  /* 移动端内边距收紧：桌面端的 pl/pr-[60px] 在手机上过宽，内容被挤窄 */
-  .formula-drawer [class*="pl-[60px]"],
-  .formula-drawer [class*="pr-[60px]"],
+  /* 移动端内边距收紧：桌面端的 px-[60px] 在手机上过宽，内容被挤窄 */
   .formula-drawer [class*="px-[60px]"] {
     padding-left: 14px !important;
     padding-right: 14px !important;
@@ -596,57 +565,19 @@ html, body {
   }
 }
 
-/* 移动端打印也保持流式 */
-@media print {
-  .formula-drawer {
-    position: static !important;
-  }
-}
-
-/* 安全区底部内边距（适配 iPhone home indicator） */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-/* ===== 移动端品牌筛选：选中品牌时移除药丸框，改为蓝色文字 =====
-   仅 <768px 生效：覆盖 TabsTrigger 激活态的底色/圆角/阴影，
-   桌面端（≥768px）保持原药丸选中底不变。 */
-@media (max-width: 767.98px) {
-  .brand-tab[data-active] {
-    background-color: transparent !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
-    color: var(--primary) !important;
-  }
-  .brand-tab[data-active] [slot="badge"] {
-    background-color: transparent !important;
-    color: var(--primary) !important;
-  }
-}
-
-/* ===== 移动端 Footer 文字缩小 2px =====
-   仅 <768px 生效：覆盖 footer 内导航链接与版权文字字号（-2px），
-   桌面端（≥768px）保持原样。 */
-@media (max-width: 767.98px) {
-  .site-footer .text-2xs {
-    font-size: calc(0.8125rem - 2px);
-  }
-
-  /* 导航标签间距缩小 12px（gap-4 = 1rem → calc(1rem - 12px)） */
-  .site-footer nav {
-    gap: calc(1rem - 12px);
-  }
-  /* 分隔符所在的 span 内部 gap 与 nav 一致，保证分隔符居中于左右两个标签 */
-  .site-footer nav > span {
-    gap: calc(1rem - 12px);
-  }
-}
-
 /* Header 背景：桌面端与移动端统一为不透明纯色（移除移动端半透明毛玻璃） */
 /* 移动端字号基线覆盖（17px 在小屏偏大） */
 @media (max-width: 599px) {
   body {
     font-size: 15px;
+  }
+}
+
+/* ===== 移动端 Hero 标题字号缩小 20% =====
+   仅 <768px 生效：桌面端（≥768px）保持 text-[54px] md:text-[80px] 不变。 */
+@media (max-width: 767.98px) {
+  .hero-title-mobile {
+    font-size: 43px !important;
   }
 }
 
@@ -684,119 +615,11 @@ html, body {
   }
 }
 
-/* ===== 移动端：管理色母弹窗 — 隐藏标题 + 添加按钮变圆形加号 =====
-   仅 <768px 生效：桌面端（≥768px）保持原标题 + 「添加色母」文字按钮。 */
-@media (max-width: 767.98px) {
-  .manage-dialog-title {
-    display: none !important;
-  }
 
-  /* 「共 N 条记录」统计也隐藏，保持右侧只剩圆形加号按钮 */
-  .manage-dialog-count {
-    display: none !important;
-  }
 
-  /* 添加按钮：圆形 + 蓝底 + 白加号 */
-  .manage-dialog-add {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    padding: 0 !important;
-    border-radius: 9999px !important;
-    flex-shrink: 0 !important;
-  }
-  .manage-dialog-add-icon {
-    margin: 0 !important;
-    color: #ffffff !important;
-    width: 18px !important;
-    height: 18px !important;
-  }
-  .manage-dialog-add-label {
-    display: none !important;
-  }
-}
 
-/* ===== 移动端：色母库页面 -「管理色母」按钮变圆形加号 =====
-   仅 <768px 生效：桌面端（≥768px）保持原 outline 按钮 + Settings + 文字。
-   搜索框保持 w-full 自适应长度，圆形按钮 shrink-0 不挤压。 */
-@media (max-width: 767.98px) {
-  .manage-page-btn {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    padding: 0 !important;
-    border-radius: 9999px !important;
-    flex-shrink: 0 !important;
-  }
-  .manage-page-btn-icon {
-    margin: 0 !important;
-  }
-  .manage-page-btn-label {
-    display: none !important;
-  }
-}
 
-/* ===== 移动端：TDS 页面 Sheet 抽屉顶部内边距 — 避免被 Header 遮挡 =====
-   仅 <768px 生效：Header 高 79px + layout pt-[84px]，所以抽屉内容需要 ≥88px 顶部 padding 才能避开 Header。
-   桌面端（≥768px）保持 pt-14 默认值。 */
-@media (max-width: 767.98px) {
-  .tds-sheet-inner {
-    padding-top: 88px !important;
-  }
 
-  /* 抽屉顶部 "Documents" 分组标签 — 抽屉内已有 SheetClose 标题，移除冗余 */
-  .tds-section-label {
-    display: none !important;
-  }
-
-  /* 移动端详情视图：二级返回栏已有箭头，隐藏内容内的「← Back to all documents」按钮 */
-  .tds-content-back-btn {
-    display: none !important;
-  }
-}
-
-/* ===== 移动端：管理色母弹窗内「搜索 + 添加按钮」一行水平排列 =====
-   仅 <768px 生效：搜索框 flex-1 自适应撑开，圆形加号按钮紧跟其右；
-   桌面端（≥768px）保持原 sm:flex-row + sm:w-72 不变。 */
-@media (max-width: 767.98px) {
-  /* 弹窗顶部容器：搜索行强制水平排列 */
-  .manage-dialog-toolbar {
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 8px !important;
-  }
-  /* 搜索框 wrapper 占满剩余空间 */
-  .manage-dialog-toolbar-search {
-    flex: 1 1 auto !important;
-    min-width: 0 !important;
-    width: auto !important;
-  }
-}
-
-/* ===== 移动端：色母库分类筛选 — 与 SearchResults 品牌筛选栏一致 =====
-   仅 <768px 生效：选中态去药丸底、文字变蓝；桌面端（≥768px）保持药丸底不变。 */
-@media (max-width: 767.98px) {
-  .toner-tabs-list [data-slot="tabs-trigger"][data-active] {
-    background-color: transparent !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
-    color: var(--primary) !important;
-  }
-  .toner-tabs-list [data-slot="tabs-trigger"][data-active] [slot="badge"] {
-    background-color: transparent !important;
-    color: var(--primary) !important;
-  }
-}
-
-/* Hero 首页标题移动端适配：桌面端（≥768px）强制单行 nowrap；手机端允许换行避免长文案（如俄语）横向溢出 */
-.hero-title-mobile {
-  white-space: normal;
-}
-@media (min-width: 768px) {
-  .hero-title-mobile {
-    white-space: nowrap;
-  }
-}
 
 @theme inline {
   --text-2xs: 0.8125rem;
@@ -969,7 +792,8 @@ html, body {
 
 /* ===== Header — 深色变量（与全站暗色 token 保持一致） ===== */
 .dark {
-  --header-bg: var(--background);
+  --header-bg: rgba(28, 28, 31, 0.88);
+  --header-backdrop: blur(12px);
   --header-text: var(--foreground);
   --header-text-muted: var(--muted-foreground);
   --header-border: var(--border);

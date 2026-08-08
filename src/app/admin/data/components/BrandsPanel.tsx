@@ -238,7 +238,7 @@ export default function BrandsPanel() {
               <Label className="text-sm font-medium text-foreground/80">产地</Label>
               <Select value={brandForm.region} onValueChange={(v) => setBrandForm({ ...brandForm, region: v || "" })}>
                 <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue /></SelectTrigger>
-                <SelectContent className="z-[130] max-h-[200px]">
+                <SelectContent className="z-[100] max-h-[200px]">
                   {regions.map((r) => (<SelectItem key={r.code} value={r.code}>{r.code}</SelectItem>))}
                 </SelectContent>
               </Select>

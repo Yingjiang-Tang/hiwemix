@@ -194,7 +194,7 @@ export default function TdsGuideContent({ guide, onBack }: TdsGuideContentProps)
               <button
                 type="button"
                 onClick={onBack}
-                className="tds-content-back-btn mb-4 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary"
+                className="mb-4 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary max-md:hidden"
               >
                 <ChevronLeft className="size-3" />
                 {t.tdsBackToList}

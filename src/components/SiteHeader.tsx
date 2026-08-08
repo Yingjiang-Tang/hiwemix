@@ -8,14 +8,14 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/components/LanguageContext";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Menu, X, LogOut, Search, Palette, Heart, FileText } from "lucide-react";
+import { X, LogOut, Search, Palette, Heart, FileText } from "lucide-react";
 
 interface SiteHeaderProps {
   useHomeTheme?: boolean;
 }
 
 export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
-  const { user: authUser, logout } = useAuth();
+  const { user: authUser, loading: authLoading, logout } = useAuth();
   const { t } = useLang();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -58,6 +58,8 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
         style={{
           position: "var(--header-position)" as React.CSSProperties["position"],
           backgroundColor: "var(--header-bg)",
+          backdropFilter: "var(--header-backdrop, none)",
+          WebkitBackdropFilter: "var(--header-backdrop, none)",
           borderBottomColor: "var(--header-bottom-border)",
           borderBottomWidth: "1px",
           borderBottomStyle: "solid",
@@ -76,7 +78,7 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
               <img
                 src="/hiwemix2-01.png"
                 alt="HIWE MIX"
-                className="h-[28px] w-auto object-contain block md:h-8 transition-all duration-[1.5s] ease-in-out"
+                className="h-[26px] w-auto object-contain block md:h-8 transition-all duration-[1.5s] ease-in-out"
               />
             </a>
 
@@ -100,6 +102,7 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
           </div>
 
           {/* 右侧操作区 */}
+          {authLoading ? null : (
           <div className="flex items-center gap-3 shrink-0 ml-auto z-[1]">
             {authUser ? (
               <>
@@ -145,15 +148,35 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
               <ThemeToggle />
             </div>
 
-            {/* 移动端汉堡按钮 */}
+            {/* 移动端汉堡按钮 — 三横线 ↔ X 动画 */}
             <button
               onClick={() => setMobileMenuOpen((o) => !o)}
-              className="text-primary inline-flex size-9 items-center justify-center rounded-lg md:hidden"
+              className="inline-flex size-9 items-center justify-center rounded-lg md:hidden"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >
-              {mobileMenuOpen ? <X className="size-6" /> : <Menu className="size-6" />}
+              <span className="relative flex size-5 flex-col items-center justify-center">
+                {/* 上横线 */}
+                <span
+                  className={`absolute h-[2px] w-5 rounded-full bg-current transition-all duration-300 ease-out ${
+                    mobileMenuOpen ? "translate-y-0 rotate-45" : "-translate-y-[6px]"
+                  }`}
+                />
+                {/* 中横线 */}
+                <span
+                  className={`absolute h-[2px] w-5 rounded-full bg-current transition-all duration-300 ease-out ${
+                    mobileMenuOpen ? "scale-x-0 opacity-0" : "scale-x-100 opacity-100"
+                  }`}
+                />
+                {/* 下横线 */}
+                <span
+                  className={`absolute h-[2px] w-5 rounded-full bg-current transition-all duration-300 ease-out ${
+                    mobileMenuOpen ? "translate-y-0 -rotate-45" : "translate-y-[6px]"
+                  }`}
+                />
+              </span>
             </button>
           </div>
+          )}
         </div>
       </header>
 
@@ -175,10 +198,18 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
             </button>
           </div>
 
-          {/* 顶部：语言切换 + 主题切换 */}
+          {/* 顶部：语言切换 + 主题切换 + 用户头像 */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
             <LanguageSwitcher transitionStyle="" />
             <ThemeToggle />
+            {authUser?.role === "admin" && (
+              <span
+                title={authUser.email}
+                className="ml-auto flex size-9 items-center justify-center rounded-full border border-border text-sm font-semibold uppercase text-foreground/80"
+              >
+                {authUser.email.charAt(0)}
+              </span>
+            )}
           </div>
 
           <div className="flex-1 overflow-auto pt-[8px]">
@@ -189,10 +220,10 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
                   key={item.label}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 mx-3 px-3 py-3 text-sm font-semibold transition-colors ${
+                  className={`flex items-center gap-3 mx-3 px-3 py-3 text-sm font-semibold transition-colors rounded-xl ${
                     active
-    ? "bg-gray-800 text-white rounded-none"
-                      : "text-foreground/80 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 hover:rounded-none"
+                      ? "bg-gray-100 dark:bg-gray-800 text-foreground"
+                      : "text-foreground/80 hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                   aria-current={active ? "page" : undefined}
                 >
@@ -203,9 +234,9 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
             })}
           </div>
 
-          {/* 底部：DataManagement / 用户名 / 退出，等宽居中 */}
+          {/* 底部：DataManagement / 退出，与上方导航左对齐 */}
           <div className="mt-auto px-3 py-4">
-            <div className="mx-auto flex w-fit flex-col items-stretch gap-2.5">
+            <div className="flex w-full flex-col items-stretch gap-2.5">
               {authUser?.role === "admin" && (
                 <>
                   <Link
@@ -215,12 +246,6 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
                   >
                     {t.navAdmin}
                   </Link>
-                  <span
-                    title={authUser.email}
-                    className="mx-auto flex size-9 items-center justify-center rounded-full border border-border text-sm font-semibold uppercase text-foreground/80"
-                  >
-                    {authUser.email.charAt(0)}
-                  </span>
                 </>
               )}
               {authUser && (

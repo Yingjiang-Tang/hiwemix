@@ -64,7 +64,11 @@ Desktop.ini
 
 # 调试临时文件
 _tmp_*.html
+_tmp_extract/
 tds-check.js
+
+# Screenshots
+*.run-home.png
 
 # Build artifacts
 dist/

@@ -193,7 +193,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
           {/* Header Bar: 品牌/颜色代码/名称/元数据 + 操作按钮
               桌面端：Logo+标题+操作按钮单行，左内边距与配方栏 px-[60px] 对齐；
               移动端：改两行——第一行 Logo(隐藏)+标题+关闭，第二行操作按钮 */}
-          <div className="sticky top-0 z-10 border-b border-border bg-card px-4 py-3 md:px-[60px] md:py-5">
+          <div className="sticky top-0 z-10 border-b border-border bg-card px-6 py-3 md:px-[60px] md:py-5">
             {/* 第一行：品牌 Logo（仅桌面）+ 标题 + 关闭 */}
             <div className="flex items-center gap-3 sm:gap-4">
               <img

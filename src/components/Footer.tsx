@@ -62,15 +62,15 @@ export default function Footer({ isLightBackground = false }: { isLightBackgroun
               target="_blank"
               rel="noopener noreferrer"
               aria-label={label}
-              className="inline-flex size-9 items-center justify-center rounded-full text-foreground/70 transition-colors hover:text-foreground"
+              className="inline-flex size-11 items-center justify-center rounded-full text-foreground/70 transition-colors hover:text-foreground md:size-9"
             >
               <Icon className="size-5" />
             </a>
           ))}
         </div>
 
-        {/* 导航链接 */}
-        <nav className="flex items-center justify-center gap-4 text-2xs">
+        {/* 导航链接 — 移动端隐藏，桌面端保持 gap-4(16px) */}
+        <nav className="hidden md:flex items-center justify-center gap-4 text-2xs">
           {navItems.map((item, i) => (
             <span key={item.label} className="flex items-center gap-4">
               {i > 0 && <span className="text-foreground/30">|</span>}

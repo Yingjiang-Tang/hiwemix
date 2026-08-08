@@ -543,15 +543,15 @@ function ManagementModal({
           {/* 固定置顶 Header */}
           <div className="shrink-0 px-6 pt-3 mb-3">
             <DialogHeader>
-              <DialogTitle className="flex items-center justify-center gap-2 font-heading text-lg font-semibold text-foreground manage-dialog-title">
+              <DialogTitle className="flex items-center justify-center gap-2 font-heading text-lg font-semibold text-foreground max-md:hidden">
                 <Settings className="size-5 text-foreground/70" />
                 色母管理中心
               </DialogTitle>
             </DialogHeader>
 
           {/* 搜索 + 添加按钮 */}
-          <div className="manage-dialog-toolbar flex flex-col items-start justify-between gap-2 pt-5 sm:flex-row sm:items-center">
-            <div className="manage-dialog-toolbar-search relative w-full sm:w-72">
+          <div className="flex flex-col items-start justify-between gap-2 pt-5 sm:flex-row sm:items-center max-md:flex-row max-md:items-center max-md:gap-2">
+            <div className="relative w-full sm:w-72 max-md:flex-1 max-md:min-w-0 max-md:w-auto">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="搜索色母代码、名称、分类..."
@@ -561,16 +561,16 @@ function ManagementModal({
               />
             </div>
             <div className="flex items-center gap-3">
-              <span className="manage-dialog-count whitespace-nowrap text-xs text-muted-foreground">
+              <span className="whitespace-nowrap text-xs text-muted-foreground max-md:hidden">
                 共 {filteredRows.length} 条记录
               </span>
               <Button
                   variant="default"
                   onClick={() => setAddOpen(true)}
-                    className="manage-dialog-add inline-flex items-center justify-center h-8 rounded-[6px] text-2xs leading-none text-white"
+                    className="inline-flex items-center justify-center h-8 rounded-[6px] text-2xs leading-none text-white max-md:w-9 max-md:h-9 max-md:min-w-9 max-md:p-0 max-md:rounded-full max-md:shrink-0"
                 >
-                  <Plus className="manage-dialog-add-icon mr-1 size-4" />
-                  <span className="manage-dialog-add-label">添加色母</span>
+                  <Plus className="mr-1 size-4 max-md:mr-0 max-md:text-white max-md:w-[18px] max-md:h-[18px]" />
+                  <span className="max-md:hidden">添加色母</span>
               </Button>
             </div>
           </div>
@@ -892,13 +892,13 @@ export default function TonerPage() {
             </button>
 
             {/* Tabs 列表：手机端折叠隐藏，桌面端始终显示 */}
-            <div className={`toner-tabs-list ${categoryExpanded ? "block" : "hidden md:block"}`}>
+            <div className={`${categoryExpanded ? "block" : "hidden md:block"}`}>
               <Tabs value={activeTab} onValueChange={(v) => setActiveCategory((v as TonerCategory | typeof ALL_CATEGORY) || "2K_BASECOAT")}>
-                <TabsList variant="default" className="toner-tabs-list-inner group-data-horizontal/tabs:h-fit h-auto w-full flex-wrap gap-1 rounded-none bg-transparent p-0">
+                <TabsList variant="default" className="group-data-horizontal/tabs:h-fit h-auto w-full flex-wrap gap-1 rounded-none bg-transparent p-0">
                   {/* All：查看全部，按分类分组展示 */}
                   <TabsTrigger
                     value={ALL_CATEGORY}
-                    className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted"
+                    className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted max-md:data-active:bg-transparent max-md:data-active:shadow-none max-md:data-active:text-primary"
                   >
                     All
                     <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
@@ -909,7 +909,7 @@ export default function TonerPage() {
                     <TabsTrigger
                       key={cat.key}
                       value={cat.key}
-                      className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted"
+                      className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted max-md:data-active:bg-transparent max-md:data-active:shadow-none max-md:data-active:text-primary"
                     >
                       {cat.label}
                       <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
@@ -938,10 +938,10 @@ export default function TonerPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setManageOpen(true)}
-                className="manage-page-btn inline-flex items-center justify-center h-9 shrink-0 rounded-lg gap-1.5 text-sm leading-none"
+                className="inline-flex items-center justify-center h-9 shrink-0 rounded-lg gap-1.5 text-sm leading-none max-md:w-9 max-md:h-9 max-md:min-w-9 max-md:p-0 max-md:rounded-full"
               >
-                <Settings className="manage-page-btn-icon size-4" />
-                <span className="manage-page-btn-label">管理色母</span>
+                <Settings className="size-4 max-md:m-0" />
+                <span className="max-md:hidden">管理色母</span>
               </Button>
             )}
           </div>

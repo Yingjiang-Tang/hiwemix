@@ -262,7 +262,7 @@ export default function TdsPanel() {
           <SelectTrigger className="h-9 min-w-[140px] rounded-lg text-sm">
             <SelectValue placeholder="全部分类" />
           </SelectTrigger>
-          <SelectContent className="z-[130] max-h-[200px]">
+          <SelectContent className="z-[100] max-h-[200px]">
             {categories.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 {c.nameZh}
@@ -274,7 +274,7 @@ export default function TdsPanel() {
           <SelectTrigger className="h-9 min-w-[120px] rounded-lg text-sm">
             <SelectValue placeholder="全部类型" />
           </SelectTrigger>
-          <SelectContent className="z-[130]">
+          <SelectContent className="z-[100]">
             <SelectItem value="tds">TDS</SelectItem>
             <SelectItem value="msds">MSDS</SelectItem>
             <SelectItem value="sds">SDS</SelectItem>
@@ -424,7 +424,7 @@ export default function TdsPanel() {
                 <SelectTrigger className="h-9 w-full rounded-lg">
                   <SelectValue placeholder="请选择" />
                 </SelectTrigger>
-                <SelectContent className="z-[130] max-h-[200px]">
+                <SelectContent className="z-[100] max-h-[200px]">
                   {categories.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.nameZh}
@@ -439,7 +439,7 @@ export default function TdsPanel() {
                 <SelectTrigger className="h-9 w-full rounded-lg">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-[130]">
+                <SelectContent className="z-[100]">
                   <SelectItem value="tds">TDS</SelectItem>
                   <SelectItem value="msds">MSDS</SelectItem>
                   <SelectItem value="sds">SDS</SelectItem>
@@ -469,7 +469,7 @@ export default function TdsPanel() {
                 <SelectTrigger className="h-9 w-full rounded-lg">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-[130]">
+                <SelectContent className="z-[100]">
                   <SelectItem value="true">已发布</SelectItem>
                   <SelectItem value="false">草稿</SelectItem>
                 </SelectContent>

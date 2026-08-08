@@ -29,9 +29,6 @@ export default function Home() {
   const [drawerResult, setDrawerResult] = useState<SearchResult | null>(null);
   const [drawerFormulaId, setDrawerFormulaId] = useState<string | undefined>();
   const [drawerYear, setDrawerYear] = useState<YearEntry | undefined>();
-  // Hero 三段式落地页：默认显示，点击 Explore Now 后隐藏；滚回顶部或点 Logo 可恢复
-  const [heroVisible, setHeroVisible] = useState(true);
-  const [heroExplored, setHeroExplored] = useState(false);
   const searchPanelRef = useRef<HTMLDivElement>(null);
 
   const dataPromiseRef = useRef<Promise<{ colors: Color[]; formulas: Formula[]; brands: CarMake[] }> | null>(null);
@@ -131,26 +128,28 @@ export default function Home() {
     setDrawerYear(row.yearEntry);
   }
 
-  // Explore Now 触发：Hero 退出 + 首次载入全部配方（无筛选），用户再在搜索框自行筛选；滚回顶部或点 Logo 可恢复
+  // Explore Now 触发：滚动到搜索区域（snap 自动吸附），首次载入全部配方
   function handleExplore() {
-    setHeroVisible(false);
-    setHeroExplored(true);
-    handleSearch({});
+    if (searchPanelRef.current) {
+      searchPanelRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+    if (!hasSearched) handleSearch({});
   }
 
   return (
-    <div className={heroVisible ? "flex h-screen flex-col overflow-hidden" : "flex min-h-screen flex-col"}>
-      <SiteHeader useHomeTheme={heroVisible} />
-      <main className={heroVisible ? "relative flex-1 overflow-hidden" : "flex min-h-screen flex-col"}>
+    <div className="flex h-screen flex-col overflow-hidden">
+      <SiteHeader useHomeTheme />
+      <main className="relative flex-1 overflow-y-auto">
         {/* Hero：占满 main 区域，Header 固定在其上方 */}
-        {heroVisible && <HeroSection onExplore={handleExplore} animateEntrance={!heroExplored} />}
+        <section className="h-full">
+          <HeroSection onExplore={handleExplore} />
+        </section>
 
-        {/* 搜索区域：白色背景，Hero 可见时完全隐藏（heroVisible=true 时不渲染下方 DOM） */}
-        {!heroVisible && (
-        <section className="flex flex-1 flex-col bg-background px-6 sm:px-8 md:px-[60px]">
+        {/* 搜索区域 */}
+        <section className="min-h-full flex flex-col bg-background px-6 sm:px-8 md:px-[60px]">
           <VerifiedBanner />
 
-          <div className="pt-[100px] md:pt-[116px]">
+          <div className="pt-[100px] md:pt-[116px]" ref={searchPanelRef}>
             <SearchPanel onSearch={handleSearch} isLoading={isLoading} />
           </div>
 
@@ -162,9 +161,8 @@ export default function Home() {
 
           <div className="pb-10" />
         </section>
-        )}
 
-        {!heroVisible && <Footer />}
+        <Footer />
       </main>
       <FormulaDrawer result={drawerResult} formulaId={drawerFormulaId} initialYear={drawerYear} onClose={() => setDrawerResult(null)} />
     </div>

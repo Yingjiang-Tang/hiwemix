@@ -35,7 +35,7 @@ const DOC_TYPE_OPTIONS: { value: "" | DocType; i18nKey: "tdsDocTypeAll" | "tdsDo
 // 分组标题：边框圆角矩形 badge（宽度与下方按钮框统一：-mx-3，拓宽 30%）
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="tds-section-label -mx-3 mb-6 flex w-full items-center rounded-md border border-foreground/40 bg-background px-[13px] py-[5px] text-2xs font-semibold text-ink lg:text-[15px] lg:w-[130%]">
+    <div className="-mx-3 mb-6 flex w-full items-center rounded-md border border-foreground/40 bg-background px-[13px] py-[5px] text-2xs font-semibold text-ink lg:text-[15px] lg:w-[130%] max-md:hidden">
       {children}
     </div>
   );
@@ -200,7 +200,7 @@ export default function TdsSidebar({
   return (
     <>
       {/* 桌面端：始终可见的侧边栏 */}
-      <aside className="hidden border-r border-border bg-card px-6 pt-8 pb-6 md:px-[60px] lg:block lg:w-[300px] lg:flex-shrink-0 lg:overflow-y-auto lg:h-[calc(100vh-84px)] lg:sticky lg:top-[84px]">
+      <aside className="hidden border-r border-border bg-card px-6 pt-8 pb-6 sm:px-8 md:px-[60px] lg:block lg:w-[300px] lg:flex-shrink-0 lg:overflow-y-auto lg:h-[calc(100vh-84px)] lg:sticky lg:top-[84px]">
         <SidebarContent
           categories={categories}
           guides={guides}
@@ -232,7 +232,7 @@ export default function TdsSidebar({
               className="w-[min(80vw,320px)] gap-0 p-0"
             >
               <SheetTitle className="sr-only">{t.tdsCategories}</SheetTitle>
-              <div className="tds-sheet-inner overflow-y-auto px-6 pt-14 pb-6">
+              <div className="overflow-y-auto px-6 pb-6 max-md:pt-[88px] md:pt-14">
                 <SidebarContent
                   categories={categories}
                   guides={guides}

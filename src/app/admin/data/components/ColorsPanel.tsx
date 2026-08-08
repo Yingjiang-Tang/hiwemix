@@ -341,7 +341,7 @@ export default function ColorsPanel() {
                   <Label className="text-sm font-medium text-foreground/80">品牌</Label>
                   <Select value={form.make_id} onValueChange={(v) => setForm({ ...form, make_id: v || "" })}>
                     <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue placeholder="请选择品牌" /></SelectTrigger>
-                    <SelectContent className="z-[130] max-h-[200px]">{brands.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
+                    <SelectContent className="z-[100] max-h-[200px]">{brands.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

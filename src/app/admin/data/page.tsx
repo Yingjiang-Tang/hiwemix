@@ -34,11 +34,13 @@ function SideNav({ activeTab, onSelect, onClose }: { activeTab: TabKey; onSelect
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.key;
+          // 移动端 Sheet 内用 px-4，桌面端侧边栏保持 pl-[60px]
+          const linkPadding = onClose ? "px-4" : "pl-[60px] pr-4";
           return (
             <button
               key={tab.key}
               onClick={() => { onSelect(tab.key); onClose?.(); }}
-              className={`relative flex items-center gap-3 rounded-none w-full pl-[60px] pr-4 py-2.5 text-left text-sm transition-colors ${
+              className={`relative flex items-center gap-3 rounded-none w-full ${linkPadding} py-2.5 text-left text-sm transition-colors ${
                 active
                   ? "bg-blue-50/80 font-semibold text-primary dark:bg-primary dark:text-primary-foreground"
                   : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground/80"
@@ -108,7 +110,7 @@ export default function DataManagementPage() {
         {/* 移动端 Sheet 侧边栏 */}
         {/* z-50（默认）低于固定 Header 的 z-1100，Header 始终保持在最顶层可见；pt-[136px] 向下让出 Header(79px)+汉堡栏(约57px) */}
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-          <SheetContent side="left" className="w-[224px] p-0 pt-[136px]">
+          <SheetContent side="left" className="w-[min(80vw,320px)] p-0 pt-[136px]">
             <SideNav activeTab={activeTab} onSelect={setActiveTab} onClose={() => setMobileNavOpen(false)} />
           </SheetContent>
         </Sheet>
