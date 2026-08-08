@@ -65,7 +65,19 @@ export default function VariantsPanel() {
   return (
     <div>
       <div className="flex justify-start mb-4">
-        <Button onClick={openCreate} variant="outline-primary" className="rounded-lg text-sm"><Plus className="size-4" /> 新增配方类型</Button>
+        {/* 桌面端：保留原文字按钮 */}
+        <Button onClick={openCreate} variant="outline-primary" className="rounded-lg text-sm max-md:hidden">
+          <Plus className="size-4" /> 新增配方类型
+        </Button>
+        {/* 移动端：圆形 + 按钮，右对齐，与 BrandsPanel 移动端按钮样式一致 */}
+        <button
+          type="button"
+          onClick={openCreate}
+          aria-label="新增配方类型"
+          className="md:hidden ml-auto inline-flex size-11 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted"
+        >
+          <Plus className="size-4" />
+        </button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">

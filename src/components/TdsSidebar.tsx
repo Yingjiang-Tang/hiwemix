@@ -8,11 +8,10 @@ import { cn } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
-  SheetTrigger,
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Menu, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 export interface TdsSidebarProps {
   categories: GuideCategory[];
@@ -200,7 +199,7 @@ export default function TdsSidebar({
   return (
     <>
       {/* 桌面端：始终可见的侧边栏 */}
-      <aside className="hidden border-r border-border bg-card px-6 pt-8 pb-6 sm:px-8 md:px-[60px] lg:block lg:w-[300px] lg:flex-shrink-0 lg:overflow-y-auto lg:h-[calc(100vh-84px)] lg:sticky lg:top-[84px]">
+      <aside className="hidden border-r border-border bg-card px-6 pt-8 pb-6 sm:px-8 md:px-[60px] lg:block lg:w-[300px] lg:flex-shrink-0 lg:overflow-y-auto lg:h-[calc(100vh-79px)] lg:sticky lg:top-[79px]">
         <SidebarContent
           categories={categories}
           guides={guides}
@@ -212,27 +211,42 @@ export default function TdsSidebar({
       </aside>
 
       {/* 移动端：Header 下方独立一栏放触发按钮 + Sheet 抽屉 */}
-      <div className="lg:hidden">
+      {/* z-[60] 高于 Sheet z-50，让 Sheet 弹出时本栏仍可见且可交互（点汉堡按钮可关闭 Sheet） */}
+      <div className="relative z-[60] lg:hidden">
         <div className="tds-categories-bar flex items-center gap-2 border-b border-border bg-background px-4 py-3">
           <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger
-              render={
-                <button
-                  type="button"
-                  aria-label="Open categories"
-                  className="tds-categories-btn inline-flex size-9 items-center justify-center rounded-lg text-foreground"
-                >
-                  <Menu className="size-6" />
-                </button>
-              }
-            />
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-label={open ? "Close menu" : "Open menu"}
+              className="tds-categories-btn inline-flex size-9 items-center justify-center rounded-lg text-foreground"
+            >
+              <span className="relative flex size-5 flex-col items-center justify-center">
+                <span
+                  className={`absolute h-[2px] w-5 rounded-full bg-current transition-all duration-300 ease-out ${
+                    open ? "translate-y-0 rotate-45" : "-translate-y-[6px]"
+                  }`}
+                />
+                <span
+                  className={`absolute h-[2px] w-5 rounded-full bg-current transition-all duration-300 ease-out ${
+                    open ? "scale-x-0 opacity-0" : "scale-x-100 opacity-100"
+                  }`}
+                />
+                <span
+                  className={`absolute h-[2px] w-5 rounded-full bg-current transition-all duration-300 ease-out ${
+                    open ? "translate-y-0 -rotate-45" : "translate-y-[6px]"
+                  }`}
+                />
+              </span>
+            </button>
             <SheetContent
               side="left"
               showCloseButton
               className="w-[min(80vw,320px)] gap-0 p-0"
             >
               <SheetTitle className="sr-only">{t.tdsCategories}</SheetTitle>
-              <div className="overflow-y-auto px-6 pb-6 max-md:pt-[88px] md:pt-14">
+              {/* pt-[163px] 让 Sheet 内容顶部贴合 Header(79px)+移动栏(约61px)+15px 间距；只在 lg 以下渲染 */}
+              <div className="overflow-y-auto px-6 pb-6 pt-[163px] lg:pt-14">
                 <SidebarContent
                   categories={categories}
                   guides={guides}
@@ -247,9 +261,6 @@ export default function TdsSidebar({
               </div>
             </SheetContent>
           </Sheet>
-          <span className="text-sm font-semibold text-foreground">
-            {t.tdsCategories}
-          </span>
         </div>
       </div>
     </>

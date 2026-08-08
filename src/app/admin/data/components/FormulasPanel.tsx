@@ -300,8 +300,27 @@ export default function FormulasPanel() {
     <div className="flex flex-col gap-4 lg:flex-row min-h-[calc(100vh-140px)]">
       {/* 左栏：配方列表 */}
       <div className="lg:w-64 flex-shrink-0 flex flex-col max-h-[200px] lg:max-h-none">
-        <Button onClick={newFormula} variant="outline-primary" className="rounded-lg mb-3"><Plus className="size-4" /> 新增配方</Button>
-        <div className="relative mb-3">
+        {/* 桌面端：文字按钮 + 搜索框 上下两排 */}
+        <Button onClick={newFormula} variant="outline-primary" className="rounded-lg mb-3 max-md:hidden">
+          <Plus className="size-4" /> 新增配方
+        </Button>
+        {/* 移动端：搜索框 + 圆形 + 按钮合为一排 */}
+        <div className="md:hidden flex items-center gap-3 mb-3">
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="搜索配方代码或名称..." value={formulaSearch} onChange={(e) => setFormulaSearch(e.target.value)} className="h-9 rounded-lg pl-9 text-sm" />
+          </div>
+          <button
+            type="button"
+            onClick={newFormula}
+            aria-label="新增配方"
+            className="shrink-0 inline-flex size-11 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted"
+          >
+            <Plus className="size-4" />
+          </button>
+        </div>
+        {/* 桌面端：搜索框独立一行 */}
+        <div className="relative mb-3 max-md:hidden">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="搜索配方代码或名称..." value={formulaSearch} onChange={(e) => setFormulaSearch(e.target.value)} className="h-9 rounded-lg pl-9 text-sm" />
         </div>

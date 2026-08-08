@@ -48,17 +48,6 @@ export default function BrandsPanel() {
   const ROWS_PER_PAGE = 10;
   const idManuallyEdited = useRef(false);
 
-  // 监听 page.tsx 的移动端「+」按钮事件：在「数据管理」栏右侧点击 + 时打开合并 modal
-  useEffect(() => {
-    function openCombined() {
-      setShowBrandModal(false);
-      setShowRegionModal(false);
-      setShowMobileCombinedModal(true);
-    }
-    window.addEventListener("admin:openCombinedModal", openCombined);
-    return () => window.removeEventListener("admin:openCombinedModal", openCombined);
-  }, []);
-
   const fetchBrands = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/brands");
@@ -166,7 +155,15 @@ export default function BrandsPanel() {
         <Button onClick={openCreateBrand} variant="outline-primary" className="rounded-lg text-sm max-md:hidden">
           <Plus className="size-4" /> 新增品牌
         </Button>
-        {/* 移动端 + 按钮已移至 page.tsx 顶栏「数据管理」右侧，此处不渲染 */}
+        {/* 移动端：合并「+ 新增产地/品牌」按钮，仅在移动端表格上方显示 */}
+        <button
+          type="button"
+          onClick={() => setShowMobileCombinedModal(true)}
+          aria-label="新增产地或品牌"
+          className="md:hidden ml-auto inline-flex size-11 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted"
+        >
+          <Plus className="size-4" />
+        </button>
       </div>
 
       {/* Table — 移动端表格舒展到自然列宽，容器内横向滑动；桌面端 md:min-w-0 保持 w-full 原样 */}

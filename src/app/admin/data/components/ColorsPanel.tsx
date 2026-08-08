@@ -259,7 +259,19 @@ export default function ColorsPanel() {
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="搜索颜色、车型、品牌..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-9 rounded-lg pl-9 text-sm" />
         </div>
-        <Button onClick={openCreate} variant="outline-primary" className="rounded-lg text-sm"><Plus className="size-4" /> 新增颜色</Button>
+        {/* 桌面端：保留原文字按钮 */}
+        <Button onClick={openCreate} variant="outline-primary" className="rounded-lg text-sm max-md:hidden">
+          <Plus className="size-4" /> 新增颜色
+        </Button>
+        {/* 移动端：圆形 + 按钮，右对齐，与 BrandsPanel/VariantsPanel 移动端按钮样式一致 */}
+        <button
+          type="button"
+          onClick={openCreate}
+          aria-label="新增颜色"
+          className="md:hidden shrink-0 inline-flex size-11 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted"
+        >
+          <Plus className="size-4" />
+        </button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">

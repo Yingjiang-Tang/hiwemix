@@ -14,7 +14,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import { Menu, Tag, Droplet, Layers, Beaker, FileText, BarChart3, Plus } from "lucide-react";
+import { Tag, Droplet, Layers, Beaker, FileText, BarChart3 } from "lucide-react";
 
 const TABS = [
   { key: "brands", label: "品牌", icon: Tag },
@@ -34,8 +34,8 @@ function SideNav({ activeTab, onSelect, onClose }: { activeTab: TabKey; onSelect
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.key;
-          // 移动端 Sheet 内用 px-4，桌面端侧边栏保持 pl-[60px]
-          const linkPadding = onClose ? "px-4" : "pl-[60px] pr-4";
+          // 移动端 Sheet 内：pl-6 (24px) 与顶部汉堡栏 px-6 内边距对齐，pr-4 避免贴右边；桌面端侧边栏保持 pl-[60px]
+          const linkPadding = onClose ? "pl-6 pr-4" : "pl-[60px] pr-4";
           return (
             <button
               key={tab.key}
@@ -86,29 +86,35 @@ export default function DataManagementPage() {
     <div className="min-h-screen overflow-x-clip bg-background">
       <SiteHeader />
 
-      {/* 移动端：Header 下方独立一栏放汉堡菜单按钮（样式对齐 TDS 面板） */}
-      {/* pt-[84px] 避开固定定位的 Header（79px 高），与 tds/layout 的间距一致，否则栏会被 Header 盖住 */}
-      <div className="pt-[84px] md:hidden">
+      {/* 移动端：Header 下方独立一栏放汉堡菜单按钮（与 Header 右侧汉堡按钮对齐） */}
+      {/* pt-[79px] 避开固定定位的 Header（79px 高），与 tds/layout 的间距一致，否则栏会被 Header 盖住 */}
+      {/* z-[60] 高于 Sheet z-50，让 Sheet 弹出时本栏仍可见且可交互（点汉堡按钮可关闭 Sheet） */}
+      <div className="relative z-[60] pt-[79px] md:hidden">
         <div className="flex items-center gap-2 border-b border-border bg-background px-6 py-3">
+          {/* 移动端汉堡按钮 — 与 Header 同款（三横线 ↔ X 动画） */}
           <button
             onClick={() => setMobileNavOpen((v) => !v)}
-            aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
+            aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
             className="inline-flex size-9 items-center justify-center rounded-lg text-foreground"
           >
-            <Menu className="size-6" />
+            <span className="relative flex size-5 flex-col items-center justify-center">
+              <span
+                className={`absolute h-[2px] w-5 rounded-full bg-current transition-all duration-300 ease-out ${
+                  mobileNavOpen ? "translate-y-0 rotate-45" : "-translate-y-[6px]"
+                }`}
+              />
+              <span
+                className={`absolute h-[2px] w-5 rounded-full bg-current transition-all duration-300 ease-out ${
+                  mobileNavOpen ? "scale-x-0 opacity-0" : "scale-x-100 opacity-100"
+                }`}
+              />
+              <span
+                className={`absolute h-[2px] w-5 rounded-full bg-current transition-all duration-300 ease-out ${
+                  mobileNavOpen ? "translate-y-0 -rotate-45" : "translate-y-[6px]"
+                }`}
+              />
+            </span>
           </button>
-          <span className="text-sm font-semibold text-foreground">数据管理</span>
-          {/* 移动端：合并「+ 新增产地/品牌」按钮（仅 brands 标签下显示） */}
-          {activeTab === "brands" && (
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new Event("admin:openCombinedModal"))}
-              aria-label="新增产地或品牌"
-              className="ml-auto inline-flex size-[35px] items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted"
-            >
-              <Plus className="size-4" />
-            </button>
-          )}
         </div>
       </div>
 
@@ -119,9 +125,9 @@ export default function DataManagementPage() {
         </aside>
 
         {/* 移动端 Sheet 侧边栏 */}
-        {/* z-50（默认）低于固定 Header 的 z-1100，Header 始终保持在最顶层可见；pt-[136px] 向下让出 Header(79px)+汉堡栏(约57px) */}
+        {/* z-50（默认）低于固定 Header 的 z-1100，Header 始终在最顶层；pt-[163px] 与 TDS Sheet 设计对齐：Header(79px)+移动栏(约61px)+15px 间距 */}
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-          <SheetContent side="left" className="w-[min(80vw,320px)] p-0 pt-[136px]">
+          <SheetContent side="left" className="w-[min(80vw,320px)] p-0 pt-[163px]">
             <SideNav activeTab={activeTab} onSelect={setActiveTab} onClose={() => setMobileNavOpen(false)} />
           </SheetContent>
         </Sheet>

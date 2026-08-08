@@ -88,7 +88,7 @@ export default function TdsIndexPage() {
 
       {/* 中栏：文档列表 — 移动端进入详情页时隐藏 */}
       <div className={cn(
-        "border-b border-border bg-background pt-8 pr-5 pb-5 pl-5 lg:w-[320px] lg:flex-shrink-0 lg:border-b-0 lg:border-r lg:overflow-y-auto lg:h-[calc(100vh-84px)] lg:sticky lg:top-[84px]",
+        "border-b border-border bg-background pt-8 pr-5 pb-5 pl-5 lg:w-[320px] lg:flex-shrink-0 lg:border-b-0 lg:border-r lg:overflow-y-auto lg:h-[calc(100vh-79px)] lg:sticky lg:top-[79px]",
         mobileDetailMode && "hidden lg:flex"
       )}>
         <div className="relative mb-3">
@@ -147,7 +147,7 @@ export default function TdsIndexPage() {
       </div>
 
       {/* 右栏：详情内容 / 欢迎提示（桌面端） */}
-      <div className="hidden lg:flex min-h-0 flex-1 flex-col lg:h-[calc(100vh-84px)] lg:sticky lg:top-[84px]">
+      <div className="hidden lg:flex min-h-0 flex-1 flex-col lg:h-[calc(100vh-79px)] lg:sticky lg:top-[79px]">
         {selectedGuide ? (
           <TdsGuideContent
             guide={selectedGuide}
