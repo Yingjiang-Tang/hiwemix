@@ -21,7 +21,7 @@ const ALL_MAKES = "all";
 //   桌面端（≥768px）保持药丸选中底（data-active:bg-muted）
 //   移动端（<768px）选中态去药丸底、文字变蓝（效果与品牌筛选栏一致）
 const brandTrigger =
-  "h-9 flex-none gap-1.5 rounded-full px-4 text-sm data-active:bg-muted max-md:data-active:bg-transparent max-md:data-active:shadow-none max-md:data-active:text-primary max-md:h-10";
+  "h-9 flex-none gap-1.5 rounded-full px-4 text-sm data-active:bg-muted max-md:data-active:bg-transparent max-md:data-active:shadow-none max-md:data-active:text-primary max-md:h-10 max-md:w-full max-md:justify-start max-md:data-active:bg-card max-md:data-active:border max-md:data-active:border-primary";
 
 export interface SearchResultsProps {
   rows: FormulaTableRow[];
@@ -33,7 +33,7 @@ export interface SearchResultsProps {
 // 段标题样式：品牌名居中，外框药丸圆角浅灰边框（与原来类型分段标题一致）
 function SectionTitle({ label, id }: { label: string; id: string }) {
   return (
-    <div className="mt-8 flex items-center justify-start px-4 py-2">
+    <div className="mt-8 max-md:mt-4 flex items-center justify-start px-4 py-2">
       <h2 id={id} className="rounded-full border-[0.5px] border-[#a8a8a8] px-4 py-1.5 font-heading text-[27px] font-normal tracking-wide text-ink">
         {label}
       </h2>
@@ -254,15 +254,15 @@ function GroupedColorCard({
 
   // 卡片下方信息块：左对齐卡片，常显配方代码 / 颜色 / 漆面类型；右侧线框收藏按钮
   const infoBlock = (
-    <div className="mt-[45px] flex items-start justify-between gap-2 text-left font-[family-name:var(--font-sans)]">
+    <div className="mt-[45px] max-md:mt-[22px] flex items-start justify-between gap-2 text-left font-[family-name:var(--font-sans)]">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[20px] font-normal leading-tight text-foreground">
+        <p className="truncate text-[20px] max-md:text-[18px] font-normal leading-tight text-foreground">
           {parent.color.color_code}
         </p>
-        <p className="mt-2 truncate text-[16px] font-normal leading-tight text-muted-foreground">
+        <p className="mt-2 max-md:mt-0.5 truncate text-[16px] max-md:text-[15px] font-normal leading-tight text-muted-foreground">
           {parent.color.color_name}
         </p>
-        <p className="truncate text-[16px] font-normal capitalize leading-tight text-muted-foreground">
+        <p className="truncate text-[16px] max-md:text-[15px] font-normal capitalize leading-tight text-muted-foreground">
           {parent.color.color_type.join(", ")}
         </p>
       </div>
@@ -294,7 +294,7 @@ function GroupedColorCard({
   // 单配方：直接返回卡片，无需 Popover
   if (!hasVariants) {
     return (
-      <div className="animate-card-row mb-[70px] w-[87.5%]">
+      <div className="animate-card-row mb-[70px] max-md:mb-[22px] w-[87.5%]">
         {cardBody}
         {infoBlock}
       </div>
@@ -303,7 +303,7 @@ function GroupedColorCard({
 
   // 多变体：Popover 包裹，悬停弹出子卡片浮层
   return (
-    <div className="animate-card-row mb-[70px] w-[87.5%]">
+    <div className="animate-card-row mb-[70px] max-md:mb-[22px] w-[87.5%]">
       <Popover
         open={open}
         onOpenChange={(v) => {
@@ -411,7 +411,7 @@ function BrandSection({
       <SectionTitle label={makeName} id={`make-${makeName}`} />
       {/* 段内网格：折叠时一行，展开时可多行；--card-delay 从 0 重置交错入场动画 */}
       <div
-        className="grid grid-cols-2 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10 sm:grid-cols-3 md:grid-cols-5"
+        className="grid grid-cols-2 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10 max-md:mt-5 sm:grid-cols-3 md:grid-cols-5"
         style={{ ["--card-delay" as string]: "0s" }}
       >
         {visibleCards.map(([colorCode, cardRows]) => (
@@ -426,7 +426,7 @@ function BrandSection({
         {needsMore && !expanded && (
           <button
             onClick={() => setExpanded(true)}
-            className="group relative aspect-square w-[87.5%] mb-[70px] cursor-pointer overflow-hidden transition-all duration-300 ease-in-out transform-gpu [backface-visibility:hidden]"
+            className="group relative aspect-square w-[87.5%] mb-[70px] max-md:mb-[22px] cursor-pointer overflow-hidden transition-all duration-300 ease-in-out transform-gpu [backface-visibility:hidden]"
             aria-label={`${t.viewMore} ${makeName}`}
           >
             {/* 流动漆液背景 */}
@@ -449,7 +449,7 @@ function BrandSection({
         {needsMore && expanded && (
           <button
             onClick={() => setExpanded(false)}
-            className="group relative aspect-square w-[87.5%] mb-[70px] cursor-pointer overflow-hidden transition-all duration-300 ease-in-out transform-gpu [backface-visibility:hidden]"
+            className="group relative aspect-square w-[87.5%] mb-[70px] max-md:mb-[22px] cursor-pointer overflow-hidden transition-all duration-300 ease-in-out transform-gpu [backface-visibility:hidden]"
             aria-label={`${t.collapse} ${makeName}`}
           >
             <div className="paint-flow absolute inset-0" />
@@ -482,24 +482,8 @@ export default function SearchResults({
   // 手机端：品牌筛选栏折叠/展开
   const [filterExpanded, setFilterExpanded] = useState(false);
 
-  // sticky 品牌筛选栏吸附状态：卡片顶部顶到 Header 底部（79px）时，上方两角变直角贴住 Header；离开吸附恢复圆角
-  const [barStuck, setBarStuck] = useState(false);
+  // sticky 品牌筛选栏
   const barRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function updateStuck() {
-      const el = barRef.current;
-      if (!el) return;
-      setBarStuck(el.getBoundingClientRect().top <= 80);
-    }
-    updateStuck();
-    window.addEventListener("scroll", updateStuck, { passive: true });
-    window.addEventListener("resize", updateStuck);
-    return () => {
-      window.removeEventListener("scroll", updateStuck);
-      window.removeEventListener("resize", updateStuck);
-    };
-  }, [rows.length]);
 
   // 新搜索产生新的 rows 时，重置品牌筛选为「全部品牌」（新结果里不一定还有之前选中的品牌）
   useEffect(() => {
@@ -580,14 +564,9 @@ export default function SearchResults({
 
   return (
     <div>
-      {/* 品牌筛选栏：手机端点按展开，自动折叠 */}
-      <div
-        ref={barRef}
-        className={cn(
-          "sticky top-[79px] z-30 rounded-xl bg-card ring-1 ring-border shadow-[var(--shadow-level-1)] md:p-6",
-          barStuck && "rounded-t-none border-t-0"
-        )}
-      >
+      {/* 品牌筛选栏：外层面包使 sticky 不因负 margin 在移动端抖动 */}
+      <div className="-mx-6 sm:-mx-8 md:-mx-[60px] sticky top-[79px] z-30">
+        <div className="rounded-none bg-card ring-1 ring-border shadow-[var(--shadow-level-1)] px-6 py-3 sm:px-8 md:px-[60px] md:py-6">
         {/* 手机端折叠头部 */}
         <button
           type="button"
@@ -604,7 +583,7 @@ export default function SearchResults({
         <div className={cn(filterExpanded ? "block" : "hidden md:block")}>
         <div className="flex min-w-0 flex-1">
           <Tabs value={activeMake} onValueChange={(v) => { setActiveMake(v); setFilterExpanded(false); }} className="w-full">
-            <TabsList variant="default" className="group-data-horizontal/tabs:h-fit h-auto w-full flex-wrap justify-start gap-1 rounded-none bg-transparent p-0">
+            <TabsList variant="default" className="group-data-horizontal/tabs:h-fit h-auto w-full flex-wrap justify-start gap-1 rounded-none bg-transparent p-0 max-md:grid max-md:grid-cols-3 max-md:gap-2">
               <TabsTrigger value={ALL_MAKES} className={brandTrigger}>
                 {t.allMakes}
                 <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
@@ -624,6 +603,7 @@ export default function SearchResults({
         </div>
         </div>
       </div>
+    </div>
 
       {/* 按品牌分段展示，品牌名 A→Z */}
       {visibleSections.map(({ makeName, colorCards }) => (

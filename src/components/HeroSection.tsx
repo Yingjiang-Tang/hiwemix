@@ -98,9 +98,28 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
         aria-hidden="true"
       />
       {/* ---- 内容层 ---- */}
-      <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-center justify-center px-6 text-white max-md:text-foreground -translate-y-[50px]">
+      <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-center justify-center px-6 text-white max-md:text-foreground -translate-y-[130px] md:-translate-y-[50px]">
         <h1 className="font-heading mt-6 text-center font-medium leading-[1.1] tracking-tight text-[54px] md:leading-[1.05] md:text-[80px] flex flex-col items-center gap-1 whitespace-nowrap max-md:whitespace-normal">
+          {/* 移动端：主蓝色 ShinyText（亮色背景下蓝字可读），白色光带高亮 */}
           <ShinyText
+            className="hero-shiny-mobile"
+            text={t.heroTitlePrefix}
+            color="#79a5ff"
+            shineColor="#ffffff"
+            speed={2.5}
+            spread={120}
+          />
+          <ShinyText
+            className="hero-shiny-mobile"
+            text={t.heroTitleHighlight}
+            color="#79a5ff"
+            shineColor="#ffffff"
+            speed={2.5}
+            spread={120}
+          />
+          {/* 桌面端：白字 + 蓝光带（暗色视频背景上原效果） */}
+          <ShinyText
+            className="hero-shiny-desktop"
             text={t.heroTitlePrefix}
             color="#ffffff"
             shineColor="#79a5ff"
@@ -108,6 +127,7 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
             spread={120}
           />
           <ShinyText
+            className="hero-shiny-desktop"
             text={t.heroTitleHighlight}
             color="#ffffff"
             shineColor="#79a5ff"

@@ -105,7 +105,7 @@ function generateTonerCode(category: TonerCategory, existingCodes: string[]): st
 
 function TonerCard({ code, tradeName, hex }: { code: string; tradeName: string; hex: string }) {
   return (
-    <div className="animate-card-row mb-[70px] w-[87.5%]">
+    <div className="animate-card-row mb-[70px] max-md:mb-[30px] w-[87.5%]">
       {/* 色块：正方形，悬停轻微放大（与首页配色卡片一致） */}
       <div className="relative aspect-square w-full cursor-pointer overflow-hidden transition-all duration-300 ease-in-out hover:scale-[1.15] hover:z-10 transform-gpu [backface-visibility:hidden]">
         {/* 颜色底色 + 金属漆渐变光泽 */}
@@ -124,7 +124,7 @@ function TonerCard({ code, tradeName, hex }: { code: string; tradeName: string; 
       </div>
 
       {/* 卡片下方信息块：左对齐常显，产品代码 / 英文名 */}
-      <div className="mt-[45px] text-left font-[family-name:var(--font-sans)]">
+      <div className="mt-[45px] max-md:mt-[15px] text-left font-[family-name:var(--font-sans)]">
         <p className="truncate text-[20px] font-normal leading-tight text-foreground">
           {code}
         </p>
@@ -883,7 +883,7 @@ export default function TonerPage() {
               onClick={() => setCategoryExpanded((v) => !v)}
               className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium md:hidden"
             >
-              <span className="text-foreground">
+              <span className="text-foreground max-md:text-[19px]">
                 {activeCategory === ALL_CATEGORY
                   ? "All"
                   : (TONER_CATEGORIES.find((c) => c.key === activeCategory)?.label ?? activeCategory)}
@@ -894,11 +894,11 @@ export default function TonerPage() {
             {/* Tabs 列表：手机端折叠隐藏，桌面端始终显示 */}
             <div className={`${categoryExpanded ? "block" : "hidden md:block"}`}>
               <Tabs value={activeTab} onValueChange={(v) => setActiveCategory((v as TonerCategory | typeof ALL_CATEGORY) || "2K_BASECOAT")}>
-                <TabsList variant="default" className="group-data-horizontal/tabs:h-fit h-auto w-full flex-wrap gap-1 rounded-none bg-transparent p-0">
+                <TabsList variant="default" className="group-data-horizontal/tabs:h-fit h-auto w-full flex-wrap gap-2 rounded-none bg-transparent p-0 max-md:grid max-md:grid-cols-2 max-md:gap-2">
                   {/* All：查看全部，按分类分组展示 */}
                   <TabsTrigger
                     value={ALL_CATEGORY}
-                    className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted max-md:data-active:bg-transparent max-md:data-active:shadow-none max-md:data-active:text-primary"
+                    className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted max-md:w-full max-md:justify-start max-md:data-active:bg-card max-md:data-active:border max-md:data-active:border-primary max-md:data-active:shadow-none max-md:data-active:text-primary"
                   >
                     All
                     <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
@@ -909,7 +909,7 @@ export default function TonerPage() {
                     <TabsTrigger
                       key={cat.key}
                       value={cat.key}
-                      className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted max-md:data-active:bg-transparent max-md:data-active:shadow-none max-md:data-active:text-primary"
+                      className="h-9 gap-1.5 rounded-full px-4 text-sm data-active:bg-muted max-md:w-full max-md:justify-start max-md:data-active:bg-card max-md:data-active:border max-md:data-active:border-primary max-md:data-active:shadow-none max-md:data-active:text-primary"
                     >
                       {cat.label}
                       <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">

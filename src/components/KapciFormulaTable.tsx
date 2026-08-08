@@ -139,10 +139,10 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
   return (
     <div>
       {/* 总量控制栏 */}
-      <div className="mb-4 flex flex-col flex-wrap items-stretch gap-2 rounded-xl border border-border/60 bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-5 flex flex-col flex-wrap items-stretch gap-2 rounded-xl border border-border/60 bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between md:mb-4">
         {/* 左侧：配方属性
             桌面端 ml-[47px] 对齐表格数字列；移动端去掉偏移靠左排列 */}
-        <span className="flex items-center gap-2 text-[15px] font-semibold text-foreground md:ml-[47px]">
+        <span className="flex items-center gap-2 text-[15px] font-semibold text-foreground md:ml-[47px] max-md:hidden">
           <span>{t.version} {formula.version}</span>
           <span aria-hidden="true">|</span>
           <span>{formula.paint_system}</span>
@@ -150,27 +150,30 @@ export default function KapciFormulaTable({ formula, activeGroup = "Pearl Paint"
           <span>{formula.formula_type}</span>
         </span>
 
-        {/* 右侧：Volume 计算器 */}
-        <div className="flex flex-wrap items-center gap-2 sm:flex-row sm:items-center">
-          <Input
-            type="number"
-            value={volumeDraft}
-            onChange={(e) => handleVolumeChange(e.target.value)}
-            className="h-8 w-[72px] rounded-md text-center text-[16px] font-semibold md:w-[90px]"
-            min={0.0001}
-            step={0.01}
-          />
-          <span className="text-[16px] font-semibold text-muted-foreground">×</span>
-          <Select value={unit} onValueChange={(v) => { setUnit((v as Unit) || "kg"); setVolumeDraft(String(volume)); }}>
-            <SelectTrigger className="h-8 w-16 rounded-lg text-[14px] font-semibold md:w-20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {UNIT_OPTIONS.map((u) => (
-                <SelectItem key={u} value={u}>{u}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* 右侧：Volume 计算器（移动端 Custom 左 / 输入控件右；桌面端维持原布局） */}
+        <div className="flex flex-wrap items-center gap-2 sm:flex-row sm:items-center max-md:w-full">
+          <span className="text-[15px] font-semibold text-foreground md:hidden">Custom</span>
+          <div className="flex items-center gap-2 max-md:ml-auto">
+            <Input
+              type="number"
+              value={volumeDraft}
+              onChange={(e) => handleVolumeChange(e.target.value)}
+              className="h-8 w-[72px] rounded-md text-center text-[16px] font-semibold md:w-[90px]"
+              min={0.0001}
+              step={0.01}
+            />
+            <span className="text-[16px] font-semibold text-muted-foreground">×</span>
+            <Select value={unit} onValueChange={(v) => { setUnit((v as Unit) || "kg"); setVolumeDraft(String(volume)); }}>
+              <SelectTrigger className="h-8 w-16 rounded-lg text-[14px] font-semibold md:w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {UNIT_OPTIONS.map((u) => (
+                  <SelectItem key={u} value={u}>{u}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Pearl Paint/Ground Paint 切换按钮 */}

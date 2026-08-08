@@ -14,7 +14,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import { Menu, Tag, Droplet, Layers, Beaker, FileText, BarChart3 } from "lucide-react";
+import { Menu, Tag, Droplet, Layers, Beaker, FileText, BarChart3, Plus } from "lucide-react";
 
 const TABS = [
   { key: "brands", label: "品牌", icon: Tag },
@@ -89,7 +89,7 @@ export default function DataManagementPage() {
       {/* 移动端：Header 下方独立一栏放汉堡菜单按钮（样式对齐 TDS 面板） */}
       {/* pt-[84px] 避开固定定位的 Header（79px 高），与 tds/layout 的间距一致，否则栏会被 Header 盖住 */}
       <div className="pt-[84px] md:hidden">
-        <div className="flex items-center gap-2 border-b border-border bg-background px-4 py-3">
+        <div className="flex items-center gap-2 border-b border-border bg-background px-6 py-3">
           <button
             onClick={() => setMobileNavOpen((v) => !v)}
             aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
@@ -98,6 +98,17 @@ export default function DataManagementPage() {
             <Menu className="size-6" />
           </button>
           <span className="text-sm font-semibold text-foreground">数据管理</span>
+          {/* 移动端：合并「+ 新增产地/品牌」按钮（仅 brands 标签下显示） */}
+          {activeTab === "brands" && (
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("admin:openCombinedModal"))}
+              aria-label="新增产地或品牌"
+              className="ml-auto inline-flex size-[35px] items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted"
+            >
+              <Plus className="size-4" />
+            </button>
+          )}
         </div>
       </div>
 

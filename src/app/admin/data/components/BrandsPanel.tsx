@@ -29,12 +29,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Edit, Trash2, Plus, X } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export default function BrandsPanel() {
   const [brands, setBrands] = useState<CarMake[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [showBrandModal, setShowBrandModal] = useState(false);
   const [showRegionModal, setShowRegionModal] = useState(false);
+  // 移动端专用：合并的新增产地 + 新增品牌 Dialog
+  const [showMobileCombinedModal, setShowMobileCombinedModal] = useState(false);
   const [editing, setEditing] = useState<CarMake | null>(null);
   const [brandForm, setBrandForm] = useState({ id: "", name: "", region: "" });
   const [regionForm, setRegionForm] = useState({ code: "" });
@@ -44,6 +47,17 @@ export default function BrandsPanel() {
   const [page, setPage] = useState(0);
   const ROWS_PER_PAGE = 10;
   const idManuallyEdited = useRef(false);
+
+  // 监听 page.tsx 的移动端「+」按钮事件：在「数据管理」栏右侧点击 + 时打开合并 modal
+  useEffect(() => {
+    function openCombined() {
+      setShowBrandModal(false);
+      setShowRegionModal(false);
+      setShowMobileCombinedModal(true);
+    }
+    window.addEventListener("admin:openCombinedModal", openCombined);
+    return () => window.removeEventListener("admin:openCombinedModal", openCombined);
+  }, []);
 
   const fetchBrands = useCallback(async () => {
     try {
@@ -145,12 +159,14 @@ export default function BrandsPanel() {
     <div>
       {/* Header buttons */}
       <div className="flex justify-start gap-2 mb-4">
-        <Button onClick={openCreateRegion} variant="outline-primary" className="rounded-lg text-sm">
+        {/* 桌面端：保留两个原按钮 */}
+        <Button onClick={openCreateRegion} variant="outline-primary" className="rounded-lg text-sm max-md:hidden">
           <Plus className="size-4" /> 新增产地
         </Button>
-        <Button onClick={openCreateBrand} variant="outline-primary" className="rounded-lg text-sm">
+        <Button onClick={openCreateBrand} variant="outline-primary" className="rounded-lg text-sm max-md:hidden">
           <Plus className="size-4" /> 新增品牌
         </Button>
+        {/* 移动端 + 按钮已移至 page.tsx 顶栏「数据管理」右侧，此处不渲染 */}
       </div>
 
       {/* Table — 移动端表格舒展到自然列宽，容器内横向滑动；桌面端 md:min-w-0 保持 w-full 原样 */}
@@ -216,9 +232,9 @@ export default function BrandsPanel() {
         </DialogContent>
       </Dialog>
 
-      {/* Brand create/edit dialog */}
+      {/* Brand create/edit dialog — 桌面端专用 */}
       <Dialog open={showBrandModal} onOpenChange={(v) => { if (!v) setShowBrandModal(false); }}>
-        <DialogContent className="max-w-sm bg-card">
+        <DialogContent className="max-md:hidden max-w-sm bg-card">
           <DialogHeader><DialogTitle>{editing ? "编辑品牌" : "新增品牌"}</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-1.5">
@@ -252,9 +268,9 @@ export default function BrandsPanel() {
         </DialogContent>
       </Dialog>
 
-      {/* Region create dialog */}
+      {/* Region create dialog — 桌面端专用 */}
       <Dialog open={showRegionModal} onOpenChange={(v) => { if (!v) setShowRegionModal(false); }}>
-        <DialogContent className="max-w-sm bg-card">
+        <DialogContent className="max-md:hidden max-w-sm bg-card">
           <DialogHeader><DialogTitle>新增产地</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             {/* 已有产地列表：新增时可对照，避免重复 */}
@@ -299,6 +315,102 @@ export default function BrandsPanel() {
             <Button variant="outline" onClick={() => setShowRegionModal(false)} className="rounded-lg text-sm">取消</Button>
             <Button onClick={handleSaveRegion} className="rounded-lg bg-primary hover:bg-primary/80">保存</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 移动端合并新增 Dialog（产地 + 品牌） */}
+      <Dialog
+        open={showMobileCombinedModal}
+        onOpenChange={(v) => {
+          if (!v) {
+            setShowMobileCombinedModal(false);
+            setBrandError("");
+            setRegionError("");
+          }
+        }}
+      >
+        <DialogContent className="md:hidden max-w-sm bg-card">
+          <DialogHeader>
+            <DialogTitle>新增产地 / 品牌</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-5 py-2 max-h-[70vh] overflow-y-auto">
+            {/* 产地区块 */}
+            <section>
+              <h3 className="mb-2 text-sm font-semibold text-foreground">新增产地</h3>
+              {/* 已有产地列表 */}
+              <div className="mb-3">
+                {regions.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border px-3 py-3 text-center text-sm text-muted-foreground">暂无产地</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {regions.map((region) => (
+                      <span
+                        key={region.code}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1 text-sm text-muted-foreground"
+                      >
+                        {region.code}
+                        <button
+                          onClick={() => { setShowMobileCombinedModal(false); setRegionToDelete(region.code); }}
+                          className="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground hover:text-destructive"
+                          aria-label={`删除产地 ${region.code}`}
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-sm font-medium text-foreground/80">新产地代码</Label>
+                <Input
+                  value={regionForm.code}
+                  onChange={(e) => setRegionForm({ ...regionForm, code: e.target.value.toUpperCase() })}
+                  className="h-9 rounded-lg"
+                  placeholder="例如：SEA"
+                  maxLength={10}
+                />
+              </div>
+              {regionError && <p className="mt-2 text-sm font-medium text-destructive">{regionError}</p>}
+              <Button onClick={handleSaveRegion} className="mt-3 w-full rounded-lg bg-primary hover:bg-primary/80">保存产地</Button>
+            </section>
+
+            <Separator />
+
+            {/* 品牌区块 */}
+            <section>
+              <h3 className="mb-2 text-sm font-semibold text-foreground">新增品牌</h3>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-sm font-medium text-foreground/80">ID（自动生成）</Label>
+                  <Input
+                    value={brandForm.id}
+                    onChange={(e) => { idManuallyEdited.current = true; setBrandForm({ ...brandForm, id: e.target.value }); }}
+                    className="h-9 rounded-lg"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-sm font-medium text-foreground/80">名称</Label>
+                  <Input
+                    value={brandForm.name}
+                    onChange={(e) => setBrandForm({ ...brandForm, name: e.target.value })}
+                    className="h-9 rounded-lg"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-sm font-medium text-foreground/80">产地</Label>
+                  <Select value={brandForm.region} onValueChange={(v) => setBrandForm({ ...brandForm, region: v || "" })}>
+                    <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectContent className="z-[100] max-h-[200px]">
+                      {regions.map((r) => (<SelectItem key={r.code} value={r.code}>{r.code}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {brandError && <p className="text-sm font-medium text-destructive">{brandError}</p>}
+                <Button onClick={handleSaveBrand} className="mt-1 w-full rounded-lg bg-primary hover:bg-primary/80">保存品牌</Button>
+              </div>
+            </section>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

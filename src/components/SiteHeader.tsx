@@ -135,7 +135,7 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
             ) : (
               <Link
                 href="/login"
-                className="inline-flex items-center rounded-md bg-transparent text-foreground border border-gray-300 dark:border-gray-600 font-medium transition-all duration-[1.5s] ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800 h-[30px] px-5 text-2xs"
+                className="max-md:hidden inline-flex items-center rounded-md bg-transparent text-foreground border border-gray-300 dark:border-gray-600 font-medium transition-all duration-[1.5s] ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800 h-[30px] px-5 text-2xs"
                 style={{ transition: transitionStyle }}
               >
                 {t.login}
@@ -198,17 +198,27 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
             </button>
           </div>
 
-          {/* 顶部：语言切换 + 主题切换 + 用户头像 */}
+          {/* 顶部：语言切换 + 主题切换 */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
             <LanguageSwitcher transitionStyle="" />
             <ThemeToggle />
-            {authUser?.role === "admin" && (
-              <span
-                title={authUser.email}
-                className="ml-auto flex size-9 items-center justify-center rounded-full border border-border text-sm font-semibold uppercase text-foreground/80"
+            {authUser ? (
+              authUser.role === "admin" && (
+                <span
+                  title={authUser.email}
+                  className="ml-auto flex size-9 items-center justify-center rounded-full border border-border text-sm font-semibold uppercase text-foreground/80"
+                >
+                  {authUser.email.charAt(0)}
+                </span>
+              )
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="ml-auto inline-flex h-8 items-center rounded-lg border border-gray-300 dark:border-gray-600 px-3 text-2xs font-medium text-foreground hover:bg-gray-100 dark:hover:bg-gray-800"
               >
-                {authUser.email.charAt(0)}
-              </span>
+                {t.login}
+              </Link>
             )}
           </div>
 

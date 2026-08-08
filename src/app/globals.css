@@ -812,3 +812,13 @@ html, body {
     @apply font-sans;
   }
 }
+
+/* ===== Hero 标题双版本互斥 =====
+   移动端蓝色 ShinyText + 桌面端白字 ShinyText 互斥渲染，
+   用 !important 防止 framer-motion 或其他 style 覆盖 display */
+.hero-shiny-mobile { display: inline-block !important; }
+.hero-shiny-desktop { display: none !important; }
+@media (min-width: 768px) {
+  .hero-shiny-mobile { display: none !important; }
+  .hero-shiny-desktop { display: inline-block !important; }
+}

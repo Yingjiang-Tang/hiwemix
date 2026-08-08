@@ -31,6 +31,8 @@ export default function Home() {
   const [drawerYear, setDrawerYear] = useState<YearEntry | undefined>();
   const searchPanelRef = useRef<HTMLDivElement>(null);
 
+  const [hasExplored, setHasExplored] = useState(false);
+
   const dataPromiseRef = useRef<Promise<{ colors: Color[]; formulas: Formula[]; brands: CarMake[] }> | null>(null);
 
   function loadData() {
@@ -128,8 +130,9 @@ export default function Home() {
     setDrawerYear(row.yearEntry);
   }
 
-  // Explore Now 触发：滚动到搜索区域（snap 自动吸附），首次载入全部配方
+  // Explore Now 触发：解锁滚动 → 滚动到搜索区域，首次载入全部配方
   function handleExplore() {
+    setHasExplored(true);
     if (searchPanelRef.current) {
       searchPanelRef.current.scrollIntoView({ behavior: "smooth" });
     }
@@ -139,11 +142,13 @@ export default function Home() {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <SiteHeader useHomeTheme />
-      <main className="relative flex-1 overflow-y-auto">
-        {/* Hero：占满 main 区域，Header 固定在其上方 */}
-        <section className="h-full">
-          <HeroSection onExplore={handleExplore} />
-        </section>
+      <main className={`relative flex-1 ${hasExplored ? "overflow-y-auto" : "overflow-hidden"}`}>
+        {/* Hero：占满 main 区域，点击后隐藏 */}
+        {!hasExplored && (
+          <section className="h-full">
+            <HeroSection onExplore={handleExplore} />
+          </section>
+        )}
 
         {/* 搜索区域 */}
         <section className="min-h-full flex flex-col bg-background px-6 sm:px-8 md:px-[60px]">

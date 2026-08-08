@@ -193,7 +193,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
           {/* Header Bar: 品牌/颜色代码/名称/元数据 + 操作按钮
               桌面端：Logo+标题+操作按钮单行，左内边距与配方栏 px-[60px] 对齐；
               移动端：改两行——第一行 Logo(隐藏)+标题+关闭，第二行操作按钮 */}
-          <div className="sticky top-0 z-10 border-b border-border bg-card px-6 py-3 md:px-[60px] md:py-5">
+          <div className="sticky top-0 z-10 border-b border-border bg-card px-6 py-4 md:px-[60px] md:py-5">
             {/* 第一行：品牌 Logo（仅桌面）+ 标题 + 关闭 */}
             <div className="flex items-center gap-3 sm:gap-4">
               <img
@@ -202,11 +202,10 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
                 className="hidden md:block h-[26px] w-auto object-contain"
               />
               {/* 标题：品牌 车型 | 配方代码 | 颜色名称
-                  移动端单行强制截断（nowrap+ellipsis），避免长车型名把 header 撑高 */}
-              <div className="min-w-0 flex-1">
+                  桌面端单行截断（nowrap+ellipsis）；移动端全部显示，超出 1 排自动换行，最多 2 排 */}
+              <div className="min-w-0 flex-1 max-md:pt-[10px]">
                 <h2
-                  className="text-[15px] font-extrabold leading-tight text-foreground sm:text-[20px] font-[family-name:var(--font-sans)]"
-                  style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                  className="text-[18px] font-extrabold leading-tight text-foreground sm:text-[23px] font-[family-name:var(--font-sans)] md:truncate max-md:whitespace-normal max-md:break-words max-md:line-clamp-2"
                 >
                   <span className="font-normal text-primary dark:text-white">{make}</span>
                   {color.car_model && (
@@ -267,31 +266,31 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
                 onClick={handleToggleFavorite}
                 variant="outline"
                 size="icon"
-                className={`size-[38px] bg-transparent border-muted-foreground/30 rounded-full ${
+                className={`size-[31px] bg-transparent border-muted-foreground/30 rounded-full ${
                   isFavorite(activeFormula?.id ?? "") ? "border-muted-foreground/30 bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
                 aria-pressed={isFavorite(activeFormula?.id ?? "")}
                 aria-label={isFavorite(activeFormula?.id ?? "") ? t.favorited : t.favorite}
               >
-                <Heart className={`size-[18px] ${isFavorite(activeFormula?.id ?? "") ? "fill-current" : ""}`} />
+                <Heart className={`size-[14px] ${isFavorite(activeFormula?.id ?? "") ? "fill-current" : ""}`} />
               </Button>
               <Button
                 onClick={handlePrint}
                 variant="outline"
                 size="icon"
-                className="size-[38px] rounded-full bg-transparent border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                className="size-[31px] rounded-full bg-transparent border-muted-foreground/30 text-muted-foreground hover:text-foreground"
                 aria-label={t.print}
               >
-                <Printer className="size-[18px]" />
+                <Printer className="size-[14px]" />
               </Button>
               <Button
                 onClick={handleCopy}
                 variant="outline"
                 size="icon"
-                className="size-[38px] rounded-full bg-transparent border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                className="size-[31px] rounded-full bg-transparent border-muted-foreground/30 text-muted-foreground hover:text-foreground"
                 aria-label={t.copy}
               >
-                <Copy className="size-[18px]" />
+                <Copy className="size-[14px]" />
               </Button>
             </div>
           </div>
@@ -299,7 +298,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
           {/* Body: 两栏布局 */}
           <div className="flex flex-col md:flex-row flex-1">
             {/* 左侧：配方详情 (~62.5%) */}
-            <div className="flex-1 overflow-auto border-b border-border px-[60px] pt-[30px] pb-[60px] md:flex-[62.5%] md:border-b-0 md:border-r">
+            <div className="flex-1 overflow-auto border-b border-border px-[60px] pt-5 md:flex-[62.5%] md:border-b-0 md:border-r md:pt-[30px] md:pb-[60px] max-md:pb-0">
               {activeFormula && displayedFormula && (
                 <div>
                   <KapciFormulaTable
@@ -323,7 +322,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
             {/* 右侧：颜色预览+信息 (~37.5%) */}
             <div className="flex-shrink-0 overflow-auto md:flex-[37.5%]">
               {/* 颜色预览：正方形，照片优先，加载失败回退纯色块（与首页卡片一致） */}
-              <div className="px-[60px] py-[30px]">
+              <div className="px-[60px] py-5 max-md:py-[19px]">
                 <div className="relative aspect-square w-full overflow-hidden rounded-[35px] border border-border/60">
                   {!photoFailed && photoSrc ? (
                     <Image

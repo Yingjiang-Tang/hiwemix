@@ -113,12 +113,11 @@ export default function ShinyText({
     WebkitBackgroundClip: "text",
     backgroundClip: "text",
     WebkitTextFillColor: "transparent",
-    display: "inline-block",
   };
 
   return (
     <motion.span
-      className={className}
+      className={`inline-block ${className}`}
       style={{ ...gradientStyle, backgroundPosition }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
