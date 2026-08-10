@@ -14,7 +14,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import { Tag, Droplet, Layers, Beaker, FileText, BarChart3 } from "lucide-react";
+import { Tag, Droplet, Layers, Beaker, FileText, BarChart3, Plus } from "lucide-react";
 
 const TABS = [
   { key: "brands", label: "品牌", icon: Tag },
@@ -115,6 +115,7 @@ export default function DataManagementPage() {
               />
             </span>
           </button>
+          <div id="mobile-brand-action-portal" className="ml-auto flex items-center" />
         </div>
       </div>
 

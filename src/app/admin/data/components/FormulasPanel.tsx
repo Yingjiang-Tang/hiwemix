@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo, type CSSProperties, type FocusEvent } from "react";
+import { createPortal } from "react-dom";
 import type { Formula, FormulaComponent, FormulaType, ComponentGroup, Color, ColorVariant, YearEntry } from "@/types";
 import type { Toner, CarMake } from "@/types";
 import { generateUniqueFormulaId } from "@/lib/id-generator";
@@ -11,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Spinner } from "@/components/ui/spinner";
-import { Search, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Search, Plus, Trash2 } from "lucide-react";
 
 const PAINT_SYSTEMS = ["1K", "2K"] as const;
 const AUTO_2K_TYPE: FormulaType = "Single Stage";
@@ -55,8 +56,13 @@ export default function FormulasPanel() {
   const [tonerDropdownFor, setTonerDropdownFor] = useState<number | null>(null);
   const [tonerQuery, setTonerQuery] = useState("");
   const tonerBlurRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   // 移动端：色母下拉用 fixed 定位（脱离表格横向滚动容器，避免被 overflow 裁剪）
   const [tonerDropdownPos, setTonerDropdownPos] = useState<{ left: number; top: number; width: number } | null>(null);
+  // 移动端：编辑模式开关
+  const [isEditing, setIsEditing] = useState(false);
+  function closeEditor() { setIsEditing(false); }
 
   const percentageSums = useMemo(() => {
     const filled = components.filter((c) => c.toner_code.trim() !== "");
@@ -103,11 +109,13 @@ export default function FormulasPanel() {
     const color = colors.find((c) => c.id === formula.color_id);
     if (color) { const bName = brandMap.get(color.make_id) ?? color.make_id; setColorQuery(`${color.color_code} - ${color.color_name} (${bName})`); } else { setColorQuery(formula.color_id); }
     setAvailableYears(color?.years || []);
+    setIsEditing(true);
   }
 
   function newFormula() {
     setSelectedId(null); setForm({ id: "", color_id: "", variant_id: "", version: "v1", paint_system: "2K", formula_type: AUTO_2K_TYPE, notes: "", year: undefined });
     setComponents([]); setPctInputs({}); setError(""); setMessage(""); setColorQuery(""); setAvailableYears([]); idManuallyEdited.current = false;
+    setIsEditing(true);
   }
 
   function handlePaintSystemChange(next: "1K" | "2K") {
@@ -152,7 +160,7 @@ export default function FormulasPanel() {
     const payload: Formula = { ...form, variant_id: form.variant_id, components: comps, updated_at: "", year: form.year };
     try {
       const res = await fetch("/api/admin/formulas", { method: selectedId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      if (res.ok) { setMessage("保存成功"); fetchFormulas(); setSelectedId(payload.id); }
+      if (res.ok) { setMessage("保存成功"); fetchFormulas(); setSelectedId(payload.id); closeEditor(); }
       else { const data = await res.json(); setError(data.error || "保存失败"); }
     } catch { setError("网络错误，请重试"); }
   }
@@ -162,7 +170,7 @@ export default function FormulasPanel() {
     if (!confirm(`确定删除配方「${selectedId}」吗？`)) return;
     try {
       const res = await fetch("/api/admin/formulas", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: selectedId }) });
-      if (res.ok) { newFormula(); fetchFormulas(); } else { setError("删除失败"); }
+      if (res.ok) { newFormula(); fetchFormulas(); closeEditor(); } else { setError("删除失败"); }
     } catch { setError("网络错误，请重试"); }
   }
 
@@ -299,7 +307,7 @@ export default function FormulasPanel() {
   return (
     <div className="flex flex-col gap-4 lg:flex-row min-h-[calc(100vh-140px)]">
       {/* 左栏：配方列表 */}
-      <div className="lg:w-64 flex-shrink-0 flex flex-col max-h-[200px] lg:max-h-none">
+      <div className={`lg:w-64 flex-shrink-0 flex flex-col max-h-[calc(100vh-220px)] lg:max-h-none ${isEditing ? "max-md:hidden" : ""}`}>
         {/* 桌面端：文字按钮 + 搜索框 上下两排 */}
         <Button onClick={newFormula} variant="outline-primary" className="rounded-lg mb-3 max-md:hidden">
           <Plus className="size-4" /> 新增配方
@@ -310,15 +318,20 @@ export default function FormulasPanel() {
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input placeholder="搜索配方代码或名称..." value={formulaSearch} onChange={(e) => setFormulaSearch(e.target.value)} className="h-9 rounded-lg pl-9 text-sm" />
           </div>
-          <button
-            type="button"
-            onClick={newFormula}
-            aria-label="新增配方"
-            className="shrink-0 inline-flex size-11 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted"
-          >
-            <Plus className="size-4" />
-          </button>
         </div>
+        {/* 移动端新增按钮通过 Portal 渲染到顶部汉堡栏 */}
+        {mounted &&
+          createPortal(
+            <button
+              type="button"
+              onClick={newFormula}
+              aria-label="新增配方"
+              className="inline-flex size-9 items-center justify-center text-foreground transition-colors hover:bg-muted"
+            >
+              <Plus className="size-5" />
+            </button>,
+            document.getElementById("mobile-brand-action-portal")!
+          )}
         {/* 桌面端：搜索框独立一行 */}
         <div className="relative mb-3 max-md:hidden">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -340,7 +353,14 @@ export default function FormulasPanel() {
       </div>
 
       {/* 右栏：配方编辑 */}
-      <div className="flex-1 rounded-xl border border-border p-5 pb-8 shadow-sm">
+      <div className={`flex-1 rounded-xl border border-border p-5 pb-8 shadow-sm ${!isEditing ? "max-md:hidden" : ""}`}>
+        {/* 移动端编辑面板返回栏 */}
+        <div className="md:hidden flex items-center gap-2 border-b border-border pb-3 mb-4 -mx-5 px-5">
+          <button onClick={closeEditor} className="inline-flex size-9 items-center justify-center rounded-lg text-foreground" aria-label="返回">
+            <ArrowLeft className="size-5" />
+          </button>
+          <span className="text-sm font-medium">{selectedId ? "编辑配方" : "新增配方"}</span>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <Label className="text-sm font-medium text-foreground/80">配方 ID</Label>
