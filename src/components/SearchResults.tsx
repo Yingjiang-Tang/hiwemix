@@ -62,7 +62,7 @@ function VariantSubCard({
 
   return (
     <div
-      className="group relative h-36 w-36 cursor-pointer overflow-hidden rounded-xl transition-all duration-300 ease-in-out active:scale-[0.95]"
+      className="group relative h-36 w-36 cursor-pointer overflow-hidden rounded-xl transition-all duration-300 ease-in-out active:scale-[0.95] max-md:shrink-0 max-md:snap-start"
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -318,11 +318,11 @@ function GroupedColorCard({
           side="bottom"
           align="start"
           sideOffset={8}
-          className="w-auto border border-border/60 bg-popover p-4 shadow-lg"
+          className="w-auto border border-border/60 bg-popover p-4 shadow-lg max-md:max-w-[calc(100vw-2.5rem)]"
           onMouseEnter={handlePopoverEnter}
           onMouseLeave={handlePopoverLeave}
         >
-          <div className="flex gap-4">
+          <div className="flex gap-4 max-md:overflow-x-auto max-md:snap-x max-md:pb-1">
             {rows.map((row, idx) => (
               <VariantSubCard
                 key={idx}

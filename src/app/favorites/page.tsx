@@ -250,7 +250,7 @@ export default function FavoritesPage() {
                           type="button"
                           onClick={(e) => { e.stopPropagation(); toggleFavorite(snap); }}
                           aria-label={t.removeFavorite}
-                          className="absolute right-2 top-2 z-10 flex size-7 items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:bg-destructive"
+                          className="absolute right-2 top-2 z-10 flex size-7 items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:bg-destructive max-md:opacity-100"
                         >
                           <X className="size-4" />
                         </button>
