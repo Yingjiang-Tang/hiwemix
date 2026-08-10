@@ -99,12 +99,24 @@ export default function BrandsPanel() {
     setIsEditing(true);
   }
 
+  // 移动端新增品牌：直接进入编辑页面，不弹 Dialog（Dialog 通过 Portal 渲染到 body，CSS 容器无法屏蔽）
+  function openCreateBrandMobile() {
+    setEditing(null);
+    setBrandForm({ id: "", name: "", region: regions[0]?.code || "JPN" });
+    setBrandError("");
+    idManuallyEdited.current = false;
+    setIsEditing(true);
+  }
+
   function openEditBrand(brand: CarMake) {
     setEditing(brand);
     setBrandForm({ id: brand.id, name: brand.name, region: brand.region });
     setBrandError("");
-    setShowBrandModal(true);
     setIsEditing(true);
+    // 桌面端（≥768px）弹出 Dialog；移动端通过 isEditing 切换到编辑页面（行内编辑按钮桌面移动端共用同一 DOM）
+    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
+      setShowBrandModal(true);
+    }
   }
 
   function openCreateRegion() {
@@ -380,7 +392,7 @@ export default function BrandsPanel() {
             createPortal(
               <button
                 type="button"
-                onClick={openCreateBrand}
+                onClick={openCreateBrandMobile}
                 aria-label="新增品牌"
                 className="inline-flex size-9 items-center justify-center text-foreground transition-colors hover:bg-muted"
               >

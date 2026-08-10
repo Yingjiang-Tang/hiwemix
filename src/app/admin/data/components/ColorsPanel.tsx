@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import type { CarMake, Color, ColorType, ColorVariant, YearEntry } from "@/types";
 import { colorSwatchStyle } from "@/lib/utils";
 import { formatYearEntry } from "@/lib/db-formula";
@@ -30,12 +31,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Edit, Trash2, Plus, X } from "lucide-react";
+import { Search, Edit, Trash2, Plus, X, ArrowLeft } from "lucide-react";
 import ColorPickerField from "@/components/ColorPickerField";
+import { ColorFormFields } from "./ColorFormFields";
 import { Spinner } from "@/components/ui/spinner";
 
 import { useLang } from "@/components/LanguageContext";
 
+export type ColorForm = { id: string; make_id: string; color_code: string; color_name: string; color_type: ColorType[]; hex_preview: string; car_model: string };
 const COLOR_TYPES = ["solid", "metallic", "pearl", "matte", "candy", "special"] as const;
 
 export default function ColorsPanel() {
@@ -46,7 +49,7 @@ export default function ColorsPanel() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Color | null>(null);
-  const [form, setForm] = useState({ id: "", make_id: "", color_code: "", color_name: "", color_type: [] as ColorType[], hex_preview: "#FFFFFF", car_model: "" });
+  const [form, setForm] = useState<ColorForm>({ id: "", make_id: "", color_code: "", color_name: "", color_type: [] as ColorType[], hex_preview: "#FFFFFF", car_model: "" });
   const [variantIds, setVariantIds] = useState<string[]>([]);
   const [yearEntries, setYearEntries] = useState<YearEntry[]>([]);
   const [yearMode, setYearMode] = useState<"single" | "range">("single");
@@ -86,16 +89,34 @@ export default function ColorsPanel() {
   }, [fetchColors]);
 
   useEffect(() => { setPage(0); }, [colors, searchQuery]);
+  // 移动端：编辑页面开关（桌面端不使用，受 max-md:hidden 容器控制）
+  const [isEditing, setIsEditing] = useState(false);
+  // portal 需要在客户端 mounted 后才能访问 document
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  function closeEditor() { setIsEditing(false); }
 
-  function openCreate() {
+  // 桌面端新增：弹 Dialog（与改动前行为一致）
+  function openCreateDesktop() {
     setEditing(null); setForm({ id: "", make_id: "", color_code: "", color_name: "", color_type: [], hex_preview: "#FFFFFF", car_model: "" });
     setVariantIds([]); setYearEntries([]); setYearMode("single"); setYearInput(""); setYearEndInput("");
     setError(""); idManuallyEdited.current = false; setShowModal(true);
   }
+  // 移动端新增：直接进入编辑页面，不弹 Dialog（Dialog 通过 Portal 渲染到 body，CSS 容器无法屏蔽）
+  function openCreateMobile() {
+    setEditing(null); setForm({ id: "", make_id: "", color_code: "", color_name: "", color_type: [], hex_preview: "#FFFFFF", car_model: "" });
+    setVariantIds([]); setYearEntries([]); setYearMode("single"); setYearInput(""); setYearEndInput("");
+    setError(""); idManuallyEdited.current = false; setIsEditing(true);
+  }
+  // 行内编辑：行内按钮桌面/移动端共用同一 DOM，根据点击瞬间视口决定行为
   function openEdit(c: Color) {
     setEditing(c); setForm({ id: c.id, make_id: c.make_id, color_code: c.color_code, color_name: c.color_name, color_type: c.color_type, hex_preview: c.hex_preview, car_model: c.car_model ?? "" });
     setVariantIds(c.variants.map((v) => v.id)); setYearEntries(c.years || []); setYearMode("single"); setYearInput(""); setYearEndInput("");
-    setError(""); setShowModal(true);
+    setError("");
+    // 点击瞬间判断视口：桌面端弹 Dialog，移动端进入编辑页面（行内编辑按钮桌面/移动端共用同一 DOM）
+    const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches;
+    setIsEditing(!isDesktop);
+    setShowModal(isDesktop);
   }
   async function handleSave() {
     setError("");
@@ -112,7 +133,7 @@ export default function ColorsPanel() {
     try {
       const m = editing ? "PUT" : "POST";
       const res = await fetch("/api/admin/colors", { method: m, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, variantIds, years: yearEntries }) });
-      if (res.ok) { setShowModal(false); fetchColors(); }
+      if (res.ok) { setShowModal(false); closeEditor(); fetchColors(); }
       else { const d = await res.json(); setError(d.error || "保存失败"); }
     } catch { setError("网络错误，请重试"); }
   }
@@ -254,24 +275,16 @@ export default function ColorsPanel() {
 
   return (
     <div>
-      <div className="flex justify-start items-center mb-4 gap-3">
+      <div className="flex justify-start items-center mb-4 gap-3 max-md:hidden">
+    <div>
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="搜索颜色、车型、品牌..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-9 rounded-lg pl-9 text-sm" />
         </div>
         {/* 桌面端：保留原文字按钮 */}
-        <Button onClick={openCreate} variant="outline-primary" className="rounded-lg text-sm max-md:hidden">
+        <Button onClick={openCreateDesktop} variant="outline-primary" className="rounded-lg text-sm max-md:hidden">
           <Plus className="size-4" /> 新增颜色
         </Button>
-        {/* 移动端：圆形 + 按钮，右对齐，与 BrandsPanel/VariantsPanel 移动端按钮样式一致 */}
-        <button
-          type="button"
-          onClick={openCreate}
-          aria-label="新增颜色"
-          className="md:hidden shrink-0 inline-flex size-11 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted"
-        >
-          <Plus className="size-4" />
-        </button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -336,220 +349,42 @@ export default function ColorsPanel() {
         </div>
       </div>
 
+    </div>
       {/* Create/Edit Dialog */}
       <Dialog open={showModal} onOpenChange={(v) => { if (!v) setShowModal(false); }}>
         <DialogContent className="max-w-2xl bg-card !max-w-[650px]">
           <DialogHeader><DialogTitle>{editing ? "编辑颜色" : "新增颜色"}</DialogTitle></DialogHeader>
-          <div className="flex flex-col gap-5 py-2 max-h-[70vh] overflow-y-auto">
-            {/* 基本信息卡片 */}
-            <div className="rounded-xl border border-border p-5">
-              <h3 className="mb-4 text-base font-semibold text-foreground/80 border-b border-border/50 pb-3">基本信息</h3>
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-sm font-medium text-foreground/80">ID</Label>
-                  <Input value={form.id} onChange={(e) => { idManuallyEdited.current = true; setForm({ ...form, id: e.target.value }); }} disabled={!!editing} className="h-9 rounded-lg" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-sm font-medium text-foreground/80">品牌</Label>
-                  <Select value={form.make_id} onValueChange={(v) => setForm({ ...form, make_id: v || "" })}>
-                    <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue placeholder="请选择品牌" /></SelectTrigger>
-                    <SelectContent className="z-[100] max-h-[200px]">{brands.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Label className="text-sm font-medium text-foreground/80">颜色代码</Label>
-                    <Input value={form.color_code} onChange={(e) => setForm({ ...form, color_code: e.target.value })} className="h-9 rounded-lg" />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label className="text-sm font-medium text-foreground/80">颜色名称</Label>
-                    <Input value={form.color_name} onChange={(e) => setForm({ ...form, color_name: e.target.value })} className="h-9 rounded-lg" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Label className="text-sm font-medium text-foreground/80">类型</Label>
-                    <Select multiple value={form.color_type} onValueChange={(v) => setForm((prev) => ({ ...prev, color_type: (Array.isArray(v) ? v : (v ? [v] : [])) as ColorType[] }))}>
-                      <SelectTrigger className="h-9 w-full rounded-lg px-2 py-1.5">
-                        <div
-                          ref={colorTypeScrollRef}
-                          className="flex flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                          style={{ touchAction: "pan-y" }}
-                          onPointerDown={handleChipPointerDown}
-                          onPointerMove={handleChipPointerMove}
-                          onPointerUp={endChipDrag}
-                          onPointerCancel={endChipDrag}
-                        >
-                          {form.color_type.map((t) => (
-                            <span
-                              key={t}
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (!suppressChipClick.current) toggleColorType(t); }}
-                              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                              className="inline-flex shrink-0 cursor-grab touch-none select-none items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-sm text-blue-700 active:cursor-grabbing hover:border-blue-300"
-                            >
-                              {t}
-                              <X className="size-3 text-blue-400 hover:text-blue-600" />
-                            </span>
-                          ))}
-                          {form.color_type.length === 0 && <span className="text-sm leading-none text-muted-foreground">请选择类型</span>}
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[200px]">
-                        {COLOR_TYPES.map((t) => (
-                          <SelectItem
-                            key={t}
-                            value={t}
-                            className={form.color_type.includes(t) ? "bg-accent text-accent-foreground" : ""}
-                          >
-                            {t}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label className="text-sm font-medium text-foreground/80">预览色</Label>
-                    <ColorPickerField
-                      value={form.hex_preview}
-                      onChange={(hex) => setForm({ ...form, hex_preview: hex })}
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-sm font-medium text-foreground/80">车型</Label>
-                  <Input value={form.car_model} onChange={(e) => setForm({ ...form, car_model: e.target.value })} placeholder="例如 Camry / Corolla" className="h-9 rounded-lg" />
-                </div>
-              </div>
-            </div>
-
-            {/* 适用年份卡片 */}
-            <div className="rounded-xl border border-border p-5">
-              <h3 className="mb-4 text-base font-semibold text-foreground/80 border-b border-border/50 pb-3">适用年份</h3>
-
-              {/* 第一排：模式切换 + 输入 + 添加（全部一行） */}
-              <div className="flex flex-wrap items-center gap-2">
-                {/* 模式切换：单年 / 区间 */}
-                <div className="inline-flex rounded-lg border border-border p-0.5">
-                  <button
-                    onClick={() => setYearMode("single")}
-                    className={`text-sm px-3 py-1.5 rounded-md transition-colors ${
-                      yearMode === "single"
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {t.yearSingle}
-                  </button>
-                  <button
-                    onClick={() => setYearMode("range")}
-                    className={`text-sm px-3 py-1.5 rounded-md transition-colors ${
-                      yearMode === "range"
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {t.yearRange}
-                  </button>
-                </div>
-
-                <Input
-                  type="number"
-                  placeholder={yearMode === "single" ? "年份 (1900-2100)" : "起始年份"}
-                  className="h-9 w-28 rounded-lg"
-                  min={1900}
-                  max={2100}
-                  value={yearInput}
-                  onChange={(e) => setYearInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") addYearEntry(); }}
-                />
-                {yearMode === "range" && (
-                  <span className="text-muted-foreground">—</span>
-                )}
-                {yearMode === "range" && (
-                  <Input
-                    type="number"
-                    placeholder="结束年份"
-                    className="h-9 w-28 rounded-lg"
-                    min={1900}
-                    max={2100}
-                    value={yearEndInput}
-                    onChange={(e) => setYearEndInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") addYearEntry(); }}
-                  />
-                )}
-                <Button variant="outline" size="sm" className="h-9 rounded-lg text-sm" onClick={addYearEntry}>添加</Button>
-              </div>
-
-              {/* 已添加年份列表 */}
-              <div className="mt-4">
-                <p className="mb-2 text-sm font-medium text-muted-foreground">已添加年份</p>
-                {yearEntries.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-sm text-muted-foreground">
-                    暂无年份，请在上方添加
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {yearEntries.map((entry) => (
-                      <span key={`${entry.year}-${entry.year_end ?? 's'}`} className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
-                        {formatYearEntry(entry)}
-                        <button onClick={() => removeYearEntry(entry)} className="size-4 text-blue-400 hover:text-blue-600"><X className="size-3" /></button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 关联配方类型卡片 */}
-            <div className="rounded-xl border border-border p-5">
-              <h3 className="mb-4 text-base font-semibold text-foreground/80 border-b border-border/50 pb-3">关联配方类型</h3>
-              <div className="max-h-[220px] overflow-auto rounded-lg border border-border">
-                {allVariants.length === 0 ? (
-                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">暂无配方类型</p>
-                ) : (
-                  <div className="flex flex-col">
-                    {allVariants.map((v) => {
-                      const checked = variantIds.includes(v.id);
-                      return (
-                        <label
-                          key={v.id}
-                          className={`flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/50 ${
-                            checked ? "bg-primary/5 dark:bg-primary/10" : ""
-                          } ${v.id !== allVariants[0].id ? "border-t border-border/60" : ""}`}
-                        >
-                          <span
-                            className={`flex size-4 shrink-0 items-center justify-center rounded-[4px] border transition-colors ${
-                              checked
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-input bg-transparent"
-                            }`}
-                            aria-hidden="true"
-                          >
-                            {checked && (
-                              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M1.5 5.5l2.5 2.5 4.5-6" />
-                              </svg>
-                            )}
-                          </span>
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleVariant(v.id)}
-                            className="sr-only"
-                          />
-                          <span className="flex flex-1 items-baseline justify-between gap-2">
-                            <span className="text-sm text-foreground">{v.name}</span>
-                            {v.year_range && <span className="text-sm text-muted-foreground">{v.year_range}</span>}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+          <div className="max-h-[70vh] overflow-y-auto">
+            <ColorFormFields
+              form={form}
+              setForm={setForm}
+              brands={brands}
+              allVariants={allVariants}
+              variantIds={variantIds}
+              setVariantIds={setVariantIds}
+              yearEntries={yearEntries}
+              yearMode={yearMode}
+              setYearMode={setYearMode}
+              yearInput={yearInput}
+              setYearInput={setYearInput}
+              yearEndInput={yearEndInput}
+              setYearEndInput={setYearEndInput}
+              error={error}
+              editing={editing}
+              idManuallyEdited={idManuallyEdited}
+              colorTypeScrollRef={colorTypeScrollRef}
+              colorTypeDrag={colorTypeDrag}
+              suppressChipClick={suppressChipClick}
+              COLOR_TYPES={COLOR_TYPES}
+              toggleColorType={toggleColorType}
+              toggleVariant={toggleVariant}
+              addYearEntry={addYearEntry}
+              removeYearEntry={removeYearEntry}
+              handleChipPointerDown={handleChipPointerDown}
+              handleChipPointerMove={handleChipPointerMove}
+              endChipDrag={endChipDrag}
+              t={t}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowModal(false)} className="rounded-lg text-sm">取消</Button>
@@ -596,6 +431,141 @@ export default function ColorsPanel() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* 块 3：移动端两栏布局（参考 FormulasPanel/VariantsPanel 模式） */}
+      <div className="md:hidden flex flex-col gap-4 lg:flex-row min-h-[calc(100vh-140px)]">
+        {/* 左栏：颜色列表 */}
+        <div className={`lg:w-64 flex-shrink-0 flex flex-col ${isEditing ? "max-md:hidden" : ""}`}>
+          <div className="flex justify-start items-center mb-4 gap-3">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="搜索颜色、车型、品牌..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-9 rounded-lg pl-9 text-sm" />
+            </div>
+          </div>
+
+          {/* 移动端 + 按钮通过 Portal 渲染到顶部汉堡栏，与 FormulasPanel/BrandsPanel 同款 */}
+          {mounted &&
+            createPortal(
+              <button
+                type="button"
+                onClick={openCreateMobile}
+                aria-label="新增颜色"
+                className="inline-flex size-9 items-center justify-center text-foreground transition-colors hover:bg-muted"
+              >
+                <Plus className="size-5" />
+              </button>,
+              document.getElementById("mobile-brand-action-portal")!
+            )}
+
+          {/* 列表（移动端，独立 DOM） */}
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <Table className="min-w-max md:min-w-0">
+          <TableHeader>
+            <TableRow className="bg-muted/80">
+              <TableHead className="w-[60px] py-2.5 text-xs font-semibold text-muted-foreground uppercase text-center">预览</TableHead>
+              <TableHead className="w-[120px] py-2.5 text-xs font-semibold text-muted-foreground uppercase text-center">品牌</TableHead>
+              <TableHead className="w-[120px] py-2.5 text-xs font-semibold text-muted-foreground uppercase text-center">颜色代码</TableHead>
+              <TableHead className="w-[150px] py-2.5 text-xs font-semibold text-muted-foreground uppercase text-center">颜色名称</TableHead>
+              <TableHead className="w-[120px] py-2.5 text-xs font-semibold text-muted-foreground uppercase text-center">车型</TableHead>
+              <TableHead className="w-[80px] py-2.5 text-xs font-semibold text-muted-foreground uppercase text-center">类型</TableHead>
+              <TableHead className="w-[80px] py-2.5 text-xs font-semibold text-muted-foreground uppercase text-center">年份</TableHead>
+              <TableHead className="w-[100px] py-2.5 text-xs font-semibold text-muted-foreground uppercase text-center">操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pageRows.map((row) => (
+              <TableRow key={`${row.colorId}-${row.yearEntry?.year ?? 'none'}-${row.yearEntry?.year_end ?? 's'}`} className="border-b border-border/50 last:border-b-0 hover:bg-muted/50">
+                <TableCell className="py-3 text-center">
+                  <div className="mx-auto w-10 h-6 rounded border border-border" style={colorSwatchStyle(row.hex_preview)} />
+                </TableCell>
+                <TableCell className="py-3 text-center">
+                  <span className="block truncate text-sm font-medium text-foreground">{row.brandName}</span>
+                </TableCell>
+                <TableCell className="py-3 text-center">
+                  <span className="text-sm font-medium text-muted-foreground">{row.color_code}</span>
+                </TableCell>
+                <TableCell className="py-3 text-center">
+                  <span className="block truncate text-sm text-foreground">{row.color_name}</span>
+                </TableCell>
+                <TableCell className="py-3 text-center">
+                  <span className="block truncate text-sm text-muted-foreground">{row.car_model || "—"}</span>
+                </TableCell>
+                <TableCell className="py-3 text-center">
+                  <div className="flex flex-wrap items-center justify-center gap-1">
+                    {row.color_type.map((t) => (
+                      <span key={t} className="rounded-md border border-muted bg-muted/50 px-1.5 py-0.5 text-sm text-muted-foreground">{t}</span>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell className="py-3 text-center">
+                  <span className="text-sm text-muted-foreground">{row.yearEntry ? formatYearEntry(row.yearEntry) : ""}</span>
+                </TableCell>
+                <TableCell className="py-3 text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <button onClick={() => openEdit(row.originalColor)} className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary"><Edit className="size-4" /></button>
+                    <button onClick={() => handleDelete(row.originalColor)} aria-label="删除颜色" title="删除颜色" className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="size-4" /></button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <div className="flex items-center justify-between border-t border-border px-4 py-3">
+          <p className="text-sm font-semibold text-primary">Found {filteredRows.length} colors</p>
+          <div className="flex items-center gap-2">
+            <span className="text-2xs text-muted-foreground">{page + 1} / {totalPages}</span>
+            <Button size="icon" variant="ghost" disabled={page === 0} onClick={() => setPage(page - 1)} className="size-8 rounded-lg">‹</Button>
+            <Button size="icon" variant="ghost" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)} className="size-8 rounded-lg">›</Button>
+          </div>
+        </div>
+      </div>
+        </div>
+
+        {/* 右栏：编辑页面（isEditing=true 时显示） */}
+        <div className={`flex-1 rounded-xl border border-border p-5 pb-8 shadow-sm ${!isEditing ? "max-md:hidden" : ""}`}>
+          {/* 移动端返回栏 */}
+          <div className="md:hidden flex items-center gap-2 border-b border-border pb-3 mb-4 -mx-5 px-5">
+            <button onClick={closeEditor} className="inline-flex size-9 items-center justify-center rounded-lg text-foreground" aria-label="返回">
+              <ArrowLeft className="size-5" />
+            </button>
+            <span className="text-sm font-medium">{editing ? "编辑颜色" : "新增颜色"}</span>
+          </div>
+          <ColorFormFields
+            form={form}
+            setForm={setForm}
+            brands={brands}
+            allVariants={allVariants}
+            variantIds={variantIds}
+            setVariantIds={setVariantIds}
+            yearEntries={yearEntries}
+            yearMode={yearMode}
+            setYearMode={setYearMode}
+            yearInput={yearInput}
+            setYearInput={setYearInput}
+            yearEndInput={yearEndInput}
+            setYearEndInput={setYearEndInput}
+            error={error}
+            editing={editing}
+            idManuallyEdited={idManuallyEdited}
+            colorTypeScrollRef={colorTypeScrollRef}
+            colorTypeDrag={colorTypeDrag}
+            suppressChipClick={suppressChipClick}
+            COLOR_TYPES={COLOR_TYPES}
+            toggleColorType={toggleColorType}
+            toggleVariant={toggleVariant}
+            addYearEntry={addYearEntry}
+            removeYearEntry={removeYearEntry}
+            handleChipPointerDown={handleChipPointerDown}
+            handleChipPointerMove={handleChipPointerMove}
+            endChipDrag={endChipDrag}
+            t={t}
+          />
+          {/* 移动端 Cancel/Save 按钮（与 FormulasPanel 右栏末尾一致） */}
+          <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border -mx-5 -mb-5 px-5 pb-0">
+            <Button variant="outline" onClick={closeEditor} className="rounded-lg text-sm">取消</Button>
+            <Button onClick={handleSave} className="rounded-lg bg-primary text-sm hover:bg-primary/80">保存</Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
