@@ -79,8 +79,19 @@ export function LoginForm({
         setLoading(false);
         return;
       }
-      // 登录成功，跳转首页
-      router.push("/");
+      // 登录成功：回到登录前想访问的页面（next 参数，同源校验防开放重定向），否则去首页
+      const next = searchParams.get("next");
+      let safeNext = "/";
+      if (next) {
+        try {
+          // 用 URL 解析校验同源：拒绝 //evil.com、/\evil.com、编码反斜杠等所有变体（对齐 auth/callback 的 AUTH-5）
+          const u = new URL(next, window.location.origin);
+          if (u.origin === window.location.origin) safeNext = next;
+        } catch {
+          // 非法 URL → 回首页
+        }
+      }
+      router.push(safeNext);
     } catch (err) {
       setError(getErrorMessage(err, t.loginErrorFailed));
       setLoading(false);

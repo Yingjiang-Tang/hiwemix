@@ -1,15 +1,16 @@
 // ============================================================
 // TDS 产品手册数据访问层
-// 读用 anon client（受 RLS SELECT 保护），写用 getSupabaseAdmin()（BYPASSRLS）
+// 读用 session 感知的 SSR 客户端（受 RLS SELECT 保护，仅已登录用户），写用 getSupabaseAdmin()（BYPASSRLS）
 // ============================================================
-import { getSupabase } from "./supabase-client";
+import { createClient } from "./supabase/server";
 import { getSupabaseAdmin } from "./supabase-server";
 import type { GuideCategory, Guide, DocType } from "@/types";
 
-// ====== 公开读 ======
+// ====== 读 ======
 
 export async function getGuideCategories(): Promise<GuideCategory[]> {
-  const { data, error } = await getSupabase()
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("guide_categories")
     .select("*")
     .order("sort_order", { ascending: true });
@@ -22,7 +23,8 @@ export async function getGuides(opts?: {
   docType?: DocType;
   publishedOnly?: boolean;
 }): Promise<Guide[]> {
-  let q = getSupabase().from("guides").select("*").order("sort_order", { ascending: true });
+  const supabase = await createClient();
+  let q = supabase.from("guides").select("*").order("sort_order", { ascending: true });
   if (opts?.categoryId) q = q.eq("category_id", opts.categoryId);
   if (opts?.docType) q = q.eq("doc_type", opts.docType);
   if (opts?.publishedOnly) q = q.eq("is_published", true);
@@ -32,7 +34,8 @@ export async function getGuides(opts?: {
 }
 
 export async function getGuideById(id: string): Promise<Guide | null> {
-  const { data, error } = await getSupabase()
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("guides")
     .select("*")
     .eq("id", id)

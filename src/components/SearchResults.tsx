@@ -7,7 +7,7 @@ import { useFavorites } from "@/components/FavoritesContext";
 import { colorSwatchStyle, cn } from "@/lib/utils";
 import { getColorPhotoCandidates } from "@/lib/color-photo";
 import type { FormulaTableRow } from "@/types";
-import { formatYearEntry } from "@/lib/db-formula";
+import { formatYearEntry } from "@/lib/formula-utils";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";

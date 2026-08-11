@@ -5,7 +5,7 @@ import Image from "next/image";
 import type { SearchResult, Formula, FormulaComponent, ComponentGroup, YearEntry } from "@/types";
 import { colorSwatchStyle } from "@/lib/utils";
 import { getColorPhotoCandidates } from "@/lib/color-photo";
-import { formatYearEntry } from "@/lib/db-formula";
+import { formatYearEntry } from "@/lib/formula-utils";
 import { useLang } from "@/components/LanguageContext";
 import { useFavorites } from "@/components/FavoritesContext";
 import { track } from "@/lib/analytics";

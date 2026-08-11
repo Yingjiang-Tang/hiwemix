@@ -1,4 +1,4 @@
-import { getSupabase } from "./supabase-client";
+import { createClient } from "./supabase/server";
 import { getSupabaseAdmin } from "./supabase-server";
 import { getToners } from "./db-toner";
 import type {
@@ -23,7 +23,8 @@ const DEFAULT_SETTINGS: AppSettings = {
 // ====== Brands ======
 
 export async function getBrands(): Promise<CarMake[]> {
-  const { data, error } = await getSupabase()
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("brands")
     .select("*")
     .order("name", { ascending: true });
@@ -34,7 +35,8 @@ export async function getBrands(): Promise<CarMake[]> {
 // ====== Formula Types ======
 
 export async function getFormulaTypes(): Promise<ColorVariant[]> {
-  const { data, error } = await getSupabase()
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("formula_types")
     .select("*")
     .order("name", { ascending: true });
@@ -43,21 +45,11 @@ export async function getFormulaTypes(): Promise<ColorVariant[]> {
 }
 
 // ====== Color Years ======
-
-// 判断 YearEntry 是否包含目标年份
-export function yearEntryContains(entry: YearEntry, target: number): boolean {
-  if (entry.year_end == null) return entry.year === target;
-  return entry.year <= target && target <= entry.year_end;
-}
-
-// 格式化 YearEntry 为显示字符串："2020" 或 "2001-2009"
-export function formatYearEntry(entry: YearEntry): string {
-  if (entry.year_end == null) return String(entry.year);
-  return `${entry.year}-${entry.year_end}`;
-}
+// 纯函数 yearEntryContains / formatYearEntry 已移至 ./formula-utils（客户端可安全引用）
 
 export async function getColorYears(colorId: string): Promise<YearEntry[]> {
-  const { data, error } = await getSupabase()
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("color_years")
     .select("year, year_end")
     .eq("color_id", colorId)
@@ -70,7 +62,8 @@ export async function getColorYears(colorId: string): Promise<YearEntry[]> {
 }
 
 export async function getAllColorYears(): Promise<Record<string, YearEntry[]>> {
-  const { data, error } = await getSupabase()
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("color_years")
     .select("color_id, year, year_end")
     .order("year", { ascending: true });
@@ -111,7 +104,8 @@ export async function saveColorYears(colorId: string, entries: YearEntry[]): Pro
 // ====== Colors ======
 
 export async function getColors(): Promise<Color[]> {
-  const { data, error } = await getSupabase()
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("colors")
     .select("*, color_variant_map(color_variants(*))")
     .order("color_code", { ascending: true });
@@ -130,7 +124,8 @@ export async function getColors(): Promise<Color[]> {
 // ====== Formulas ======
 
 export async function getFormulas(): Promise<Formula[]> {
-  const { data, error } = await getSupabase()
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("formulas")
     .select("*, formula_components(*)")
     .order("updated_at", { ascending: false });
@@ -148,7 +143,8 @@ export async function getFormulas(): Promise<Formula[]> {
 // ====== Settings ======
 
 export async function getSettings(): Promise<AppSettings> {
-  const { data, error } = await getSupabase()
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("settings")
     .select("*")
     .eq("id", 1)

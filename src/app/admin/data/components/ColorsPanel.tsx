@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import type { CarMake, Color, ColorType, ColorVariant, YearEntry } from "@/types";
 import { colorSwatchStyle } from "@/lib/utils";
-import { formatYearEntry } from "@/lib/db-formula";
+import { formatYearEntry } from "@/lib/formula-utils";
 import { generateUniqueColorId } from "@/lib/id-generator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

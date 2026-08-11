@@ -9,7 +9,7 @@ import Footer from "@/components/Footer";
 import HeroSection from "@/components/HeroSection";
 import VerifiedBanner from "@/components/VerifiedBanner";
 import { useLang } from "@/components/LanguageContext";
-import { yearEntryContains } from "@/lib/db-formula";
+import { yearEntryContains } from "@/lib/formula-utils";
 import { track, trackPageView } from "@/lib/analytics";
 import type { CarMake, Color, ColorType, Formula, SearchParams, SearchResult, FormulaTableRow, YearEntry } from "@/types";
 

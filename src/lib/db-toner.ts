@@ -1,14 +1,15 @@
 // ============================================================
-// 色母数据访问层 — 读操作用 anon client，写操作用 getSupabaseAdmin()
+// 色母数据访问层 — 读操作用 session 感知的 SSR 客户端（RLS 按登录用户生效），写操作 getSupabaseAdmin()
 // ============================================================
-import { getSupabase } from "./supabase-client";
+import { createClient } from "./supabase/server";
 import { getSupabaseAdmin } from "./supabase-server";
 import type { Toner } from "@/types";
 
-// ====== 读（anon，受 RLS SELECT 策略保护） ======
+// ====== 读（SSR 客户端，受 RLS SELECT 策略保护：仅已登录用户） ======
 
 export async function getToners(): Promise<Toner[]> {
-  const { data, error } = await getSupabase()
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("toners")
     .select("*")
     .order("code", { ascending: true });

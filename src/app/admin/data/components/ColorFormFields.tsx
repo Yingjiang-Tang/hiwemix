@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import ColorPickerField from "@/components/ColorPickerField";
 import { X } from "lucide-react";
-import { formatYearEntry } from "@/lib/db-formula";
+import { formatYearEntry } from "@/lib/formula-utils";
 import type { I18nDict } from "@/lib/i18n";
 import type { ColorForm } from "./ColorsPanel";
 
