@@ -192,7 +192,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
         <SheetContent side="right" className="formula-print-area formula-drawer p-0 gap-0 bg-card z-[2000] md:!fixed md:!inset-0 md:!w-screen md:!max-w-none md:!h-screen md:!translate-x-0 md:!rounded-none md:!overflow-y-auto md:!z-[2000]">
           {/* Header Bar: 品牌/颜色代码/名称/元数据 + 操作按钮
               桌面端：Logo+标题+操作按钮单行，左内边距与配方栏 px-[60px] 对齐；
-              移动端：改两行——第一行 Logo(隐藏)+标题+关闭，第二行操作按钮 */}
+              移动端：改两行——第一行 Logo+标题+关闭（标题去车型、15px），第二行操作按钮 */}
           <div className="sticky top-0 z-10 border-b border-border bg-card px-6 py-4 md:px-[60px] md:py-5">
             {/* 第一行：品牌 Logo（仅桌面）+ 标题 + 关闭 */}
             <div className="flex items-center gap-3 sm:gap-4">
@@ -201,22 +201,30 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
                 alt="HIWE"
                 className="hidden md:block h-[26px] w-auto object-contain"
               />
-              {/* 标题：品牌 车型 | 配方代码 | 颜色名称
+              {/* 移动端专属标题前 logo（weblogo.png 28px 方形）；桌面端仍用上方 hiwemix2 横幅 */}
+              <img
+                src="/weblogo.png"
+                alt="HIWE"
+                className="md:hidden size-[28px] object-cover flex-shrink-0"
+              />
+              {/* 标题：品牌 [车型] | 配方代码 | 颜色名称（车型仅桌面端，移动端隐藏）
                   桌面端单行截断（nowrap+ellipsis）；移动端全部显示，超出 1 排自动换行，最多 2 排 */}
-              <div className="min-w-0 flex-1 max-md:pt-[10px]">
+              <div className="min-w-0 flex-1">
                 <h2
-                  className="text-[18px] font-extrabold leading-tight text-foreground sm:text-[23px] font-[family-name:var(--font-sans)] md:truncate max-md:whitespace-normal max-md:break-words max-md:line-clamp-2"
+                  className="text-[15px] font-extrabold leading-tight text-foreground sm:text-[23px] font-[family-name:var(--font-sans)] md:truncate max-md:whitespace-normal max-md:break-words max-md:line-clamp-2"
                 >
-                  <span className="font-normal text-primary dark:text-white">{make}</span>
+                  {/* 品牌/车型移动端统一为 semibold，与代码/名称一致；桌面端保持 font-normal 原样 */}
+                  <span className="font-normal text-primary dark:text-white max-md:font-semibold">{make}</span>
                   {color.car_model && (
                     <>
-                      <span className="font-normal text-primary dark:text-white"> {color.car_model}</span>
+                      {/* 车型仅桌面端显示；移动端标题去掉车型（max-md:hidden），保留 品牌 | 代码 | 名称 */}
+                      <span className="font-normal text-primary dark:text-white max-md:font-semibold max-md:hidden"> {color.car_model}</span>
                     </>
                   )}
-                  <span className="mx-2 text-muted-foreground/40" aria-hidden="true">|</span>
-                  <span className="font-semibold">{color.color_code}</span>
-                  <span className="mx-2 text-muted-foreground/40" aria-hidden="true">|</span>
-                  <span className="font-semibold">{color.color_name}</span>
+                  <span className="mx-2 text-muted-foreground/40 max-md:font-normal max-md:text-primary" aria-hidden="true">|</span>
+                  <span className="font-semibold max-md:text-primary">{color.color_code}</span>
+                  <span className="mx-2 text-muted-foreground/40 max-md:font-normal max-md:text-primary" aria-hidden="true">|</span>
+                  <span className="font-semibold max-md:text-primary">{color.color_name}</span>
                 </h2>
               </div>
 

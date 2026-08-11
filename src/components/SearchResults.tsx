@@ -21,7 +21,7 @@ const ALL_MAKES = "all";
 //   桌面端（≥768px）保持药丸选中底（data-active:bg-muted）
 //   移动端（<768px）选中态去药丸底、文字变蓝（效果与品牌筛选栏一致）
 const brandTrigger =
-  "h-9 flex-none gap-1.5 rounded-full px-4 text-sm data-active:bg-muted max-md:data-active:bg-transparent max-md:data-active:shadow-none max-md:data-active:text-primary max-md:h-10 max-md:w-full max-md:justify-start max-md:data-active:bg-card max-md:data-active:border max-md:data-active:border-primary";
+  "h-9 flex-none gap-1.5 rounded-full px-4 text-sm data-active:bg-muted max-md:data-active:bg-transparent! dark:max-md:data-active:bg-transparent! max-md:data-active:shadow-none! max-md:data-active:text-primary max-md:h-10 max-md:w-full max-md:justify-start";
 
 export interface SearchResultsProps {
   rows: FormulaTableRow[];

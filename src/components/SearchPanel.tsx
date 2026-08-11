@@ -318,7 +318,7 @@ export default function SearchPanel({
 
           {/* LEFT — 区域标签 */}
           <div className="lg:w-5/12 xl:w-2/5 lg:shrink-0">
-            <h2 className="font-heading font-bold leading-tight tracking-tight text-muted-foreground text-xl lg:text-2xl">
+            <h2 className="font-heading font-bold leading-tight tracking-tight text-muted-foreground text-xl lg:text-2xl max-md:text-primary max-md:text-center">
               {t.panelTitle}
             </h2>
           </div>
