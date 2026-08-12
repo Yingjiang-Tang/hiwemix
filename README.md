@@ -9,21 +9,21 @@
 - 📋 详细的色母配方表（克重比例）
 - 📱 响应式设计，支持移动端
 - 🔐 用户认证和管理后台
-- 🌐 多语言支持（中文/英文）
+- 🌐 多语言支持（13 种语言）
 
 ## 技术栈
 
-- **前端**: Next.js 16 App Router + TypeScript + Tailwind CSS
-- **UI 组件**: Material-UI (MUI)
+- **前端**: Next.js 16 App Router + TypeScript + Tailwind CSS v4
+- **UI 组件**: shadcn/ui + Base UI（Tailwind CSS）
 - **后端**: Supabase (PostgreSQL)
-- **认证**: JWT + bcrypt
+- **认证**: Supabase Auth（邮箱验证 / 密码重置，profile 存于 `public.profiles`）
 - **部署**: Vercel
 
 ## 快速开始
 
 ### 环境要求
 
-- Node.js 18+
+- Node.js 20+
 - Supabase 项目（需要配置环境变量）
 
 ### 安装和运行
@@ -44,13 +44,17 @@ npm run dev
 
 ### 环境变量
 
-在 `.env.local` 中配置以下变量：
+在 `.env.local` 中配置以下变量（参照 `.env.example`）：
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SECRET_KEY=your_supabase_service_role_key
 JWT_SECRET=your_jwt_secret
+NEXT_PUBLIC_SITE_URL=https://your-site.example.com
 ```
+
+> 注意：`SUPABASE_SECRET_KEY`（service_role key）只能用于服务端（`getSupabaseAdmin()`），严禁出现在客户端代码或暴露给浏览器。
 
 ## 项目结构
 
