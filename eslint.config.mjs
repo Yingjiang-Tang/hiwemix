@@ -21,6 +21,9 @@ const eslintConfig = defineConfig([
   },
   // Override default ignores of eslint-config-next.
   globalIgnores([
+    // 工具/临时目录（firecrawl 爬取产物、pdf 提取脚本），非业务代码，不参与 lint
+    ".firecrawl/**",
+    "_tmp_extract/**",
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",

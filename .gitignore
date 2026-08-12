@@ -74,3 +74,4 @@ tds-check.js
 dist/
 build/
 .firecrawl/
+.zcode/
