@@ -276,7 +276,6 @@ export default function ColorsPanel() {
   return (
     <div>
       <div className="flex justify-start items-center mb-4 gap-3 max-md:hidden">
-    <div>
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="搜索颜色、车型、品牌..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-9 rounded-lg pl-9 text-sm" />
@@ -349,7 +348,6 @@ export default function ColorsPanel() {
         </div>
       </div>
 
-    </div>
       {/* Create/Edit Dialog */}
       <Dialog open={showModal} onOpenChange={(v) => { if (!v) setShowModal(false); }}>
         <DialogContent className="max-w-2xl bg-card !max-w-[650px]">
