@@ -21,27 +21,9 @@ const DIFFERENTIATED_COLOR_IDS = new Set([
   "citron_ewp",
 ]);
 
-/** 该颜色行是否需要差异化照片（位于白名单内） */
-export function isDifferentiatedColor(color: Color): boolean {
-  return DIFFERENTIATED_COLOR_IDS.has(color.id);
-}
-
 /**
- * 计算颜色照片路径：
- * 1. 白名单内的行 → 优先用 {color_id}.jpg（专属图）
- * 2. 否则 / 或专属图不存在时 → 回退 {color_code}.jpg（去掉 "/" 后大写）
- */
-export function getColorPhotoSrc(color: Color): string {
-  const code = color.color_code.replace(/\//g, "").toUpperCase();
-  if (DIFFERENTIATED_COLOR_IDS.has(color.id)) {
-    return `/images/colors/${color.id}.jpg`;
-  }
-  return `/images/colors/${code}.jpg`;
-}
-
-/**
- * 与 getColorPhotoSrc 一致的「多候选回退」版本，供 <img> onError 逐级尝试：
- * 返回候选列表，第一候选不存在时依次回退到下一候选。
+ * 颜色照片多候选回退列表，供 <img> onError 逐级尝试：
+ * 白名单内的行优先用 {color_id}.jpg（专属图），第一候选不存在时依次回退到 {color_code}.jpg。
  */
 export function getColorPhotoCandidates(color: Color): string[] {
   const code = color.color_code.replace(/\//g, "").toUpperCase();

@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
   } catch (e: unknown) {
     const msg = extractError(e);
     console.error("[POST /api/admin/toners]", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    // 内部错误脱敏：真实错误只进服务端日志
+    return NextResponse.json({ error: "保存失败，请稍后重试" }, { status: 500 });
   }
 }
 
@@ -69,7 +70,8 @@ export async function PUT(req: NextRequest) {
   } catch (e: unknown) {
     const msg = extractError(e);
     console.error("[PUT /api/admin/toners]", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    // 内部错误脱敏：真实错误只进服务端日志
+    return NextResponse.json({ error: "保存失败，请稍后重试" }, { status: 500 });
   }
 }
 
@@ -95,6 +97,7 @@ export async function DELETE(req: NextRequest) {
   } catch (e: unknown) {
     const msg = extractError(e);
     console.error("[DELETE /api/admin/toners]", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    // 内部错误脱敏：真实错误只进服务端日志
+    return NextResponse.json({ error: "删除失败，请稍后重试" }, { status: 500 });
   }
 }

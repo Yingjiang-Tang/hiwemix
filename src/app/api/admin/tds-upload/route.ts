@@ -53,7 +53,8 @@ export async function POST(req: NextRequest) {
     const { data: pub } = getSupabaseAdmin().storage.from("tds-images").getPublicUrl(filename);
     return NextResponse.json({ url: pub.publicUrl });
   } catch (e) {
-    const detail = (e as { message?: string })?.message ?? String(e);
-    return NextResponse.json({ error: "上传失败: " + detail }, { status: 500 });
+    // 内部错误脱敏：真实错误只进服务端日志
+    console.error("[POST /api/admin/tds-upload]", e);
+    return NextResponse.json({ error: "上传失败，请稍后重试" }, { status: 500 });
   }
 }

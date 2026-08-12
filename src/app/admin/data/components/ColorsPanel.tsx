@@ -371,7 +371,7 @@ export default function ColorsPanel() {
               setYearEndInput={setYearEndInput}
               error={error}
               editing={editing}
-              idManuallyEdited={idManuallyEdited}
+              idManuallyEditedRef={idManuallyEdited}
               colorTypeScrollRef={colorTypeScrollRef}
               colorTypeDrag={colorTypeDrag}
               suppressChipClick={suppressChipClick}
@@ -545,7 +545,7 @@ export default function ColorsPanel() {
             setYearEndInput={setYearEndInput}
             error={error}
             editing={editing}
-            idManuallyEdited={idManuallyEdited}
+            idManuallyEditedRef={idManuallyEdited}
             colorTypeScrollRef={colorTypeScrollRef}
             colorTypeDrag={colorTypeDrag}
             suppressChipClick={suppressChipClick}

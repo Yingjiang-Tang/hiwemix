@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkSupabaseAdmin } from "@/lib/auth";
 import { applyRateLimit, ADMIN_LIMIT } from "@/lib/rate-limit";
-import { getColors, saveColor, deleteColor, saveColorYears } from "@/lib/db-formula";
+import { getColors, saveColor, deleteColor } from "@/lib/db-formula";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import type { Color, YearEntry } from "@/types";
 
@@ -28,20 +28,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "缺少必填字段（id/make_id/color_code）" }, { status: 400 });
   }
   try {
-    const saved = await saveColor(color, (variantIds as string[]) ?? [], true);
-
-    // 保存年份
-    if (years && Array.isArray(years)) {
-      await saveColorYears(color.id, years as YearEntry[]);
-    }
-
+    // 颜色主行 + 变体映射 + 年份在同一事务 RPC 内完成；years 缺省按空数组 → 清空旧年份
+    const saved = await saveColor(color, (variantIds as string[]) ?? [], (years as YearEntry[] | undefined) ?? [], true);
     return NextResponse.json(saved, { status: 201 });
   } catch (e) {
-    const detail = (e as { code?: string; message?: string; details?: string })?.details
-                || (e as { code?: string; message?: string; details?: string })?.message
-                || (e instanceof Error ? e.message : "")
-                || (typeof e === "object" ? JSON.stringify(e) : String(e));
-    return NextResponse.json({ error: "保存失败: " + detail }, { status: 500 });
+    console.error("[POST /api/admin/colors]", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    // 只回传业务错误（如"颜色 ID 已存在"）；DB 内部错误统一脱敏
+    const isBusiness = msg.includes("已存在") || msg.includes("必须");
+    return NextResponse.json({ error: isBusiness ? msg : "保存失败，请稍后重试" }, { status: 500 });
   }
 }
 
@@ -59,20 +54,15 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "缺少 ID" }, { status: 400 });
   }
   try {
-    const saved = await saveColor(color, (variantIds as string[]) ?? []);
-
-    // 保存年份
-    if (years && Array.isArray(years)) {
-      await saveColorYears(color.id, years as YearEntry[]);
-    }
-
+    // 颜色主行 + 变体映射 + 年份在同一事务 RPC 内完成；years 缺省按空数组 → 清空旧年份
+    const saved = await saveColor(color, (variantIds as string[]) ?? [], (years as YearEntry[] | undefined) ?? []);
     return NextResponse.json(saved);
   } catch (e) {
-    const detail = (e as { code?: string; message?: string; details?: string })?.details
-                || (e as { code?: string; message?: string; details?: string })?.message
-                || (e instanceof Error ? e.message : "")
-                || (typeof e === "object" ? JSON.stringify(e) : String(e));
-    return NextResponse.json({ error: "保存失败: " + detail }, { status: 500 });
+    console.error("[PUT /api/admin/colors]", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    // 只回传业务错误（如"颜色 ID 已存在"）；DB 内部错误统一脱敏
+    const isBusiness = msg.includes("已存在") || msg.includes("必须");
+    return NextResponse.json({ error: isBusiness ? msg : "保存失败，请稍后重试" }, { status: 500 });
   }
 }
 
@@ -93,7 +83,10 @@ export async function DELETE(req: NextRequest) {
     .from("formulas")
     .select("id, version, updated_at")
     .eq("color_id", id);
-  if (countErr) return NextResponse.json({ error: "查询配方失败: " + countErr.message }, { status: 500 });
+  if (countErr) {
+    console.error("[DELETE /api/admin/colors] query formulas failed:", countErr.message);
+    return NextResponse.json({ error: "查询配方失败，请稍后重试" }, { status: 500 });
+  }
 
   const formulas = (formulaRows ?? []).map((r) => ({
     id: String(r.id),

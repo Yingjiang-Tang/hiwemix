@@ -81,26 +81,6 @@ export async function getAllColorYears(): Promise<Record<string, YearEntry[]>> {
   return map;
 }
 
-export async function saveColorYears(colorId: string, entries: YearEntry[]): Promise<void> {
-  // 删除现有的年份
-  const { error: delErr } = await getSupabaseAdmin()
-    .from("color_years")
-    .delete()
-    .eq("color_id", colorId);
-  if (delErr) throw delErr;
-
-  // 插入新的年份（含 year_end）
-  if (entries.length > 0) {
-    const rows = entries.map((e) => ({
-      color_id: colorId,
-      year: e.year,
-      year_end: e.year_end ?? null,
-    }));
-    const { error: insErr } = await getSupabaseAdmin().from("color_years").insert(rows);
-    if (insErr) throw insErr;
-  }
-}
-
 // ====== Colors ======
 
 export async function getColors(): Promise<Color[]> {
@@ -310,67 +290,19 @@ export async function deleteBrand(id: string): Promise<void> {
 // --- Formula Types ---
 
 export async function saveFormulaType(variant: ColorVariant, originalId?: string): Promise<ColorVariant> {
-  // 如果 ID 发生了变更：先把所有引用迁移到新 ID，再删除旧记录。
-  // 引用它的表：color_variant_map（颜色-变体关联）、formulas（配方）、
-  // color_variants（变体真名/年份，FK 目标）。顺序迁移后删除 formula_types 旧行，
-  // 保证重命名后旧变体不残留、新变体不悬空。
-  if (originalId && originalId !== variant.id) {
-    // 1. 在 color_variants 中建立新 ID 行（沿用旧行真名，待下方 upsert 用新名覆盖）
-    const { error: cvErr } = await getSupabaseAdmin()
-      .from("color_variants")
-      .upsert({
-        id: variant.id,
-        name: variant.name,
-        year_range: variant.year_range ?? "",
-      });
-    if (cvErr) throw new Error("create new color_variant failed: " + cvErr.message);
-
-    // 2. 迁移 color_variant_map（多对多关联）
-    const { error: mapErr } = await getSupabaseAdmin()
-      .from("color_variant_map")
-      .update({ variant_id: variant.id })
-      .eq("variant_id", originalId);
-    if (mapErr) throw new Error("relink color_variant_map failed: " + mapErr.message);
-
-    // 3. 迁移 formulas.variant_id（ON DELETE SET NULL，不迁移会在删旧行时把配方置空）
-    const { error: fErr } = await getSupabaseAdmin()
-      .from("formulas")
-      .update({ variant_id: variant.id })
-      .eq("variant_id", originalId);
-    if (fErr) throw new Error("relink formulas failed: " + fErr.message);
-
-    // 4. 删除旧 color_variants 行（此时已无引用）
-    const { error: delCvErr } = await getSupabaseAdmin()
-      .from("color_variants")
-      .delete()
-      .eq("id", originalId);
-    if (delCvErr) throw new Error("delete old color_variant failed: " + delCvErr.message);
-
-    // 5. 最后删除旧 formula_types 行
-    const { error: delErr } = await getSupabaseAdmin()
-      .from("formula_types")
-      .delete()
-      .eq("id", originalId);
-    if (delErr) throw new Error("delete old formula_type failed: " + delErr.message);
-  }
-  const { data, error } = await getSupabaseAdmin()
-    .from("formula_types")
-    .upsert({ id: variant.id, name: variant.name, year_range: variant.year_range ?? "" })
-    .select()
-    .single();
+  // 通过 RPC 在单个 Postgres 事务内完成变体重命名/保存：
+  // 改 ID 时依次 建新 color_variants → 迁 color_variant_map → 迁 formulas.variant_id → 删旧行，
+  // 任一失败整体回滚，不留半迁移状态；无 ID 变更时仅 upsert formula_types + 同步变体真名。
+  const { data, error } = await getSupabaseAdmin().rpc("save_variant_with_relink", {
+    p_id: variant.id,
+    p_name: variant.name,
+    p_year_range: variant.year_range ?? "",
+    p_original_id: originalId ?? null,
+  });
   if (error) throw error;
-  // 同步 color_variants 的新 ID 行名（若无 ID 变更，name/year_range 变化也要反映到 color_variants）
-  if (!originalId || originalId === variant.id) {
-    const { error: syncErr } = await getSupabaseAdmin()
-      .from("color_variants")
-      .upsert({
-        id: variant.id,
-        name: variant.name,
-        year_range: variant.year_range ?? "",
-      });
-    if (syncErr) throw new Error("sync color_variant failed: " + syncErr.message);
-  }
-  return data as ColorVariant;
+  // RPC 返回 SETOF → data 为行数组，取首行（与旧实现的单行返回契约一致）
+  const row = Array.isArray(data) ? (data[0] as ColorVariant) : (data as ColorVariant);
+  return row;
 }
 
 export async function deleteFormulaType(id: string): Promise<void> {
@@ -378,104 +310,49 @@ export async function deleteFormulaType(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// --- Colors（含变体多对多同步）---
+// --- Colors（含变体多对多同步 + 年份全量同步）---
 
+/**
+ * 保存颜色（主行 + 变体映射 + 年份，全量同步）。
+ * 通过 RPC 在单个 Postgres 事务内完成全部步骤，
+ * 避免中途失败留下"主行已存、变体/年份关联被删光"的半成品。
+ * @param years 年份列表（空数组 = 清空该颜色的所有年份）
+ * @param isNew true = 创建语义（ID 已存在时报 23505 冲突，不覆盖）；false = 更新语义（upsert）
+ */
 export async function saveColor(
   color: Omit<Color, "variants">,
   variantIds: string[],
+  years: YearEntry[] = [],
   isNew = false
 ): Promise<Color> {
-  // 1. 写入颜色主行
-  //    - 新增（isNew）：走 insert；若主键冲突（同 ID 已存在）直接报错，
-  //      绝不静默覆盖已有记录 —— 这是"任意字段不同必须独立保存"的最终防线。
-  //    - 编辑：按 id update 现有行。
-  let data: unknown;
-  let error: { code?: string; message?: string; details?: string } | null;
   // 空选兜底为 ["solid"]，不依赖 DB 默认值；先归一化为数组，
   // 防止旧数据/异常传入字符串（如 "solid"）被 PostgREST 当作数组字面量解析报错
   const types = typeColorType(color.color_type).length
     ? typeColorType(color.color_type)
     : (["solid"] as ColorType[]);
-  if (isNew) {
-    const row = {
-      id: color.id,
-      make_id: color.make_id,
-      color_code: color.color_code,
-      color_name: color.color_name,
-      color_type: types,
-      hex_preview: color.hex_preview,
-      car_model: color.car_model || null,
-    };
-    const res = await getSupabaseAdmin().from("colors").insert(row).select().single();
-    data = res.data; error = res.error;
+
+  const { data, error } = await getSupabaseAdmin().rpc("save_color_with_components", {
+    p_id: color.id,
+    p_make_id: color.make_id,
+    p_color_code: color.color_code,
+    p_color_name: color.color_name,
+    p_color_type: types,
+    p_hex_preview: color.hex_preview,
+    p_car_model: color.car_model || null,
+    p_variant_ids: variantIds,
+    p_years: years.map((e) => ({ year: e.year, year_end: e.year_end ?? null })),
+    p_is_new: isNew,
+  });
+  if (error) {
     // 23505 = unique_violation（主键冲突）：给出可读的重复提示
-    if (error?.code === "23505") {
+    if (error.code === "23505") {
       throw new Error(`颜色 ID「${color.id}」已存在，无法重复新增。请修改颜色代码/类型，或使用编辑功能。`);
     }
-  } else {
-    const res = await getSupabaseAdmin()
-      .from("colors")
-      .update({
-        make_id: color.make_id,
-        color_code: color.color_code,
-        color_name: color.color_name,
-        color_type: types,
-        hex_preview: color.hex_preview,
-        car_model: color.car_model || null,
-      })
-      .eq("id", color.id)
-      .select()
-      .single();
-    data = res.data; error = res.error;
+    throw new Error(error.message || JSON.stringify(error));
   }
-  if (error) throw new Error(error.message || JSON.stringify(error));
-
-  // 2. 同步 color_variant_map：始终保持双向同步
-  //    color_variant_map 的外键指向 color_variants，但
-  //    saveFormulaType 写入 formula_types 表（同一个变体概念）
-  //    所以要先确保 formula_types 中的 ID 也存在于 color_variants 中。
-  //    注意：必须从 formula_types 查真名再同步，不能写死 name=id，
-  //    否则会把共享变体的名字覆盖成 ID（历史 bug，已由回填 SQL 修复存量数据）。
-  if (variantIds.length > 0) {
-    // 先从 formula_types 批量查出对应变体的真名和年份范围
-    const { data: ftRows, error: ftErr } = await getSupabaseAdmin()
-      .from("formula_types")
-      .select("id, name, year_range")
-      .in("id", variantIds);
-    if (ftErr) throw new Error("query formula_types failed: " + ftErr.message);
-    const ftMap = new Map(
-      (ftRows ?? []).map((r) => [String(r.id), r as { name?: string; year_range?: string | null }]),
-    );
-    // 批量幂等 upsert：真名缺失时回退到 ID，避免空名
-    const syncRows = variantIds.map((vid) => {
-      const ft = ftMap.get(vid);
-      return {
-        id: vid,
-        name: ft?.name && String(ft.name).trim() !== "" ? String(ft.name) : vid,
-        year_range: ft?.year_range ?? "",
-      };
-    });
-    const { error: syncErr } = await getSupabaseAdmin()
-      .from("color_variants")
-      .upsert(syncRows);
-    if (syncErr) throw new Error("sync color_variants failed: " + syncErr.message);
-  }
-
-  // 清理旧映射
-  const { error: delErr } = await getSupabaseAdmin()
-    .from("color_variant_map")
-    .delete()
-    .eq("color_id", color.id);
-  if (delErr) throw new Error(delErr.message || JSON.stringify(delErr));
-
-  // 写入新映射
-  if (variantIds.length > 0) {
-    const rows = variantIds.map((variant_id) => ({ color_id: color.id, variant_id }));
-    const { error: insErr } = await getSupabaseAdmin().from("color_variant_map").insert(rows);
-    if (insErr) throw new Error(insErr.message || JSON.stringify(insErr));
-  }
-
-  return data as Color;
+  // RPC 返回 SETOF → data 为行数组，取首行（与旧实现的单行返回契约一致）
+  const row = Array.isArray(data) ? (data[0] as Color) : (data as Color);
+  return row;
 }
 
 export async function deleteColor(id: string): Promise<void> {
@@ -485,53 +362,51 @@ export async function deleteColor(id: string): Promise<void> {
 
 // --- Formulas（含色母组件全量同步）---
 
-export async function saveFormula(formula: Formula): Promise<Formula> {
-  // 1. upsert 配方主行（variant_id 空字符串转 null）
-  const { data, error } = await getSupabaseAdmin()
-    .from("formulas")
-    .upsert({
-      id: formula.id,
-      color_id: formula.color_id,
-      variant_id: formula.variant_id || null,
-      version: formula.version,
-      paint_system: formula.paint_system,
-      formula_type: formula.formula_type,
-      notes: formula.notes ?? "",
-    })
-    .select()
-    .single();
-  if (error) throw error;
+/**
+ * 保存配方（主行 + 色母组件全量同步）。
+ * 通过 RPC 在单个 Postgres 事务内完成三步（写主行 → 删旧组件 → 插新组件），
+ * 避免中途失败留下"主行已存、组件被删光"的空壳配方。
+ * @param isNew true = 创建语义（ID 已存在时报 23505 冲突，不覆盖）；false = 更新语义（upsert）
+ */
+export async function saveFormula(formula: Formula, isNew = false): Promise<Formula> {
+  // 组件映射为 RPC 入参 JSON 数组；grams_per_100g 由 DB 层从 percentage 派生
+  const components = formula.components.map((c) => {
+    const row: Record<string, unknown> = {
+      toner_code: c.toner_code,
+      toner_name: c.toner_name,
+      percentage: c.percentage,
+      density: c.density ?? null,
+      rgb_r: c.rgb_r ?? null,
+      rgb_g: c.rgb_g ?? null,
+      rgb_b: c.rgb_b ?? null,
+    };
+    if (c.component_group != null) {
+      row.component_group = c.component_group;
+    }
+    return row;
+  });
 
-  // 2. 全量同步 components：先删后插（id 是 SERIAL 自增，无稳定客户端 id）
-  const { error: delErr } = await getSupabaseAdmin()
-    .from("formula_components")
-    .delete()
-    .eq("formula_id", formula.id);
-  if (delErr) throw delErr;
-
-  if (formula.components.length > 0) {
-    const rows = formula.components.map((c) => {
-      const row: Record<string, unknown> = {
-        formula_id: formula.id,
-        toner_code: c.toner_code,
-        toner_name: c.toner_name,
-        percentage: c.percentage,
-        grams_per_100g: c.percentage,  // 始终从 percentage 派生
-        density: c.density ?? null,
-        rgb_r: c.rgb_r ?? null,
-        rgb_g: c.rgb_g ?? null,
-        rgb_b: c.rgb_b ?? null,
-      };
-      if (c.component_group != null) {
-        row.component_group = c.component_group;
-      }
-      return row;
-    });
-    const { error: insErr } = await getSupabaseAdmin().from("formula_components").insert(rows);
-    if (insErr) throw insErr;
+  const { data, error } = await getSupabaseAdmin().rpc("save_formula_with_components", {
+    p_id: formula.id,
+    p_color_id: formula.color_id,
+    p_variant_id: formula.variant_id || null,
+    p_version: formula.version,
+    p_paint_system: formula.paint_system,
+    p_formula_type: formula.formula_type,
+    p_notes: formula.notes ?? "",
+    p_components: components,
+    p_is_new: isNew,
+  });
+  if (error) {
+    // 并发创建撞 ID：DB 抛 23505 → 转成可读中文错误，避免静默覆盖
+    if (error.code === "23505") {
+      throw new Error(`配方 ID ${formula.id} 已存在，请刷新列表后重试`);
+    }
+    throw error;
   }
-
-  return data as Formula;
+  // RPC 返回 SETOF → data 为行数组，取首行（与旧实现的单行返回契约一致）
+  const row = Array.isArray(data) ? (data[0] as Formula) : (data as Formula);
+  return row;
 }
 
 export async function deleteFormula(id: string): Promise<void> {

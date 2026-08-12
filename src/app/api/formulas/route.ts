@@ -1,7 +1,10 @@
 import { getFormulas } from "@/lib/db-formula";
 import { safeJson } from "@/lib/api-error";
+import { requireLogin } from "@/lib/auth";
 
-// 公开读取接口：搜索页普通用户可访问（无需登录）
+// 公开读取接口：搜索页登录用户访问（全站已登录门禁，此处为路由级纵深防御）
 export async function GET() {
+  const authError = await requireLogin();
+  if (authError) return authError;
   return safeJson(() => getFormulas());
 }

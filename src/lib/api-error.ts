@@ -21,7 +21,8 @@ export function toError(err: unknown, fallback = "Unknown error"): Error {
 export function jsonError(err: unknown, status = 500): NextResponse {
   const e = toError(err);
   console.error("[api]", e.message, e.stack);
-  return NextResponse.json({ error: e.message }, { status });
+  // 脱敏：不把内部错误（DB 约束/表结构等）回传给客户端，统一通用文案
+  return NextResponse.json({ error: "服务器内部错误" }, { status });
 }
 
 // 给 GET handler 用的薄包装：handler 抛错时统一返回 500 + 真错误消息。

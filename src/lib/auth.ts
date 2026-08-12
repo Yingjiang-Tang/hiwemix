@@ -79,3 +79,15 @@ export async function checkSupabaseAdmin(): Promise<
   if (adminErr) return { user: null, error: adminErr };
   return { user, error: null };
 }
+
+/** 轻量登录检查（仅验证 session，不查 profile）——供公开读接口做路由级纵深防御。
+ * 全站 proxy 门禁之外的第二道防线：即使 proxy 被绕过，路由层仍拒绝未登录请求。
+ * 与 requireSupabaseAuth 的区别：不查 profiles 表，无 profile 查询失败抛错路径，更轻。 */
+export async function requireLogin(): Promise<NextResponse | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+  return null;
+}

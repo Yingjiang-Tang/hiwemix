@@ -1,3 +1,13 @@
+-- ⚠️ 已废弃 — 请勿在此文件中插入或修改任何内容 ⚠️
+-- ================================================================
+-- 本文件是遗留认证方案的脚本（HAIWEN MIX 的 users 表 + bcrypt 密码 + admin123 种子）。
+-- 项目已全面切换到 Supabase Auth（auth.users + public.profiles），
+-- 对应代码 src/lib/db.ts 已删除（无任何调用方）。
+-- 本文件保留仅为审计历史；其中包含硬编码默认密码（admin123），
+-- 若误执行会在库中留下一个已知密码的账号，属安全隐患。
+-- 如需重新初始化用户表，请改用 Supabase Auth + profiles-setup.sql。
+-- 不要在未获明确指示的情况下运行本脚本。
+-- ================================================================
 -- HAIWEN MIX 用户表
 CREATE TABLE IF NOT EXISTS public.users (
   id SERIAL PRIMARY KEY,

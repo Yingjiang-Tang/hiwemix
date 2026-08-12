@@ -31,8 +31,9 @@ export async function POST(req: NextRequest) {
     const saved = await saveGuideCategory({ ...cat, sortOrder: cat.sortOrder ?? 0 });
     return NextResponse.json(saved, { status: 201 });
   } catch (e) {
-    const detail = (e as { message?: string })?.message ?? String(e);
-    return NextResponse.json({ error: "保存失败: " + detail }, { status: 500 });
+    // 内部错误脱敏：真实错误只进服务端日志
+    console.error("[POST /api/admin/tds-categories]", e);
+    return NextResponse.json({ error: "保存失败，请稍后重试" }, { status: 500 });
   }
 }
 
@@ -55,7 +56,8 @@ export async function DELETE(req: NextRequest) {
     await deleteGuideCategory(id);
     return NextResponse.json({ ok: true });
   } catch (e) {
-    const detail = (e as { message?: string })?.message ?? String(e);
-    return NextResponse.json({ error: "删除失败: " + detail }, { status: 500 });
+    // 内部错误脱敏：真实错误只进服务端日志
+    console.error("[DELETE /api/admin/tds-categories]", e);
+    return NextResponse.json({ error: "删除失败，请稍后重试" }, { status: 500 });
   }
 }

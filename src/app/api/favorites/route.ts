@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   } catch (e: unknown) {
     const msg = extractError(e);
     console.error("[GET /api/favorites]", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: "获取收藏失败，请稍后重试" }, { status: 500 });
   }
 }
 
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
   } catch (e: unknown) {
     const msg = extractError(e);
     console.error("[POST /api/favorites]", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: "收藏失败，请稍后重试" }, { status: 500 });
   }
 }
 
@@ -90,6 +90,6 @@ export async function DELETE(req: NextRequest) {
   } catch (e: unknown) {
     const msg = extractError(e);
     console.error("[DELETE /api/favorites]", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: "取消收藏失败，请稍后重试" }, { status: 500 });
   }
 }

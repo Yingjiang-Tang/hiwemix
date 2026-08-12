@@ -20,17 +20,22 @@ function validateFormula(body: Formula): string | null {
     if (missing.length > 0) return `Three Stages 配方的每个色母都必须选择分组（缺失分组：${missing.join(", ")}）`;
     const pearlComps = body.components.filter(c => c.component_group === "Pearl Paint");
     const groundComps = body.components.filter(c => c.component_group === "Ground Paint");
+    // 补全：Three Stages 必须两组都存在（与 FormulasPanel UI 校验对齐），否则放行残缺配方
+    if (pearlComps.length === 0) return "Three Stages 配方必须包含 Pearl Paint 色母组分";
+    if (groundComps.length === 0) return "Three Stages 配方必须包含 Ground Paint 色母组分";
     const pearlSum = pearlComps.reduce((sum, c) => sum + c.percentage, 0);
     const groundSum = groundComps.reduce((sum, c) => sum + c.percentage, 0);
-    if (pearlComps.length > 0 && Math.abs(pearlSum - 100) > 1) {
+    if (Math.abs(pearlSum - 100) > 1) {
       return `Pearl Paint 组分百分比总和为 ${pearlSum.toFixed(1)}%，应接近 100%`;
     }
-    if (groundComps.length > 0 && Math.abs(groundSum - 100) > 1) {
+    if (Math.abs(groundSum - 100) > 1) {
       return `Ground Paint 组分百分比总和为 ${groundSum.toFixed(1)}%，应接近 100%`;
     }
   } else {
+    // 补全：空组件列表直接拒绝（无组件即无配方）
+    if (body.components.length === 0) return "配方至少需要一个色母组件";
     const totalPct = body.components.reduce((sum, c) => sum + c.percentage, 0);
-    if (body.components.length > 0 && Math.abs(totalPct - 100) > 1) {
+    if (Math.abs(totalPct - 100) > 1) {
       return `色母百分比总和为 ${totalPct.toFixed(1)}%，应接近 100%`;
     }
   }
@@ -68,8 +73,17 @@ export async function POST(req: NextRequest) {
     ...c,
     grams_per_100g: c.percentage,
   }));
-  const saved = await saveFormula(body);
-  return NextResponse.json(saved, { status: 201 });
+  try {
+    // isNew=true：ID 已存在时 DB 抛 23505 → 409 冲突，绝不静默覆盖
+    const saved = await saveFormula(body, true);
+    return NextResponse.json(saved, { status: 201 });
+  } catch (e: unknown) {
+    if (e instanceof Error && e.message.includes("已存在")) {
+      return NextResponse.json({ error: e.message }, { status: 409 });
+    }
+    console.error("[POST /api/admin/formulas]", e);
+    return NextResponse.json({ error: "保存配方失败，请稍后重试" }, { status: 500 });
+  }
 }
 
 export async function PUT(req: NextRequest) {
@@ -94,8 +108,14 @@ export async function PUT(req: NextRequest) {
     ...c,
     grams_per_100g: c.percentage,
   }));
-  const saved = await saveFormula(body);
-  return NextResponse.json(saved);
+  try {
+    // isNew=false：更新语义（upsert），复用同一个事务 RPC
+    const saved = await saveFormula(body, false);
+    return NextResponse.json(saved);
+  } catch (e: unknown) {
+    console.error("[PUT /api/admin/formulas]", e);
+    return NextResponse.json({ error: "保存配方失败，请稍后重试" }, { status: 500 });
+  }
 }
 
 export async function DELETE(req: NextRequest) {

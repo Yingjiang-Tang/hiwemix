@@ -34,7 +34,7 @@ export interface ColorFormFieldsProps {
   setYearEndInput: Dispatch<SetStateAction<string>>;
   error: string;
   editing: Color | null;
-  idManuallyEdited: MutableRefObject<boolean>;
+  idManuallyEditedRef: MutableRefObject<boolean>;
   colorTypeScrollRef: RefObject<HTMLDivElement | null>;
   colorTypeDrag: MutableRefObject<{ startX: number; scrollLeft: number; moved: boolean; pointerId: number } | null>;
   suppressChipClick: MutableRefObject<boolean>;
@@ -52,7 +52,7 @@ export interface ColorFormFieldsProps {
 export function ColorFormFields({
   form, setForm, brands, allVariants, variantIds, setVariantIds,
   yearEntries, yearMode, setYearMode, yearInput, setYearInput, yearEndInput, setYearEndInput,
-  error, editing, idManuallyEdited, colorTypeScrollRef, colorTypeDrag, suppressChipClick,
+  error, editing, idManuallyEditedRef, colorTypeScrollRef, colorTypeDrag, suppressChipClick,
   COLOR_TYPES, toggleColorType, toggleVariant, addYearEntry, removeYearEntry,
   handleChipPointerDown, handleChipPointerMove, endChipDrag, t,
 }: ColorFormFieldsProps) {
@@ -64,7 +64,7 @@ export function ColorFormFields({
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-sm font-medium text-foreground/80">ID</Label>
-                  <Input value={form.id} onChange={(e) => { idManuallyEdited.current = true; setForm({ ...form, id: e.target.value }); }} disabled={!!editing} className="h-9 rounded-lg" />
+                  <Input value={form.id} onChange={(e) => { idManuallyEditedRef.current = true; setForm({ ...form, id: e.target.value }); }} disabled={!!editing} className="h-9 rounded-lg" />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-sm font-medium text-foreground/80">品牌</Label>
