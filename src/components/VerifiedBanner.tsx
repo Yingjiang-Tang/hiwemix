@@ -16,12 +16,13 @@ function Notice() {
   const verified = searchParams.get("verified") === "1";
   const error = searchParams.get("error");
 
-  // 链接出错 → 跳登录页展示错误
+  // 链接出错 → 跳登录页展示错误。
+  // 只透传一个标识符，不透传 Supabase 原始 error/error_description（防信息泄露——AUTH-3），
+  // 由登录页把标识符映射到本地化文案。
   useEffect(() => {
     if (!error) return;
-    const desc = searchParams.get("error_description") || error;
-    router.replace(`/login?error=${encodeURIComponent(desc)}`);
-  }, [error, searchParams, router]);
+    router.replace("/login?error=link_invalid");
+  }, [error, router]);
 
   // 成功提示 ~6s 自动消失
   useEffect(() => {

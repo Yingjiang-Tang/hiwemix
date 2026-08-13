@@ -44,12 +44,20 @@ export default function ResetPasswordPage() {
     const fromEmail = params.get("from") === "email";
 
     if (fromEmail) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
-          setEmail(session.user.email ?? "");
-          setStep("new-password");
-        }
-      });
+      // 校验 recovery 标记 cookie（由 auth/callback 的 recovery 分支设置）：
+      // 已登录用户手动访问 ?from=email 不会带此 cookie，留在第1步，避免误改密码（AUTH-2 加固）。
+      // 只检查存在性、不主动清除，让它在 300s 后自然过期——这样用户在第3步刷新页面仍能再次进入。
+      const hasRecoveryMark = document.cookie
+        .split(";")
+        .some((c) => c.trim() === "pw_recovery=1");
+      if (hasRecoveryMark) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session?.user) {
+            setEmail(session.user.email ?? "");
+            setStep("new-password");
+          }
+        });
+      }
     }
 
     // PKCE 回调在服务端已建立 recovery session；若在本页打开期间才建立会话，

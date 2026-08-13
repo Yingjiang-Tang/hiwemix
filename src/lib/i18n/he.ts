@@ -50,7 +50,6 @@ const dict_he = dict({
     signUp: "הירשם",
     loginErrorInvalid: "דואר אלקטרוני או סיסמה שגויים. אם נרשמת עם Google או Facebook, השתמש בכפתורים למטה.",
     loginResetSuccess: "הסיסמה עודכנה. התחבר עם הסיסמה החדשה.",
-    loginConfirmed: "הדואר אושר. התחבר.",
     oauthGoogleFailed: "ההתחברות עם Google נכשלה",
     oauthFacebookFailed: "ההתחברות עם Facebook נכשלה",
     oauthUnavailable: "התחברות חברתית אינה זמינה כרגע",

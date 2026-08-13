@@ -50,7 +50,6 @@ const dict_de = dict({
     signUp: "Registrieren",
     loginErrorInvalid: "Ungültige E-Mail oder Passwort. Falls Sie sich mit Google oder Facebook registriert haben, nutzen Sie die Social-Login-Buttons unten.",
     loginResetSuccess: "Passwort aktualisiert. Bitte mit Ihrem neuen Passwort anmelden.",
-    loginConfirmed: "E-Mail bestätigt. Bitte anmelden.",
     oauthGoogleFailed: "Google-Anmeldung fehlgeschlagen",
     oauthFacebookFailed: "Facebook-Anmeldung fehlgeschlagen",
     oauthUnavailable: "Social-Login ist vorübergehend nicht verfügbar",

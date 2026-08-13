@@ -59,7 +59,6 @@ const dict_fr = dict({
     loginErrorFailed: "Échec de la connexion",
     loginErrorInvalid: "E-mail ou mot de passe invalide. Si vous vous êtes inscrit avec Google ou Facebook, utilisez les boutons de connexion sociale ci-dessous.",
     loginResetSuccess: "Mot de passe mis à jour. Veuillez vous connecter avec votre nouveau mot de passe.",
-    loginConfirmed: "E-mail confirmé. Veuillez vous connecter.",
     oauthGoogleFailed: "Échec de la connexion Google",
     oauthFacebookFailed: "Échec de la connexion Facebook",
     oauthUnavailable: "La connexion sociale est temporairement indisponible",

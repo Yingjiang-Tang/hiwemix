@@ -50,7 +50,6 @@ const dict_sl = dict({
     signUp: "Registracija",
     loginErrorInvalid: "Neveljaven e-poštni naslov ali geslo. Če ste se registrirali z Google ali Facebook, uporabite gumbe spodaj.",
     loginResetSuccess: "Geslo posodobljeno. Prijavite se z novim geslom.",
-    loginConfirmed: "E-pošta potrjena. Prijavite se.",
     oauthGoogleFailed: "Google prijava ni uspela",
     oauthFacebookFailed: "Facebook prijava ni uspela",
     oauthUnavailable: "Prijava prek socialnih omrežij trenutno ni na voljo",

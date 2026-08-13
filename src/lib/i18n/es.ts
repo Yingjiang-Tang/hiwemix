@@ -50,7 +50,6 @@ const dict_es = dict({
     signUp: "Registrarse",
     loginErrorInvalid: "Correo o contraseña inválidos. Si te registraste con Google o Facebook, usa los botones de abajo.",
     loginResetSuccess: "Contraseña actualizada. Inicia sesión con tu nueva contraseña.",
-    loginConfirmed: "Correo confirmado. Inicia sesión.",
     oauthGoogleFailed: "Error al iniciar con Google",
     oauthFacebookFailed: "Error al iniciar con Facebook",
     oauthUnavailable: "El inicio social no está disponible temporalmente",

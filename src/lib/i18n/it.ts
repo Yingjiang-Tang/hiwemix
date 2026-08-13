@@ -50,7 +50,6 @@ const dict_it = dict({
     signUp: "Registrati",
     loginErrorInvalid: "Email o password non validi. Se ti sei registrato con Google o Facebook, usa i pulsanti qui sotto.",
     loginResetSuccess: "Password aggiornata. Accedi con la nuova password.",
-    loginConfirmed: "Email confermata. Accedi.",
     oauthGoogleFailed: "Accesso Google non riuscito",
     oauthFacebookFailed: "Accesso Facebook non riuscito",
     oauthUnavailable: "Accesso social temporaneamente non disponibile",

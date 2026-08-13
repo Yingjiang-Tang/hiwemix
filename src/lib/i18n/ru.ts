@@ -50,7 +50,6 @@ const dict_ru = dict({
     signUp: "Регистрация",
     loginErrorInvalid: "Неверный email или пароль. Если вы регистрировались через Google или Facebook, используйте кнопки ниже.",
     loginResetSuccess: "Пароль обновлён. Войдите с новым паролем.",
-    loginConfirmed: "Email подтверждён. Войдите.",
     oauthGoogleFailed: "Не удалось войти через Google",
     oauthFacebookFailed: "Не удалось войти через Facebook",
     oauthUnavailable: "Вход через соцсети временно недоступен",

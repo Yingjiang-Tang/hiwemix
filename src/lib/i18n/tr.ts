@@ -50,7 +50,6 @@ const dict_tr = dict({
     signUp: "Kayıt ol",
     loginErrorInvalid: "Geçersiz e-posta veya şifre. Google veya Facebook ile kayıt olduysanız aşağıdaki butonları kullanın.",
     loginResetSuccess: "Şifre güncellendi. Yeni şifrenizle giriş yapın.",
-    loginConfirmed: "E-posta doğrulandı. Giriş yapın.",
     oauthGoogleFailed: "Google girişi başarısız",
     oauthFacebookFailed: "Facebook girişi başarısız",
     oauthUnavailable: "Sosyal giriş geçici olarak kullanılamıyor",

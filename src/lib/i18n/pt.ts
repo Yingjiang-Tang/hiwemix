@@ -50,7 +50,6 @@ const dict_pt = dict({
     signUp: "Cadastrar",
     loginErrorInvalid: "E-mail ou senha inválidos. Se você se cadastrou com Google ou Facebook, use os botões abaixo.",
     loginResetSuccess: "Senha atualizada. Entre com sua nova senha.",
-    loginConfirmed: "E-mail confirmado. Faça login.",
     oauthGoogleFailed: "Falha no login com Google",
     oauthFacebookFailed: "Falha no login com Facebook",
     oauthUnavailable: "Login social temporariamente indisponível",

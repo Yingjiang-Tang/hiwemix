@@ -33,12 +33,10 @@ export function LoginForm({
     if (searchParams.get("reset") === "success") {
       setSuccess(t.loginResetSuccess);
     }
-    if (searchParams.get("confirmed") === "1") {
-      setSuccess(t.loginConfirmed);
-    }
     const errParam = searchParams.get("error");
     if (errParam) {
-      setError(errParam);
+      // 只接受白名单标识符，映射到本地化文案；绝不透传上游原始错误字符串（防信息泄露——AUTH-3）
+      setError(errParam === "link_invalid" ? t.loginErrorLink : t.loginErrorFailed);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);

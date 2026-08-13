@@ -128,7 +128,7 @@ export function RegisterForm({
 
   return (
     <AuthCard className={cn("", className)} {...props}>
-      <form className="p-6 md:p-8" onSubmit={handleRegister}>
+      <form className="flex min-h-[700px] flex-col p-6 md:p-8" onSubmit={handleRegister}>
         <div className="mt-5 flex flex-col gap-6">
           <div className="flex flex-col items-center gap-2 text-center">
             <h1 className="text-2xl font-bold text-foreground">{t.registerTitle}</h1>
@@ -272,8 +272,8 @@ export function RegisterForm({
             </div>
           )}
 
-          {/* 登录链接 */}
-          <div className="text-center text-sm text-muted-foreground">
+          {/* 登录链接 — mt-auto 推到底部，与登录页卡片等高（min-h-700px） */}
+          <div className="mt-auto pt-6 text-center text-sm text-muted-foreground">
             {t.haveAccount}{" "}
             <Link
               href="/login"

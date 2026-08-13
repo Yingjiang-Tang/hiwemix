@@ -61,7 +61,6 @@ const dict_zh = dict({
     loginErrorFailed: "登录失败",
     loginErrorInvalid: "邮箱或密码错误。如果您是用 Google 或 Facebook 注册的，请使用下方社交登录按钮。",
     loginResetSuccess: "密码已更新，请使用新密码登录。",
-    loginConfirmed: "邮箱已确认，请登录。",
     oauthGoogleFailed: "Google 登录失败",
     oauthFacebookFailed: "Facebook 登录失败",
     oauthUnavailable: "社交登录暂时不可用",

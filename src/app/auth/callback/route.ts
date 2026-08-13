@@ -29,11 +29,7 @@ export async function GET(request: NextRequest) {
     if (next.startsWith("/reset-password")) {
       return NextResponse.redirect(`${origin}/reset-password?error=expired`);
     }
-    return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(
-        "This link is invalid or has expired. Please try signing in again."
-      )}`
-    );
+    return NextResponse.redirect(`${origin}/login?error=link_invalid`);
   }
 
   if (code) {
@@ -78,11 +74,18 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${origin}/reset-password?error=expired`);
       }
       // 不透传原始错误消息（AUTH-3），仅服务端日志
-      return NextResponse.redirect(
-        `${origin}/login?error=${encodeURIComponent(
-          "Sign-in link is invalid or expired. Please try signing in or request a new link."
-        )}`
-      );
+      return NextResponse.redirect(`${origin}/login?error=link_invalid`);
+    }
+
+    // 密码重置流程：设一个短时效、非敏感标记 cookie，reset-password 页据此确认
+    // 确实来自 recovery 回调（而非已登录用户手动访问 ?from=email）——AUTH-2 加固
+    if (type === "recovery") {
+      response.cookies.set("pw_recovery", "1", {
+        maxAge: 300,
+        path: "/",
+        sameSite: "lax",
+        httpOnly: false,
+      });
     }
 
     // session cookie 已写在 response 上，随 302 落到浏览器

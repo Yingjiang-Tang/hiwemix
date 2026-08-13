@@ -50,7 +50,6 @@ const dict_ar = dict({
     signUp: "إنشاء حساب",
     loginErrorInvalid: "بريد إلكتروني أو كلمة مرور غير صحيحة. إذا سجلت عبر Google أو Facebook، استخدم الأزرار أدناه.",
     loginResetSuccess: "تم تحديث كلمة المرور. سجل الدخول بكلمة المرور الجديدة.",
-    loginConfirmed: "تم تأكيد البريد الإلكتروني. سجل الدخول.",
     oauthGoogleFailed: "فشل الدخول عبر Google",
     oauthFacebookFailed: "فشل الدخول عبر Facebook",
     oauthUnavailable: "الدخول الاجتماعي غير متاح مؤقتاً",

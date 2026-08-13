@@ -49,8 +49,8 @@ export interface I18nDict {
   loginErrorNetwork: string;
   loginErrorFailed: string;
   loginErrorInvalid: string;
+  loginErrorLink: string;
   loginResetSuccess: string;
-  loginConfirmed: string;
   oauthGoogleFailed: string;
   oauthFacebookFailed: string;
   oauthUnavailable: string;
@@ -264,8 +264,8 @@ export const ENGLISH_DEFAULTS: I18nDict = {
   loginErrorNetwork: "Network error, please retry",
   loginErrorFailed: "Login failed",
   loginErrorInvalid: "Invalid email or password. If you signed up with Google or Facebook, use the social login buttons below.",
+  loginErrorLink: "This sign-in link is invalid or has expired. Please try again.",
   loginResetSuccess: "Password updated. Please sign in with your new password.",
-  loginConfirmed: "Email confirmed. Please sign in.",
   oauthGoogleFailed: "Google sign-in failed",
   oauthFacebookFailed: "Facebook sign-in failed",
   oauthUnavailable: "Social sign-in is temporarily unavailable",
