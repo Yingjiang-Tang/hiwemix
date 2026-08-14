@@ -89,7 +89,7 @@ export default function TdsIndexPage() {
       {/* 中栏：文档列表 — 移动端进入详情页时隐藏 */}
       <div className={cn(
         "border-b border-border bg-background pt-8 pr-5 pb-5 pl-5 lg:w-[320px] lg:flex-shrink-0 lg:border-b-0 lg:border-r lg:overflow-y-auto lg:h-[calc(100vh-79px)] lg:sticky lg:top-[79px]",
-        mobileDetailMode && "hidden lg:flex"
+        mobileDetailMode && "hidden lg:block"
       )}>
         <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
