@@ -27,7 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Edit, Trash2, Settings, Plus, ChevronUp, ChevronDown, Eye } from "lucide-react";
+import { Search, Edit, Trash2, Settings, Plus, ChevronUp, ChevronDown, Eye, ExternalLink } from "lucide-react";
+import { getTonerLink } from "@/data/toner-site-links";
 
 // 色母分类标签
 const TONER_CATEGORIES: { key: TonerCategory; label: string }[] = [
@@ -103,9 +104,19 @@ function generateTonerCode(category: TonerCategory, existingCodes: string[]): st
 
 // ==================== 色母卡片组件（首页搜索配方卡片风格） ====================
 
-function TonerCard({ code, tradeName, hex }: { code: string; tradeName: string; hex: string }) {
-  return (
-    <div className="animate-card-row mb-[70px] max-md:mb-[30px] w-[87.5%]">
+function TonerCard({
+  code,
+  tradeName,
+  hex,
+  href,
+}: {
+  code: string;
+  tradeName: string;
+  hex: string;
+  href?: string;
+}) {
+  const inner = (
+    <>
       {/* 色块：正方形，悬停轻微放大（与首页配色卡片一致） */}
       <div className="relative aspect-square w-full cursor-pointer overflow-hidden transition-all duration-300 ease-in-out hover:scale-[1.15] hover:z-10 transform-gpu [backface-visibility:hidden]">
         {/* 颜色底色 + 金属漆渐变光泽 */}
@@ -123,16 +134,36 @@ function TonerCard({ code, tradeName, hex }: { code: string; tradeName: string; 
         />
       </div>
 
-      {/* 卡片下方信息块：左对齐常显，产品代码 / 英文名 */}
+      {/* 卡片下方信息块：左对齐常显，产品代码 / 英文名；外链图标仅移动端显示 */}
       <div className="mt-[45px] max-md:mt-[15px] text-left font-[family-name:var(--font-sans)]">
-        <p className="truncate text-[20px] font-normal leading-tight text-foreground">
-          {code}
-        </p>
+        <div className="flex items-center gap-1">
+          <p className="truncate text-[20px] font-normal leading-tight text-foreground">
+            {code}
+          </p>
+          <ExternalLink
+            aria-hidden
+            className="hidden max-md:inline-flex size-3.5 shrink-0 text-muted-foreground"
+          />
+        </div>
         <p className="mt-2 truncate text-[16px] font-normal leading-tight text-muted-foreground">
           {tradeName}
         </p>
       </div>
-    </div>
+    </>
+  );
+
+  // 有官网链接时整卡可点击（新标签打开），无链接保持不可点 div
+  return href ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="animate-card-row mb-[70px] max-md:mb-[30px] block w-[87.5%]"
+    >
+      {inner}
+    </a>
+  ) : (
+    <div className="animate-card-row mb-[70px] max-md:mb-[30px] w-[87.5%]">{inner}</div>
   );
 }
 
@@ -210,7 +241,7 @@ function TonerSection({
         style={{ ["--card-delay" as string]: "0s" }}
       >
         {visibleToners.map((toner) => (
-          <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} hex={toner.hex} />
+          <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} hex={toner.hex} href={getTonerLink(toner.code)} />
         ))}
 
         {/* 折叠且还有更多时：第 5 格显示「查看更多」占位卡片（车漆流动效果） */}
@@ -973,7 +1004,7 @@ export default function TonerPage() {
             style={{ ["--card-delay" as string]: "0s" }}
           >
             {filteredToners.map((toner) => (
-              <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} hex={toner.hex} />
+              <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} hex={toner.hex} href={getTonerLink(toner.code)} />
             ))}
           </div>
         )}
