@@ -8,7 +8,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/components/LanguageContext";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { X, LogOut, Search, Palette, Heart, FileText } from "lucide-react";
+import { X, LogOut, Search, Palette, Heart, FileText, Bookmark, Scale } from "lucide-react";
 
 interface SiteHeaderProps {
   useHomeTheme?: boolean;
@@ -44,7 +44,12 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
     { label: t.navColorLibrary, href: "/color-library", icon: Palette },
     { label: t.navFavorites, href: "/favorites", icon: Heart },
     { label: t.navTds, href: "/tds", icon: FileText },
+    { label: t.navMyFormulas, href: "/my-formulas", icon: Bookmark },
+    { label: t.navCompare, href: "/compare", icon: Scale },
   ];
+  // 桌面端横向导航：My Formulas 仅 xl(≥1280px) 宽屏显示（1024-1280 用 Footer，避免宽度溢出）；Compare 仅移动端菜单
+  const desktopNavItems = navItems.filter((item) => item.href !== "/compare");
+  const isWideOnly = (href: string) => href === "/my-formulas";
 
   const isActive = (href: string) =>
     (href === "/" && pathname === "/") ||
@@ -84,14 +89,15 @@ export default function SiteHeader({ useHomeTheme }: SiteHeaderProps) {
 
             {/* 导航链接 紧跟 Logo 右侧 */}
             <nav className="hidden md:flex items-center gap-[34px]">
-              {navItems.map((item) => {
+              {desktopNavItems.map((item) => {
                 const active = isActive(item.href);
+                const wideOnly = isWideOnly(item.href);
                 return (
                   <Link
                     key={item.label}
                     href={item.href}
                     aria-current={active ? "page" : undefined}
-                    className={`header-nav-link inline-flex h-8 items-center text-[16px] font-medium capitalize tracking-[-0.5px] transition-colors whitespace-nowrap ${active ? "font-semibold" : ""}`}
+                    className={`header-nav-link h-8 items-center text-[16px] font-medium capitalize tracking-[-0.5px] transition-colors whitespace-nowrap ${wideOnly ? "hidden xl:inline-flex" : "inline-flex"} ${active ? "font-semibold" : ""}`}
                     style={{ transition: transitionStyle }}
                   >
                     {item.label}

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { LanguageProvider } from "@/components/LanguageContext";
 import { AuthProvider } from "@/components/AuthContext";
 import { FavoritesProvider } from "@/components/FavoritesContext";
+import { CompareProvider } from "@/components/CompareContext";
 import Providers from "@/components/Providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import BackToTop from "@/components/BackToTop";
@@ -75,8 +76,10 @@ export default async function RootLayout({
           <LanguageProvider initialLang={lang as Lang}>
             <AuthProvider>
               <FavoritesProvider>
-                {children}
-                <BackToTop />
+                <CompareProvider>
+                  {children}
+                  <BackToTop />
+                </CompareProvider>
               </FavoritesProvider>
             </AuthProvider>
           </LanguageProvider>

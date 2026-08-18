@@ -91,6 +91,13 @@ export interface SearchResult {
   formulas: Formula[]
 }
 
+// 配方完整快照（个人保存/对比共用）：Drawer 可直接渲染，无需再 fetch 反查
+export interface FormulaSnapshot {
+  formula_id: string
+  color: Color      // 完整 Color（含 hex_preview/variants/years）
+  formula: Formula  // 完整 Formula（含 components/notes）
+}
+
 // 表格行：每个配方一行（展平 SearchResult）
 export interface FormulaTableRow {
   color: Color

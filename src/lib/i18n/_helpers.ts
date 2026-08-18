@@ -23,6 +23,31 @@ export interface I18nDict {
   navColorLibrary: string;
   navTds: string;
   navFavorites: string;
+  navMyFormulas: string;
+  navCompare: string;
+  cancel: string;
+  saveFormula: string;
+  savedFormula: string;
+  saveFormulaDialogTitle: string;
+  saveFormulaNameLabel: string;
+  saveFormulaNamePlaceholder: string;
+  saveFormulaSuccess: string;
+  saveFormulaFail: string;
+  saveRequireLogin: string;
+  myFormulasTitle: string;
+  myFormulasEmpty: string;
+  myFormulasEmptyHint: string;
+  myFormulasDelete: string;
+  compareTitle: string;
+  addToCompare: string;
+  inCompare: string;
+  addedToCompare: string;
+  removedFromCompare: string;
+  compareEmpty: string;
+  compareEmptyHint: string;
+  compareGrams: string;
+  compareOnlyIn: string;
+  compareClearAll: string;
   navAdmin: string;
   userManagement: string;
   logout: string;
@@ -238,6 +263,31 @@ export const ENGLISH_DEFAULTS: I18nDict = {
   navColorLibrary: "Toner",
   navTds: "Technical Data Sheets",
   navFavorites: "Favorites",
+  navMyFormulas: "My Formulas",
+  navCompare: "Compare",
+  cancel: "Cancel",
+  saveFormula: "Save Formula",
+  savedFormula: "Saved",
+  saveFormulaDialogTitle: "Save Formula",
+  saveFormulaNameLabel: "Name",
+  saveFormulaNamePlaceholder: "e.g. Toyota | 040 Super White",
+  saveFormulaSuccess: "Formula saved",
+  saveFormulaFail: "Save failed, please try again",
+  saveRequireLogin: "Please log in to save formulas",
+  myFormulasTitle: "My Formulas",
+  myFormulasEmpty: "No saved formulas yet",
+  myFormulasEmptyHint: "Open any formula and tap Save to keep it here",
+  myFormulasDelete: "Delete",
+  compareTitle: "Compare",
+  addToCompare: "Add to Compare",
+  inCompare: "In Compare",
+  addedToCompare: "Added to compare",
+  removedFromCompare: "Removed from compare",
+  compareEmpty: "Compare list is empty",
+  compareEmptyHint: "Open formulas and tap Compare to add them here",
+  compareGrams: "g/100g",
+  compareOnlyIn: "Only in",
+  compareClearAll: "Clear All",
   navAdmin: "Data Management",
   userManagement: "User Management",
   logout: "Logout",

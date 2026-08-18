@@ -130,19 +130,29 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     const formulaId = snapshot.formula_id;
     const wasFav = isFavorite(formulaId);
     if (user) {
-      // 登录：走 API
-      const res = wasFav
-        ? await fetch(`/api/favorites?formula_id=${encodeURIComponent(formulaId)}`, { method: "DELETE" })
-        : await fetch("/api/favorites", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(snapshot),
-          });
-      if (!res.ok) throw new Error("favorite request failed");
+      // 登录：乐观更新立即反映状态（与保存配方按钮一致），失败回滚
       if (wasFav) {
         setCloudFavs((prev) => prev.filter((f) => f.formula_id !== formulaId));
       } else {
         setCloudFavs((prev) => [snapshot, ...prev]);
+      }
+      try {
+        const res = wasFav
+          ? await fetch(`/api/favorites?formula_id=${encodeURIComponent(formulaId)}`, { method: "DELETE" })
+          : await fetch("/api/favorites", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(snapshot),
+            });
+        if (!res.ok) throw new Error("favorite request failed");
+      } catch (e) {
+        // 回滚乐观更新
+        if (wasFav) {
+          setCloudFavs((prev) => [snapshot, ...prev]);
+        } else {
+          setCloudFavs((prev) => prev.filter((f) => f.formula_id !== formulaId));
+        }
+        throw e;
       }
       return;
     }
