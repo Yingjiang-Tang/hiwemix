@@ -12,13 +12,23 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Spinner } from "@/components/ui/spinner";
-import { ArrowLeft, Search, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Search, Plus, Trash2, Upload } from "lucide-react";
 
 const PAINT_SYSTEMS = ["1K", "2K"] as const;
 const AUTO_2K_TYPE: FormulaType = "Single Stage";
 const PEARL_GROUPS: ComponentGroup[] = ["Pearl Paint", "Ground Paint"];
 
 const EMPTY_COMPONENT: FormulaComponent = { toner_code: "", toner_name: "", percentage: 0, grams_per_100g: 0 };
+
+// 从 Supabase Storage 公开 URL 提取相对路径（去掉 /storage/v1/object/public/<bucket>/ 前缀）
+// 例：https://xxx.supabase.co/storage/v1/object/public/formula-images/abc.jpg → "abc.jpg"
+function extractStoragePath(publicUrl: string, bucket: string): string | null {
+  const marker = `/object/public/${bucket}/`;
+  const idx = publicUrl.indexOf(marker);
+  if (idx < 0) return null;
+  const path = publicUrl.slice(idx + marker.length);
+  return path || null;
+}
 
 export default function FormulasPanel() {
   const [formulas, setFormulas] = useState<Formula[]>([]);
@@ -28,7 +38,9 @@ export default function FormulasPanel() {
   const [brands, setBrands] = useState<CarMake[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [form, setForm] = useState({ id: "", color_id: "", variant_id: "", version: "v1", paint_system: "2K" as Formula["paint_system"], formula_type: AUTO_2K_TYPE, notes: "", year: undefined as number | undefined });
+  const [form, setForm] = useState({ id: "", color_id: "", variant_id: "", version: "v1", paint_system: "2K" as Formula["paint_system"], formula_type: AUTO_2K_TYPE, notes: "", year: undefined as number | undefined, image_url: "" });
+  const [initialImageUrl, setInitialImageUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [components, setComponents] = useState<FormulaComponent[]>([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -102,7 +114,8 @@ export default function FormulasPanel() {
 
   function selectFormula(formula: Formula) {
     setSelectedId(formula.id);
-    setForm({ id: formula.id, color_id: formula.color_id, variant_id: formula.variant_id, version: formula.version, paint_system: formula.paint_system, formula_type: formula.formula_type, notes: formula.notes, year: formula.year });
+    setForm({ id: formula.id, color_id: formula.color_id, variant_id: formula.variant_id, version: formula.version, paint_system: formula.paint_system, formula_type: formula.formula_type, notes: formula.notes, year: formula.year, image_url: formula.image_url ?? "" });
+    setInitialImageUrl(formula.image_url ?? "");
     setComponents(formula.components.map((c) => ({ ...c, grams_per_100g: c.percentage })));
     setPctInputs({});
     setError(""); setMessage("");
@@ -113,9 +126,39 @@ export default function FormulasPanel() {
   }
 
   function newFormula() {
-    setSelectedId(null); setForm({ id: "", color_id: "", variant_id: "", version: "v1", paint_system: "2K", formula_type: AUTO_2K_TYPE, notes: "", year: undefined });
+    setSelectedId(null); setForm({ id: "", color_id: "", variant_id: "", version: "v1", paint_system: "2K", formula_type: AUTO_2K_TYPE, notes: "", year: undefined, image_url: "" });
+    setInitialImageUrl("");
     setComponents([]); setPctInputs({}); setError(""); setMessage(""); setColorQuery(""); setAvailableYears([]); idManuallyEdited.current = false;
     setIsEditing(true);
+  }
+
+  // 上传图片到 Supabase Storage 公开桶 formula-images；返回 { url, path }
+  async function uploadFormulaImage(file: File): Promise<{ url: string; path: string }> {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/admin/formula-upload", { method: "POST", body: fd });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error || "上传失败");
+    }
+    return res.json();
+  }
+
+  async function handleUploadImage(file: File) {
+    setUploadingImage(true);
+    setError("");
+    try {
+      const { url } = await uploadFormulaImage(file);
+      setForm((prev) => ({ ...prev, image_url: url }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "上传失败");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
+  function handleRemoveImage() {
+    setForm((prev) => ({ ...prev, image_url: "" }));
   }
 
   function handlePaintSystemChange(next: "1K" | "2K") {
@@ -157,10 +200,26 @@ export default function FormulasPanel() {
     if (!form.id || !form.color_id) { setError("配方 ID 和关联颜色不能为空"); return; }
     const comps = components.filter((c) => c.toner_code.trim()).map((c) => ({ ...c, grams_per_100g: c.percentage }));
     // 变体保留：selectFormula 已把已有 variant_id 写进 form；新建时由用户选择（不选则为 "" → null）
-    const payload: Formula = { ...form, variant_id: form.variant_id, components: comps, updated_at: "", year: form.year };
+    const payload: Formula = { ...form, variant_id: form.variant_id, components: comps, updated_at: "", year: form.year, image_url: form.image_url || undefined };
     try {
       const res = await fetch("/api/admin/formulas", { method: selectedId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      if (res.ok) { setMessage("保存成功"); fetchFormulas(); setSelectedId(payload.id); closeEditor(); }
+      if (res.ok) {
+        setMessage("保存成功");
+        // 保存成功后清理被替换的旧图（best-effort：从 storage 删物理文件）
+        const newUrl = form.image_url || "";
+        if (initialImageUrl && initialImageUrl !== newUrl) {
+          const oldPath = extractStoragePath(initialImageUrl, "formula-images");
+          if (oldPath) {
+            fetch("/api/admin/formula-image-delete", {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ path: oldPath }),
+            }).catch(() => { /* silent: 旧图残留不影响主流程 */ });
+          }
+        }
+        setInitialImageUrl(newUrl);
+        fetchFormulas(); setSelectedId(payload.id); closeEditor();
+      }
       else { const data = await res.json(); setError(data.error || "保存失败"); }
     } catch { setError("网络错误，请重试"); }
   }
@@ -428,6 +487,38 @@ export default function FormulasPanel() {
         <div className="flex flex-col gap-1.5 mt-3">
           <Label className="text-sm font-medium text-foreground/80">施工备注</Label>
           <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="min-h-[60px] w-full rounded-lg border border-border p-3 text-sm outline-none focus:border-primary" />
+        </div>
+
+        {/* 颜色参考图（OEM 车体照片）：存在则首页/抽屉/我的配方卡片优先显示，否则回退静态图 */}
+        <div className="flex flex-col gap-1.5 mt-3">
+          <Label className="text-sm font-medium text-foreground/80">颜色参考图</Label>
+          <div className="flex items-center gap-3">
+            {form.image_url ? (
+              <img src={form.image_url} alt="颜色参考图" className="size-24 rounded-md border border-border object-cover" />
+            ) : (
+              <div className="flex size-24 items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground">无</div>
+            )}
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://... 或下方上传" className="h-9 rounded-lg" />
+              <div className="flex gap-2">
+                <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-3 text-xs hover:bg-muted">
+                  <Upload className="size-3" />
+                  {uploadingImage ? "上传中..." : form.image_url ? "替换图片" : "上传图片到 Supabase Storage"}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    capture="environment"
+                    className="hidden"
+                    disabled={uploadingImage}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadImage(f); e.target.value = ""; }}
+                  />
+                </label>
+                {form.image_url && (
+                  <Button onClick={handleRemoveImage} variant="ghost" size="sm" className="h-11 text-destructive hover:bg-destructive/10">移除图片</Button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="mt-2 flex-1 min-h-0 overflow-visible">

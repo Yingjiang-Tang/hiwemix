@@ -9,6 +9,7 @@ import { useCompare } from "@/components/CompareContext";
 import { trackPageView } from "@/lib/analytics";
 import { buildCompareRows, isPartial } from "@/lib/compare-utils";
 import { colorSwatchStyle } from "@/lib/utils";
+import { getFormulaImageCandidates } from "@/lib/color-photo";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -107,7 +108,10 @@ export default function ComparePage() {
               <div className="w-full max-w-4xl">
                 {/* 顶部：对比配方颜色卡片行（横向滚动，移动端可滑） */}
                 <div className="flex gap-3 overflow-x-auto pb-2">
-                  {compareItems.map((snap, i) => (
+                  {compareItems.map((snap, i) => {
+                    const photoCandidates = getFormulaImageCandidates(snap.formula, snap.color);
+                    const firstImg = photoCandidates[0];
+                    return (
                     <div
                       key={snap.formula_id}
                       className="group relative w-28 flex-shrink-0 cursor-pointer rounded-xl border border-border bg-card p-2 transition-colors hover:border-primary/40"
@@ -117,7 +121,14 @@ export default function ComparePage() {
                       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openFromSnapshot(snap); } }}
                       aria-label={`${snap.color.color_code} ${snap.color.color_name}`}
                     >
-                      <div className="aspect-square w-full overflow-hidden rounded-lg border border-border/50" style={colorSwatchStyle(snap.color.hex_preview)} />
+                      <div
+                        className="aspect-square w-full overflow-hidden rounded-lg border border-border/50"
+                        style={firstImg ? undefined : colorSwatchStyle(snap.color.hex_preview)}
+                      >
+                        {firstImg && (
+                          <img src={firstImg} alt={`${snap.color.color_code} ${snap.color.color_name}`} className="h-full w-full object-cover" />
+                        )}
+                      </div>
                       <p className="mt-2 truncate text-xs font-semibold text-foreground">{snap.color.color_code}</p>
                       <p className="truncate text-[11px] text-muted-foreground">{snap.color.color_name}</p>
                       <span className="absolute left-2 top-2 flex size-5 items-center justify-center rounded-full bg-black/50 text-[10px] font-bold text-white">
@@ -133,7 +144,8 @@ export default function ComparePage() {
                         <X className="size-3.5" />
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* 主体：并排对比表（横向滚动） */}

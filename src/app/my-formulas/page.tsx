@@ -9,7 +9,7 @@ import { useLang } from "@/components/LanguageContext";
 import { trackPageView } from "@/lib/analytics";
 import { Spinner } from "@/components/ui/spinner";
 import { Bookmark, Trash2 } from "lucide-react";
-import { getColorPhotoCandidates } from "@/lib/color-photo";
+import { getFormulaImageCandidates } from "@/lib/color-photo";
 import type { SearchResult, FormulaSnapshot } from "@/types";
 import type { UserSavedFormula } from "@/lib/db-user-formulas";
 
@@ -129,7 +129,7 @@ export default function MyFormulasPage() {
                   {items.map((item) => {
                     const snap = item.formula_json as FormulaSnapshot;
                     const hex = snap.color.hex_preview ?? "#d1d5db";
-                    const photoCandidates = getColorPhotoCandidates(snap.color);
+                    const photoCandidates = getFormulaImageCandidates(snap.formula, snap.color);
                     return (
                       <div key={item.id} className="animate-card-row mb-[70px] w-[87.5%]">
                         <div

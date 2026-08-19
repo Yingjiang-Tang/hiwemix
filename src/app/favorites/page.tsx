@@ -12,7 +12,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Heart, Search, RotateCcw, X } from "lucide-react";
 import { classifyColorFamily, COLOR_FAMILIES, type ColorFamily } from "@/lib/utils";
-import { getColorPhotoCandidates } from "@/lib/color-photo";
+import { getFormulaImageCandidates } from "@/lib/color-photo";
 import type { Color, Formula, SearchResult } from "@/types";
 
 // 复用首页的配方抽屉（懒加载）
@@ -89,13 +89,13 @@ export default function FavoritesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // 每个收藏快照反查其颜色，得到用于分类的 hex 和色系
+  // 每个收藏快照反查其颜色与配方，得到用于分类的 hex、色系，以及 image_url 优先级链
   const snapWithColor = useMemo(() => {
     return snapshotList.map((s) => {
       const formula = formulas.find((f) => f.id === s.formula_id);
       const color = formula ? colors.find((c) => c.id === formula.color_id) : undefined;
       const hex = color?.hex_preview ?? "#d1d5db";
-      return { snap: s, color, hex, family: classifyColorFamily(hex) };
+      return { snap: s, color, hex, formula, family: classifyColorFamily(hex) };
     });
   }, [snapshotList, formulas, colors]);
 
@@ -224,8 +224,8 @@ export default function FavoritesPage() {
                 className="grid grid-cols-2 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 sm:grid-cols-3 md:grid-cols-5"
                 style={{ ["--card-delay" as string]: "0s" }}
               >
-                {filtered.map(({ snap, color, hex }) => {
-                  const photoCandidates = color ? getColorPhotoCandidates(color) : [];
+                {filtered.map(({ snap, color, hex, formula }) => {
+                  const photoCandidates = color ? getFormulaImageCandidates(formula, color) : [];
                   return (
                     <div key={snap.formula_id} className="animate-card-row mb-[70px] w-[87.5%]">
                       {/* 圆角矩形卡片：色块/照片 + 圆角 + 边框，与整页卡片风格一致 */}

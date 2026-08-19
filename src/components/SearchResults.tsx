@@ -1,11 +1,11 @@
 ﻿"use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { useLang } from "@/components/LanguageContext";
 import { useFavorites } from "@/components/FavoritesContext";
 import { colorSwatchStyle, cn } from "@/lib/utils";
-import { getColorPhotoCandidates } from "@/lib/color-photo";
+import { getColorPhotoCandidates, getFormulaImageCandidates } from "@/lib/color-photo";
 import type { FormulaTableRow } from "@/types";
 import { formatYearEntry } from "@/lib/formula-utils";
 import { Spinner } from "@/components/ui/spinner";
@@ -53,8 +53,8 @@ function VariantSubCard({
   const displayTitle = row.variant?.name || row.formula.version;
   const displayYear = row.variant?.year_range || (row.yearEntry ? formatYearEntry(row.yearEntry) : "");
   const displayMeta = `${row.formula.paint_system} | ${row.formula.formula_type}`;
-  // 颜色照片：差异化行优先专属图 {color_id}.jpg，否则回退 {code}.jpg；再失败回退纯色块
-  const photoCandidates = getColorPhotoCandidates(row.color);
+  // 颜色照片：四级回退 — formula.image_url → {color_id}.jpg → {CODE}.jpg → 纯色块
+  const photoCandidates = getFormulaImageCandidates(row.formula, row.color);
   const [photoIdx, setPhotoIdx] = useState(0);
   const photoSrc = photoCandidates[Math.min(photoIdx, photoCandidates.length - 1)] ?? null;
   const [photoFailed, setPhotoFailed] = useState(false);
@@ -134,9 +134,13 @@ function GroupedColorCard({
   // 收藏以该颜色下的第一个配方为对象（与抽屉内收藏同一粒度）
   const favFormula = parent.formula;
   const isFav = isFavorite(favFormula.id);
-  // 颜色卡片照片：差异化行优先 {color_id}.jpg，否则回退 {CODE}.jpg；失败再回退纯色块
+  // 颜色卡片照片：四级回退 — 任一配方 image_url（首个有图）→ {color_id}.jpg → {CODE}.jpg → 纯色块
   // （文件名不允许含 "/"，故将 color_code 中的 "/" 去除后大写，如 C2/45U -> C245U.jpg）
-  const photoCandidates = getColorPhotoCandidates(parent.color);
+  const photoCandidates = useMemo(() => {
+    const withImage = rows.find((r) => r.formula.image_url?.trim());
+    if (withImage) return [withImage.formula.image_url!];
+    return getColorPhotoCandidates(parent.color);
+  }, [rows, parent.color]);
   const [photoIdx, setPhotoIdx] = useState(0);
   const photoSrc = photoCandidates[Math.min(photoIdx, photoCandidates.length - 1)] ?? null;
   const [photoFailed, setPhotoFailed] = useState(false);

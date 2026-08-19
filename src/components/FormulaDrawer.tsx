@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import type { SearchResult, Formula, FormulaComponent, ComponentGroup, YearEntry, FormulaSnapshot } from "@/types";
 import { colorSwatchStyle } from "@/lib/utils";
-import { getColorPhotoCandidates } from "@/lib/color-photo";
+import { getFormulaImageCandidates } from "@/lib/color-photo";
 import { formatYearEntry } from "@/lib/formula-utils";
 import { useLang } from "@/components/LanguageContext";
 import { useFavorites } from "@/components/FavoritesContext";
@@ -177,8 +177,8 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   const origin = brands.find((m) => m.id === color.make_id)?.region ?? "-";
   const activeFormula = formulas[activeFormulaIdx];
   const previewColor = parseHexInput(hexInput, color.hex_preview);
-  // 颜色照片路径：差异化行优先 {color_id}.jpg，否则回退 {code}.jpg（去掉 "/" 后大写）
-  const photoCandidates = getColorPhotoCandidates(color);
+  // 颜色照片路径：四级回退 — 当前激活配方的 image_url → {color_id}.jpg → {CODE}.jpg → hex 色块
+  const photoCandidates = getFormulaImageCandidates(activeFormula, color);
   const photoSrc = photoCandidates[Math.min(photoIdx, photoCandidates.length - 1)] ?? null;
 
   let displayedFormula: Formula | null = activeFormula ?? null;

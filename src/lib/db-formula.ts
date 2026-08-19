@@ -265,6 +265,7 @@ function mapFormulaRow(row: Record<string, unknown>, tonerMap?: Map<string, Tone
     components,
     notes: String(row.notes ?? ""),
     updated_at: String(row.updated_at ?? ""),
+    image_url: row.image_url ? String(row.image_url) : undefined,
   };
 }
 
@@ -395,6 +396,7 @@ export async function saveFormula(formula: Formula, isNew = false): Promise<Form
     p_formula_type: formula.formula_type,
     p_notes: formula.notes ?? "",
     p_components: components,
+    p_image_url: formula.image_url || null,
     p_is_new: isNew,
   });
   if (error) {

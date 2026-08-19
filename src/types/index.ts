@@ -73,6 +73,7 @@ export interface Formula {
   updated_at: string
   year?: number            // 适用年份（可选，用于反规范化搜索）
   color_name?: string      // 颜色名称（可选，用于快速搜索）
+  image_url?: string       // OEM 颜色参考图 URL（Supabase Storage 公开桶 formula-images）
 }
 
 // 搜索参数

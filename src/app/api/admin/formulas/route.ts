@@ -2,7 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkSupabaseAdmin } from "@/lib/auth";
 import { applyRateLimit, ADMIN_LIMIT } from "@/lib/rate-limit";
 import { getFormulas, saveFormula, deleteFormula } from "@/lib/db-formula";
+import { getSupabaseAdmin } from "@/lib/supabase-server";
 import type { Formula } from "@/types";
+
+// 从 Supabase Storage 公开 URL 提取相对路径（去掉 /storage/v1/object/public/<bucket>/ 前缀）
+// 例：https://xxx.supabase.co/storage/v1/object/public/formula-images/abc.jpg → "abc.jpg"
+function extractStoragePath(publicUrl: string, bucket: string): string | null {
+  const marker = `/object/public/${bucket}/`;
+  const idx = publicUrl.indexOf(marker);
+  if (idx < 0) return null;
+  const path = publicUrl.slice(idx + marker.length);
+  return path || null;
+}
 
 function validateFormula(body: Formula): string | null {
   if (body.paint_system === "2K" && body.formula_type !== "Single Stage") {
@@ -130,6 +141,25 @@ export async function DELETE(req: NextRequest) {
   }
   const { id } = body;
   if (!id) return NextResponse.json({ error: "缺少 ID" }, { status: 400 });
+  // 先读取 image_url，删除后清理 storage（best-effort：失败仅记日志，不影响接口返回）
+  const { data: row } = await getSupabaseAdmin()
+    .from("formulas")
+    .select("image_url")
+    .eq("id", id)
+    .maybeSingle();
   await deleteFormula(id);
+  const oldUrl = (row?.image_url ?? "") as string;
+  if (oldUrl) {
+    const path = extractStoragePath(oldUrl, "formula-images");
+    if (path) {
+      const { error: rmErr } = await getSupabaseAdmin()
+        .storage
+        .from("formula-images")
+        .remove([path]);
+      if (rmErr) {
+        console.warn(`[DELETE /api/admin/formulas] storage remove failed: ${oldUrl}`, rmErr);
+      }
+    }
+  }
   return NextResponse.json({ success: true });
 }
