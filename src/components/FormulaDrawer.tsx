@@ -9,7 +9,6 @@ import { formatYearEntry } from "@/lib/formula-utils";
 import { useLang } from "@/components/LanguageContext";
 import { useFavorites } from "@/components/FavoritesContext";
 import { useCompare } from "@/components/CompareContext";
-import { useAuth } from "@/components/AuthContext";
 import { track } from "@/lib/analytics";
 import KapciFormulaTable from "./KapciFormulaTable";
 import Toast from "./Toast";
@@ -17,10 +16,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableCell, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { X, Printer, Copy, Heart, Bookmark, Scale } from "lucide-react";
+import { X, Printer, Copy, Heart, Scale } from "lucide-react";
 
 interface FormulaDrawerProps {
   result: SearchResult | null;
@@ -29,9 +25,6 @@ interface FormulaDrawerProps {
   formulaId?: string;
   initialYear?: YearEntry;
 }
-
-// 会话级缓存：已保存配方 ID（避免每次打开抽屉重复请求 /api/user-formulas）
-let savedIdsCache: Set<string> | null = null;
 
 function formatComponents(components: FormulaComponent[]): string[] {
   const lines: string[] = ["Toner Code  |  Toner Name       |    %  |  g/100g", "-".repeat(50)];
@@ -80,37 +73,13 @@ function parseHexInput(raw: string, fallback: string): string {
 export default function FormulaDrawer({ result, onClose, initialFormulaIdx, formulaId, initialYear }: FormulaDrawerProps) {
   const { t } = useLang();
   const { isFavorite, toggleFavorite } = useFavorites();
-  const { user } = useAuth();
   const { isInCompare, toggleCompare } = useCompare();
   const [activeFormulaIdx, setActiveFormulaIdx] = useState(0);
   const [brands, setBrands] = useState<{ id: string; name: string; region: string }[]>([]);
   const [hexInput, setHexInput] = useState("");
   const [activeGroup, setActiveGroup] = useState<ComponentGroup>("Pearl Paint");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [saveName, setSaveName] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
-  // 拉取已保存配方 ID（会话级缓存），用于书签按钮点亮
-  useEffect(() => {
-    if (savedIdsCache) {
-      setSavedIds(savedIdsCache);
-      return;
-    }
-    fetch("/api/user-formulas")
-      .then((r) => (r.ok ? r.json() : []))
-      .then((list) => {
-        const ids = new Set<string>(
-          (list as { formula_id: string | null }[])
-            .map((x) => x.formula_id)
-            .filter((v): v is string => !!v),
-        );
-        savedIdsCache = ids;
-        setSavedIds(ids);
-      })
-      .catch(() => {});
-  }, []);
   // 颜色照片加载失败时回退纯色块（与首页卡片同一套逻辑）
   const [photoFailed, setPhotoFailed] = useState(false);
   const [photoIdx, setPhotoIdx] = useState(0);
@@ -230,56 +199,6 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
     setToastMsg(isInCompare(activeFormula.id) ? t.removedFromCompare : t.addedToCompare);
   }
 
-  // 打开保存弹窗：未登录先提示（全站已登录门禁，此为兜底）
-  function openSaveDialog() {
-    if (!activeFormula) return;
-    if (!user) {
-      setToastMsg(t.saveRequireLogin);
-      return;
-    }
-    setSaveName(`${make} | ${color.color_code} ${color.color_name}`);
-    setShowSaveDialog(true);
-  }
-
-  // 保存配方到"我的配方"（乐观更新：立即关弹窗 + 点亮书签，失败回滚）
-  async function handleSaveFormula() {
-    if (!activeFormula || !user || !saveName.trim() || saving) return;
-    const formulaId = activeFormula.id;
-    setShowSaveDialog(false);
-    setSaving(true);
-    // 乐观更新：立即点亮书签图标（API 延迟 1-2s，不能让用户干等）
-    setSavedIds((prev) => new Set([...prev, formulaId]));
-    const snapshot: FormulaSnapshot = {
-      formula_id: formulaId,
-      color,
-      formula: activeFormula,
-    };
-    try {
-      const res = await fetch("/api/user-formulas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: saveName.trim(),
-          formula_id: formulaId,
-          formula_json: snapshot,
-        }),
-      });
-      if (!res.ok) throw new Error("save formula failed");
-      if (savedIdsCache) savedIdsCache.add(formulaId);
-      setToastMsg(t.saveFormulaSuccess);
-    } catch {
-      // 失败回滚点亮状态
-      setSavedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(formulaId);
-        return next;
-      });
-      setToastMsg(t.saveFormulaFail);
-    } finally {
-      setSaving(false);
-    }
-  }
-
   const currentYear = initialYear ? formatYearEntry(initialYear) : "-";
 
   return (
@@ -339,18 +258,6 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
                   <Heart className={`size-[18px] ${isFavorite(activeFormula?.id ?? "") ? "fill-current" : ""}`} />
                 </Button>
                 <Button
-                  onClick={openSaveDialog}
-                  variant="outline"
-                  size="icon"
-                  className={`size-[38px] rounded-full bg-transparent border-muted-foreground/30 ${
-                    savedIds.has(activeFormula?.id ?? "") ? "border-muted-foreground/30 bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  aria-pressed={savedIds.has(activeFormula?.id ?? "")}
-                  aria-label={savedIds.has(activeFormula?.id ?? "") ? t.savedFormula : t.saveFormula}
-                >
-                  <Bookmark className={`size-[18px] ${savedIds.has(activeFormula?.id ?? "") ? "fill-current" : ""}`} />
-                </Button>
-                <Button
                   onClick={handlePrint}
                   variant="outline"
                   size="icon"
@@ -401,18 +308,6 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
                 aria-label={isFavorite(activeFormula?.id ?? "") ? t.favorited : t.favorite}
               >
                 <Heart className={`size-[14px] ${isFavorite(activeFormula?.id ?? "") ? "fill-current" : ""}`} />
-              </Button>
-              <Button
-                onClick={openSaveDialog}
-                variant="outline"
-                size="icon"
-                className={`size-[31px] rounded-full bg-transparent border-muted-foreground/30 ${
-                  savedIds.has(activeFormula?.id ?? "") ? "border-muted-foreground/30 bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-                aria-pressed={savedIds.has(activeFormula?.id ?? "")}
-                aria-label={savedIds.has(activeFormula?.id ?? "") ? t.savedFormula : t.saveFormula}
-              >
-                <Bookmark className={`size-[14px] ${savedIds.has(activeFormula?.id ?? "") ? "fill-current" : ""}`} />
               </Button>
               {/* 移动端无打印按钮（用户要求：移动端取消打印功能，桌面端保留） */}
               <Button
@@ -538,34 +433,6 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
           </div>
         </SheetContent>
       </Sheet>
-
-      {/* 保存配方弹窗：z-[2200] 高于 FormulaDrawer z-[2000]，遮罩盖住抽屉（超出全局尺度表的新增层） */}
-      <Dialog open={showSaveDialog} onOpenChange={(v) => { if (!v) setShowSaveDialog(false); }}>
-        <DialogContent overlayClassName="z-[2200]" className="z-[2200] max-w-sm bg-card">
-          <DialogHeader>
-            <DialogTitle>{t.saveFormulaDialogTitle}</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-1.5 py-2">
-            <Label htmlFor="save-formula-name">{t.saveFormulaNameLabel}</Label>
-            <Input
-              id="save-formula-name"
-              value={saveName}
-              onChange={(e) => setSaveName(e.target.value)}
-              placeholder={t.saveFormulaNamePlaceholder}
-              maxLength={200}
-              autoFocus
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
-              {t.cancel}
-            </Button>
-            <Button onClick={handleSaveFormula} disabled={saving || !saveName.trim()}>
-              {t.saveFormula}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {toastMsg && <Toast message={toastMsg} onDone={() => setToastMsg(null)} />}
     </>

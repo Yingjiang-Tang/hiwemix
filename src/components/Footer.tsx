@@ -39,7 +39,6 @@ export default function Footer({ isLightBackground = false }: { isLightBackgroun
     { label: t.navColorLibrary, href: "/color-library" },
     { label: t.navFavorites, href: "/favorites" },
     { label: t.navTds, href: "/tds" },
-    { label: t.navMyFormulas, href: "/my-formulas" },
     { label: t.navCompare, href: "/compare" },
   ];
 
