@@ -391,11 +391,12 @@ html[lang="he"] body {
 .animate-card-row:nth-child(n+13):nth-child(6n+6) { animation-delay: calc(var(--card-delay, 0s) + 0.70s); }
 
 @page {
-  /* 不锁定方向：让打印对话框可选横屏/竖屏；打印配方时用户可按需切换 */
-  size: A4;
-  margin: 12mm;
+  /* 配方打印默认 A4 横向 + 8mm 边距；站点当前只有配方抽屉调用打印 */
+  size: A4 landscape;
+  margin: 8mm;
 }
 
+@layer utilities {
 @media print {
   /* 打印配方抽屉时（.printing-formula 由 handlePrint 添加）：隐藏抽屉外的所有页面内容 */
   html.printing-formula body > *:not([data-slot="sheet-portal"]):not(script):not(style) {
@@ -412,8 +413,8 @@ html[lang="he"] body {
   }
 
   body {
-    font-size: 12px;
-    line-height: 1.5;
+    font-size: 10px;
+    line-height: 1.35;
     color: #000;
     background: #fff;
   }
@@ -436,6 +437,47 @@ html[lang="he"] body {
     display: block !important;
   }
 
+  /* 配方打印紧凑排版：缩小字号、内边距与表格行高，尽量单页 */
+  .formula-print-area,
+  .formula-print-area [data-slot="table"],
+  .formula-print-area input,
+  .formula-print-area select,
+  .formula-print-area [class*="text-["],
+  .formula-print-area [class*="text-sm"],
+  .formula-print-area [class*="text-xs"],
+  .formula-print-area [class*="text-2xs"] {
+    font-size: 10px !important;
+  }
+
+  .formula-print-area [class*="px-[60px]"] {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .formula-print-area .sticky.top-0 {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .formula-print-area [data-slot="table"] th,
+  .formula-print-area [data-slot="table"] td {
+    padding: 2px 4px !important;
+    height: auto !important;
+  }
+
+  .formula-print-area [data-slot="table"] tr {
+    break-inside: avoid;
+  }
+
+  .formula-print-area input,
+  .formula-print-area select {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+
   /* 打印时隐藏遮罩层（overlay 是 drawer 的兄弟节点，不在 .formula-print-area 内部，
      需要通过 portal 选择器定位） */
   [data-slot="sheet-portal"] [data-slot="sheet-overlay"] {
@@ -447,17 +489,13 @@ html[lang="he"] body {
     position: static !important;
   }
 
-  /* 抽屉内部两栏打印时改纵向堆叠 */
+  /* 打印：保持两栏并排（表格左、颜色信息右），利用 A4 横向宽度，省去强制分页 */
   .formula-print-area .md\:flex-row {
-    display: block !important;
+    column-gap: 12px;
   }
 
-  .formula-print-area [class*="md:flex-[62.5%]"],
-  .formula-print-area [class*="md:flex-[37.5%]"],
-  .formula-print-area [class*="md:border-r"],
-  .formula-print-area [class*="md:border-b-0"] {
-    flex: none !important;
-    border: none !important;
+  /* 打印：分栏滚动容器改可见，避免内容被裁剪 */
+  .formula-print-area [class*="overflow-auto"] {
     overflow: visible !important;
   }
 
@@ -471,18 +509,18 @@ html[lang="he"] body {
     display: none !important;
   }
 
-  /* 配方抽屉打印分页：左栏配方表格在第 1 页，右栏颜色预览+信息强制从第 2 页开始 */
-  .formula-print-area [class*="md:flex-[37.5%]"] {
-    break-before: page;
-  }
-
-  /* 打印页颜色预览缩小 30%：预览方块宽度收窄到 70% 并居中（高度随 aspect-ratio 等比缩小），
-     仅打印媒体生效，屏幕显示不受影响 */
+  /* 打印页颜色预览：侧栏内收窄到 65% 并居中（约 65mm 见方），
+     避免预览图占据侧栏大半高度；仅打印媒体生效，屏幕显示不受影响 */
   .formula-print-area [class*="aspect-square"] {
-    width: 70%;
+    width: 65%;
     margin-left: auto;
     margin-right: auto;
   }
+
+  .formula-print-area [class*="rounded-[35px]"] {
+    border-radius: 10px !important;
+  }
+}
 }
 
 /* 标题折行优化：在词边界换行，避免单词被拆成两行 */

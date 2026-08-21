@@ -15,7 +15,7 @@ import Toast from "./Toast";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Table, TableCell, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { X, Printer, Copy, Heart, Scale } from "lucide-react";
 
 interface FormulaDrawerProps {
@@ -337,19 +337,68 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
           {/* Body: 两栏布局 */}
           <div className="flex flex-col md:flex-row flex-1">
             {/* 左侧：配方详情 (~62.5%) */}
-            <div className="flex-1 overflow-auto border-b border-border px-[60px] pt-5 md:flex-[62.5%] md:border-b-0 md:border-r md:pt-[30px] md:pb-[60px] max-md:pb-0">
+            <div className="flex-1 overflow-auto border-b border-border px-[60px] pt-5 md:flex-[62.5%] md:border-b-0 md:border-r md:pt-[30px] md:pb-[60px] max-md:pb-0 print:pt-1 print:pb-0">
               {activeFormula && displayedFormula && (
                 <div>
-                  <KapciFormulaTable
-                    key={`${activeFormula.id}-${activeGroup}`}
-                    formula={displayedFormula}
-                    activeGroup={activeGroup}
-                    onGroupChange={setActiveGroup}
-                    showGroupToggle={true}
-                  />
+                  <div className={isGroupedType ? "print:hidden" : undefined}>
+                    <KapciFormulaTable
+                      key={`${activeFormula.id}-${activeGroup}`}
+                      formula={displayedFormula}
+                      activeGroup={activeGroup}
+                      onGroupChange={setActiveGroup}
+                      showGroupToggle={true}
+                    />
+                  </div>
+
+                  {/* 打印专用完整表：Three Stages 打印时输出两组全部色母（屏幕隐藏，不影响 UI） */}
+                  {isGroupedType && (
+                    <div className="hidden print:block mt-2">
+                      {(["Pearl Paint", "Ground Paint"] as ComponentGroup[]).map((group) => (
+                        <div key={group} className="mb-3">
+                          <h3 className="mb-1 text-sm font-bold text-foreground">
+                            {group === "Pearl Paint" ? t.pearlPaintLabel : t.groundPaintLabel}
+                          </h3>
+                          <Table className="w-full table-fixed">
+                            <TableHeader>
+                              <TableRow className="bg-muted/50">
+                                <TableHead className="w-1/5 text-center text-2xs uppercase font-semibold">{t.tonerCode}</TableHead>
+                                <TableHead className="w-1/5 text-center text-2xs uppercase font-semibold">{t.tonerName}</TableHead>
+                                <TableHead className="w-1/5 text-center text-2xs uppercase font-semibold">%</TableHead>
+                                <TableHead className="w-1/5 text-center text-2xs uppercase font-semibold">g/100g</TableHead>
+                                <TableHead className="w-1/5 text-center text-2xs uppercase font-semibold">{t.massTone}</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {activeFormula.components
+                                .filter((comp) => comp.component_group === group)
+                                .map((comp, idx) => (
+                                  <TableRow key={`${comp.toner_code}-${idx}`} className="even:bg-muted/30">
+                                    <TableCell className="text-center font-semibold">{comp.toner_code}</TableCell>
+                                    <TableCell className="text-center">{comp.toner_name}</TableCell>
+                                    <TableCell className="text-center">{comp.percentage}</TableCell>
+                                    <TableCell className="text-center tabular-nums">{comp.grams_per_100g}</TableCell>
+                                    <TableCell className="text-center">
+                                      <div
+                                        className="mx-auto h-3 w-6 rounded-sm border border-border/60"
+                                        style={{
+                                          backgroundColor:
+                                            comp.rgb_r != null && comp.rgb_g != null && comp.rgb_b != null
+                                              ? `rgb(${comp.rgb_r}, ${comp.rgb_g}, ${comp.rgb_b})`
+                                              : "var(--muted)",
+                                        }}
+                                      />
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {activeFormula.notes && (
-                    <div className="mt-4 rounded-xl border border-amber-200/60 bg-amber-50/30 p-3 dark:border-amber-400/25 dark:bg-amber-400/10">
+                    <div className="mt-4 rounded-xl border border-amber-200/60 bg-amber-50/30 p-3 dark:border-amber-400/25 dark:bg-amber-400/10 print:mt-1 print:p-1">
                       <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">{t.notesLabel}</span>
                       <p className="mt-1 text-xs text-amber-600 dark:text-amber-200/90">{activeFormula.notes}</p>
                     </div>
@@ -361,7 +410,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
             {/* 右侧：颜色预览+信息 (~37.5%) */}
             <div className="flex-shrink-0 overflow-auto md:flex-[37.5%]">
               {/* 颜色预览：正方形，照片优先，加载失败回退纯色块（与首页卡片一致） */}
-              <div className="px-[60px] py-5 max-md:py-[19px]">
+              <div className="px-[60px] py-5 max-md:py-[19px] print:py-1">
                 <div className="relative aspect-square w-full overflow-hidden rounded-[35px] border border-border/60">
                   {!photoFailed && photoSrc ? (
                     <Image
@@ -388,8 +437,8 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
               <Separator />
 
               {/* Color Information（标题 + 斑马纹表格） */}
-              <div className="px-[60px] pt-[30px] pb-[60px]">
-                <h3 className="mb-4 text-center font-heading text-xl font-bold leading-tight text-foreground sm:text-2xl">{t.tabColorInfo}</h3>
+              <div className="px-[60px] pt-[30px] pb-[60px] print:pt-1 print:pb-1">
+                <h3 className="mb-4 text-center font-heading text-xl font-bold leading-tight text-foreground sm:text-2xl print:mb-1">{t.tabColorInfo}</h3>
                 <div className="overflow-x-auto rounded-lg border border-border text-sm">
                   <Table className="w-full">
                     <tbody>
