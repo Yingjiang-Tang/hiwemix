@@ -134,16 +134,18 @@ function TonerCard({
         />
       </div>
 
-      {/* 卡片下方信息块：左对齐常显，产品代码 / 英文名；外链图标仅移动端显示 */}
+      {/* 卡片下方信息块：左对齐常显，产品代码 / 英文名；有官网链接时在代码右侧显示外链图标 */}
       <div className="mt-[45px] max-md:mt-[15px] text-left font-[family-name:var(--font-sans)]">
         <div className="flex items-center gap-1">
           <p className="truncate text-[20px] font-normal leading-tight text-foreground">
             {code}
           </p>
-          <ExternalLink
-            aria-hidden
-            className="hidden max-md:inline-flex size-3.5 shrink-0 text-muted-foreground"
-          />
+          {href && (
+            <ExternalLink
+              aria-hidden
+              className="size-5 shrink-0 -my-1 text-muted-foreground"
+            />
+          )}
         </div>
         <p className="mt-2 truncate text-[16px] font-normal leading-tight text-muted-foreground">
           {tradeName}
