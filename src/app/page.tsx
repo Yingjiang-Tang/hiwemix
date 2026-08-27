@@ -130,14 +130,20 @@ export default function Home() {
     setDrawerYear(row.yearEntry);
   }
 
-  // Explore Now 触发：解锁滚动 → 滚动到搜索区域，首次载入全部配方
+  // Explore Now 触发：解锁滚动 + 首次载入全部配方
   function handleExplore() {
     setHasExplored(true);
-    if (searchPanelRef.current) {
-      searchPanelRef.current.scrollIntoView({ behavior: "smooth" });
-    }
     if (!hasSearched) handleSearch({});
   }
+
+  // 滚动必须在 Hero 卸载、滚动解锁后的新布局上执行，
+  // 同步调用 scrollIntoView 会按旧布局（Hero 未移除）计算位置导致停在配方卡片区域
+  useEffect(() => {
+    if (hasExplored && searchPanelRef.current) {
+      searchPanelRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasExplored]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
