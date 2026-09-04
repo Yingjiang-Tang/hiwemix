@@ -46,6 +46,8 @@ export default function FormulasPanel() {
   const [message, setMessage] = useState("");
   const idManuallyEdited = useRef(false);
   const [formulaSearch, setFormulaSearch] = useState("");
+  const [formulaPage, setFormulaPage] = useState(0);
+  const FORMULAS_PER_PAGE = 10;
   const [availableYears, setAvailableYears] = useState<YearEntry[]>([]);
   // 将 YearEntry[] 展开为所有包含的单年（用于下拉选项）
   const expandedYears = useMemo(() => {
@@ -240,6 +242,13 @@ export default function FormulasPanel() {
     return formulas.filter((f) => { if (f.id.toLowerCase().includes(q)) return true; const cc = colors.find((c) => c.id === f.color_id)?.color_code ?? ""; return cc.toLowerCase().includes(q); });
   }, [formulas, formulaSearch, colors]);
 
+  useEffect(() => {
+    setFormulaPage(0);
+  }, [formulas, formulaSearch]);
+
+  const formulaTotalPages = Math.max(1, Math.ceil(filteredFormulas.length / FORMULAS_PER_PAGE));
+  const visibleFormulas = filteredFormulas.slice(formulaPage * FORMULAS_PER_PAGE, formulaPage * FORMULAS_PER_PAGE + FORMULAS_PER_PAGE);
+
   const INPUT_CLASS = "w-full border border-input rounded-lg px-3 py-2 h-[38px] text-sm outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/10";
 
   function renderComponentTable(group?: ComponentGroup) {
@@ -366,7 +375,7 @@ export default function FormulasPanel() {
   return (
     <div className="flex flex-col gap-4 lg:flex-row min-h-[calc(100vh-140px)]">
       {/* 左栏：配方列表 */}
-      <div className={`lg:w-64 flex-shrink-0 flex flex-col max-h-[calc(100vh-220px)] lg:max-h-none ${isEditing ? "max-md:hidden" : ""}`}>
+      <div className={`lg:w-64 flex-shrink-0 flex flex-col max-h-[calc(100vh-220px)] ${isEditing ? "max-md:hidden" : ""}`}>
         {/* 桌面端：文字按钮 + 搜索框 上下两排 */}
         <Button onClick={newFormula} variant="outline-primary" className="rounded-lg mb-3 max-md:hidden">
           <Plus className="size-4" /> 新增配方
@@ -397,7 +406,7 @@ export default function FormulasPanel() {
           <Input placeholder="搜索配方代码或名称..." value={formulaSearch} onChange={(e) => setFormulaSearch(e.target.value)} className="h-9 rounded-lg pl-9 text-sm" />
         </div>
         <div className="flex-1 overflow-auto rounded-lg border border-border min-h-0">
-          {filteredFormulas.map((f) => {
+          {visibleFormulas.map((f) => {
             const isSel = selectedId === f.id;
             return (
               <button key={f.id} onClick={() => selectFormula(f)}
@@ -408,6 +417,15 @@ export default function FormulasPanel() {
               </button>
             );
           })}
+        </div>
+        {/* 分页脚注：列表按页渲染，避免一次性展示全部配方导致页面过长 */}
+        <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2">
+          <p className="min-w-0 truncate text-xs font-semibold text-primary">Found {filteredFormulas.length} formulas</p>
+          <div className="flex items-center gap-1.5">
+            <span className="whitespace-nowrap text-2xs text-muted-foreground">{formulaPage + 1} / {formulaTotalPages}</span>
+            <Button size="icon" variant="ghost" disabled={formulaPage === 0} onClick={() => setFormulaPage(formulaPage - 1)} aria-label="上一页" className="size-8 rounded-lg">‹</Button>
+            <Button size="icon" variant="ghost" disabled={formulaPage >= formulaTotalPages - 1} onClick={() => setFormulaPage(formulaPage + 1)} aria-label="下一页" className="size-8 rounded-lg">›</Button>
+          </div>
         </div>
       </div>
 
