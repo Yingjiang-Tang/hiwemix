@@ -22,7 +22,7 @@ const TABS = [
   { key: "variants", label: "配方类型", icon: Layers },
   { key: "formulas", label: "配方", icon: Beaker },
   { key: "tds", label: "文档", icon: FileText },
-  { key: "analytics", label: "数据分析", icon: BarChart3 },
+  { key: "analytics", label: "分析中心", icon: BarChart3 },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];

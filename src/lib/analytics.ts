@@ -3,8 +3,9 @@
 // track() 发送事件到 /api/analytics；服务端负责生成/续期 visitor_id cookie
 // 并插入 Supabase。失败静默降级（不影响用户任何操作）。
 // ============================================================
+import type { AnalyticsEventType, FormulaActionType } from "@/types";
 
-export type TrackEventType = "page_view" | "search" | "formula_view" | "color_view";
+export type TrackEventType = AnalyticsEventType;
 
 export interface TrackData {
   make?: string;
@@ -15,6 +16,8 @@ export interface TrackData {
   formula_id?: string;
   variant?: string;
   version?: string;
+  result_count?: number;
+  action?: FormulaActionType;
   [key: string]: string | number | undefined;
 }
 

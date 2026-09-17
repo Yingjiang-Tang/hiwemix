@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { insertAnalyticsEvent, type AnalyticsEventType } from "@/lib/db-analytics";
+import { insertAnalyticsEvent } from "@/lib/db-analytics";
 import { LANG_COOKIE, VISITOR_COOKIE } from "@/lib/cookies";
+import type { AnalyticsEventType, FormulaActionType } from "@/types";
 
 // 埋点限流：公开端点，防刷，每 IP 每分钟 120 次
 const LIMIT = { prefix: "analytics", maxRequests: 120, windowMs: 60_000 };
 
-const ALLOWED_TYPES: AnalyticsEventType[] = ["page_view", "search", "formula_view", "color_view"];
+const ALLOWED_TYPES: AnalyticsEventType[] = ["page_view", "search", "formula_view", "color_view", "formula_action"];
+const ALLOWED_ACTIONS = new Set<FormulaActionType>(["copy", "print", "favorite_add", "favorite_remove"]);
 
 // event_data 白名单：只收埋点 SDK 会发的键，拒绝任意键注入（防污染聚合统计）
-const ALLOWED_DATA_KEYS = new Set(["make", "code", "name", "year", "page", "formula_id", "variant", "version"]);
+const ALLOWED_DATA_KEYS = new Set(["make", "code", "name", "year", "page", "formula_id", "variant", "version", "result_count", "action"]);
 const MAX_VALUE_LEN = 200;
 
 const VISITOR_MAX_AGE = 60 * 60 * 24 * 365; // 1 年
@@ -41,10 +43,11 @@ export async function POST(req: NextRequest) {
     for (const [k, v] of Object.entries(event_data)) {
       if (!ALLOWED_DATA_KEYS.has(k)) continue;
       if (typeof v === "string") {
+        if (k === "action" && !ALLOWED_ACTIONS.has(v as FormulaActionType)) continue;
         const s = v.slice(0, MAX_VALUE_LEN);
         if (s !== "") cleanData[k] = s;
       } else if (typeof v === "number" && Number.isFinite(v)) {
-        cleanData[k] = v;
+        cleanData[k] = k === "result_count" ? Math.max(0, Math.floor(v)) : v;
       }
     }
   }

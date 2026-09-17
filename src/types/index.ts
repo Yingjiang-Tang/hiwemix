@@ -116,6 +116,53 @@ export interface AppSettings {
   yearMax: number
 }
 
+// 行为分析
+export type AnalyticsEventType = "page_view" | "search" | "formula_view" | "color_view" | "formula_action"
+export type FormulaActionType = "copy" | "print" | "favorite_add" | "favorite_remove"
+
+export interface AnalyticsEventRecord {
+  visitor_id: string
+  event_type: AnalyticsEventType
+  event_data: Record<string, string | number | undefined>
+  created_at: string
+}
+
+export interface AnalyticsInsights {
+  searches: {
+    total: number
+    measured: number
+    successful: number
+    zeroResult: number
+    successRate: number
+  }
+  conversion: {
+    searchVisitors: number
+    convertedVisitors: number
+    rate: number
+  }
+  actions: {
+    copy: number
+    print: number
+    favoriteAdd: number
+    favoriteRemove: number
+  }
+  topZeroResultSearches: Array<{ label: string; count: number }>
+}
+
+export interface AnalyticsRankItem {
+  label: string
+  count: number
+}
+
+export interface AnalyticsSummary {
+  dailyViews: Array<{ date: string; count: number }>
+  uniqueVisitors: number
+  eventTypeCounts: Record<string, number>
+  topSearches: AnalyticsRankItem[]
+  topFormulaViews: AnalyticsRankItem[]
+  insights: AnalyticsInsights
+}
+
 // TDS 产品族分类（汽车修补漆产品族）
 export interface GuideCategory {
   id: string                    // 'primer' / 'basecoat' / 'clearcoat' / ...

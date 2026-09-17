@@ -7,6 +7,7 @@ import {
   getTopFormulaViews,
   getUniqueVisitors,
   getEventTypeCounts,
+  getAnalyticsInsights,
 } from "@/lib/db-analytics";
 
 // 管理员面板：聚合行为统计数据（不含个人身份）
@@ -24,12 +25,13 @@ export async function GET(req: NextRequest) {
   const daysParam = Number(req.nextUrl.searchParams.get("days"));
   const days = Number.isFinite(daysParam) && daysParam > 0 && daysParam <= 90 ? daysParam : 14;
 
-  const [dailyViews, uniqueVisitors, eventTypeCounts, topSearches, topFormulaViews] = await Promise.all([
+  const [dailyViews, uniqueVisitors, eventTypeCounts, topSearches, topFormulaViews, insights] = await Promise.all([
     getDailyPageViews(days),
     getUniqueVisitors(days),
     getEventTypeCounts(days),
     getTopSearches(20, days),
     getTopFormulaViews(20, days),
+    getAnalyticsInsights(days),
   ]);
 
   return NextResponse.json({
@@ -38,5 +40,6 @@ export async function GET(req: NextRequest) {
     eventTypeCounts,
     topSearches,
     topFormulaViews,
+    insights,
   });
 }

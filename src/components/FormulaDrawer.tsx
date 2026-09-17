@@ -130,6 +130,10 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   function handlePrint() {
     // 打印前标记：CSS 只打印抽屉内容，隐藏首页其余部分（打印按钮的 beforeprint 在 window.print 前触发）
     document.documentElement.classList.add("printing-formula");
+    const formula = result?.formulas[activeFormulaIdx];
+    if (formula) {
+      void track("formula_action", { action: "print", formula_id: formula.id });
+    }
     window.print();
   }
 
@@ -162,7 +166,10 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   function handleCopy() {
     if (!activeFormula) return;
     navigator.clipboard.writeText(formatFormulaAsText(result!, activeFormula, make)).then(
-      () => setToastMsg(t.copySuccess),
+      () => {
+        void track("formula_action", { action: "copy", formula_id: activeFormula.id });
+        setToastMsg(t.copySuccess);
+      },
       () => setToastMsg(t.copyFail),
     );
   }
@@ -170,6 +177,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   // 收藏 / 取消收藏当前配方
   async function handleToggleFavorite() {
     if (!activeFormula) return;
+    const wasFavorite = isFavorite(activeFormula.id);
     const snapshot = {
       formula_id: activeFormula.id,
       color_code: color.color_code,
@@ -181,7 +189,11 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
     };
     try {
       await toggleFavorite(snapshot);
-      setToastMsg(isFavorite(activeFormula.id) ? t.favoriteRemoved : t.favoriteAdded);
+      void track("formula_action", {
+        action: wasFavorite ? "favorite_remove" : "favorite_add",
+        formula_id: activeFormula.id,
+      });
+      setToastMsg(wasFavorite ? t.favoriteRemoved : t.favoriteAdded);
     } catch {
       setToastMsg(t.favoriteFail);
     }

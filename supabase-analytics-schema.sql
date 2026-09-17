@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS public.analytics_events (
   id BIGSERIAL PRIMARY KEY,
   visitor_id TEXT NOT NULL,               -- 匿名访客 ID（hiwe_visitor_id cookie，随机 UUID）
-  event_type TEXT NOT NULL,               -- 'page_view' | 'search' | 'formula_view' | 'color_view'
+  event_type TEXT NOT NULL,               -- 'page_view' | 'search' | 'formula_view' | 'color_view' | 'formula_action'
   event_data JSONB NOT NULL DEFAULT '{}', -- 事件详情：如 {code:"040", name:"...", make:"BMW"}
   lang TEXT NOT NULL DEFAULT 'en',        -- 事件发生时用户语言（从 site-language cookie 读取）
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

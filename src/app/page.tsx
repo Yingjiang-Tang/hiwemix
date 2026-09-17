@@ -8,10 +8,9 @@ import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import HeroSection from "@/components/HeroSection";
 import VerifiedBanner from "@/components/VerifiedBanner";
-import { useLang } from "@/components/LanguageContext";
-import { yearEntryContains } from "@/lib/formula-utils";
+import { searchFormulas } from "@/lib/search-formulas";
 import { track, trackPageView } from "@/lib/analytics";
-import type { CarMake, Color, ColorType, Formula, SearchParams, SearchResult, FormulaTableRow, YearEntry } from "@/types";
+import type { CarMake, Color, Formula, SearchParams, SearchResult, FormulaTableRow, YearEntry } from "@/types";
 
 // FormulaDrawer（Sheet + Tabs + KapciFormulaTable + framer-motion 依赖较重）
 // 只在用户真正打开配方抽屉时才加载 JS，首屏不打包
@@ -21,7 +20,6 @@ const FormulaDrawer = dynamic(() => import("@/components/FormulaDrawer"), {
 });
 
 export default function Home() {
-  const { t } = useLang();
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [tableRows, setTableRows] = useState<FormulaTableRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,69 +53,16 @@ export default function Home() {
     setIsLoading(true);
     setHasSearched(true);
     loadData().then(({ colors, formulas, brands }) => {
-      let filtered = colors;
-
-      if (params.region) {
-        const regionBrandIds = brands
-          .filter((b) => b.region === params.region)
-          .map((b) => b.id);
-        filtered = filtered.filter((c) => regionBrandIds.includes(c.make_id));
-      }
-
-      if (params.make_id) filtered = filtered.filter((c) => c.make_id === params.make_id);
-
-      if (params.color_code) {
-        const code = params.color_code!.toUpperCase();
-        filtered = filtered.filter((c) => c.color_code.toUpperCase().includes(code));
-      }
-
-      if (params.color_name) {
-        const name = params.color_name!.toLowerCase();
-        filtered = filtered.filter((c) => c.color_name.toLowerCase().includes(name));
-      }
-
-      if (params.color_type) filtered = filtered.filter((c) => c.color_type.includes(params.color_type as ColorType));
-
-      if (params.year) {
-        const searchYear = parseInt(params.year, 10);
-        if (!isNaN(searchYear)) {
-          filtered = filtered.filter((c) =>
-            c.years && c.years.some((entry) => yearEntryContains(entry, searchYear))
-          );
-        }
-      }
-      const results: SearchResult[] = filtered.map((color) => ({
-        color,
-        formulas: formulas.filter((f) => f.color_id === color.id),
-      }));
-      const brandsMap = new Map(brands.map((b) => [b.id, b.name]));
-      const searchYear = params.year ? parseInt(params.year, 10) : undefined;
-      const rows: FormulaTableRow[] = [];
-      for (const r of results) {
-        // 匹配的 YearEntry（按搜索年份过滤）；若无搜索年份则展示全部 YearEntry
-        const matchedEntries = searchYear && !isNaN(searchYear)
-          ? r.color.years?.filter(e => yearEntryContains(e, searchYear)) ?? []
-          : (r.color.years && r.color.years.length > 0 ? r.color.years : [undefined]);
-        for (const f of r.formulas) {
-          for (const entry of matchedEntries) {
-            rows.push({
-              color: r.color,
-              formula: f,
-              variant: r.color.variants.find((v) => v.id === f.variant_id),
-              makeName: brandsMap.get(r.color.make_id) ?? r.color.make_id,
-              yearEntry: entry,
-            });
-          }
-        }
-      }
+      const { results, rows, makeNameById } = searchFormulas(colors, formulas, brands, params);
       setSearchResults(results);
       setTableRows(rows);
       // 搜索事件埋点（记录品牌/色号/颜色名/年份，不含个人身份）
       void track("search", {
-        make: params.make_id ? brandsMap.get(params.make_id) ?? params.make_id : undefined,
+        make: params.make_id ? makeNameById.get(params.make_id) ?? params.make_id : undefined,
         code: params.color_code,
         name: params.color_name,
         year: params.year,
+        result_count: rows.length,
       });
     }).catch((err) => { console.error(err); setSearchResults([]); }).finally(() => setIsLoading(false));
   }

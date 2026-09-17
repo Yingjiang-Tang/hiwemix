@@ -1,16 +1,12 @@
 import { getSupabaseAdmin } from "./supabase-server";
+import { summarizeAnalyticsEvents } from "./analytics-summary";
+import type { AnalyticsEventRecord, AnalyticsEventType, AnalyticsInsights } from "@/types";
 
 // ============================================================
 // 行为分析（轻量埋点）
-// 事件类型：page_view / search / formula_view / color_view
+// 事件类型：page_view / search / formula_view / color_view / formula_action
 // 只记录匿名 visitor_id，不关联账号身份（规避 GDPR 个人数据采集）
 // ============================================================
-
-export type AnalyticsEventType =
-  | "page_view"
-  | "search"
-  | "formula_view"
-  | "color_view";
 
 export interface AnalyticsEventInput {
   visitor_id: string;
@@ -149,4 +145,18 @@ export async function getEventTypeCounts(days: number): Promise<Record<string, n
     counts[t] = (counts[t] ?? 0) + 1;
   }
   return counts;
+}
+
+/** 搜索质量、搜索转化和配方操作汇总。 */
+export async function getAnalyticsInsights(days: number): Promise<AnalyticsInsights> {
+  const { data, error } = await getSupabaseAdmin()
+    .from("analytics_events")
+    .select("visitor_id, event_type, event_data, created_at")
+    .in("event_type", ["search", "formula_view", "formula_action"])
+    .gte("created_at", new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
+    .order("created_at", { ascending: true })
+    .limit(5000);
+  if (error) return summarizeAnalyticsEvents([]);
+
+  return summarizeAnalyticsEvents((data ?? []) as AnalyticsEventRecord[]);
 }
