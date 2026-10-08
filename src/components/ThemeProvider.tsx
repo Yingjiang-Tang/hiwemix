@@ -18,7 +18,13 @@ const STORAGE_KEY = "hiwemix-theme";
 function readStoredTheme(): Theme | null {
   if (typeof window === "undefined") return null;
   // 优先 localStorage（老逻辑兼容）；其次 cookie（SSR 写入）
-  const v = window.localStorage.getItem(STORAGE_KEY) ?? getClientCookie(STORAGE_KEY);
+  let v: string | null;
+  try {
+    v = window.localStorage.getItem(STORAGE_KEY) ?? getClientCookie(STORAGE_KEY);
+  } catch {
+    // 隐私模式禁用存储时，账户页面仍需正常加载。
+    v = getClientCookie(STORAGE_KEY);
+  }
   if (v === "light" || v === "dark") return v;
   return null;
 }

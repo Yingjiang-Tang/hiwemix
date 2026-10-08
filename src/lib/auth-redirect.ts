@@ -24,3 +24,15 @@ export function getEmailRedirectTo(path: string, searchParams?: Record<string, s
   }
   return url.toString();
 }
+
+// 登录和邮件回调共用校验，拒绝反斜杠、编码变体及认证页循环跳转。
+export function getSafeAuthNext(path: string | null | undefined): string {
+  if (!path) return "/";
+  try {
+    const decoded = decodeURIComponent(path);
+    if (!decoded.startsWith("/") || decoded.startsWith("//") || /[\\\u0000-\u001f]/.test(decoded)) return "/";
+    const url = new URL(path, "https://auth.invalid");
+    if (url.origin !== "https://auth.invalid" || ["/login", "/register", "/auth/callback", "/auth/recovery"].includes(url.pathname)) return "/";
+    return url.pathname + url.search + url.hash;
+  } catch { return "/"; }
+}

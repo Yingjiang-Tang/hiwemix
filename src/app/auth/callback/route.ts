@@ -1,97 +1,63 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { getSafeAuthNext } from "@/lib/auth-redirect";
+import { createRecoveryToken, RECOVERY_COOKIE, RECOVERY_MAX_AGE } from "@/lib/password-recovery";
+import { fetchWithAuthTimeout } from "@/lib/auth-fetch";
 
-// 统一的 Auth 回调路由
-// - Google OAuth 完成后 Supabase 跳转：/auth/callback?code=xxx
-// - 邮箱注册确认链接：/auth/callback?code=xxx&type=signup
-// - 密码重置链接：/auth/callback?code=xxx&type=recovery
-//
-// 用 code 交换 session，把 session cookie 直接写到「将返回的 redirect 响应」上，
-// 确保随 302 落到浏览器（不依赖 next/headers cookies() 存储与独立 NextResponse 的隐式合并）。
-// signup 确认后已建立 session，自动登录跳首页并带 ?verified=1 提示。
+// 同时支持原浏览器的 PKCE code 和邮件模板中的 token_hash（可跨设备）。
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const error = searchParams.get("error");
-  const type = searchParams.get("type"); // signup | recovery | implicit | null
-  const next = searchParams.get("next") ?? "/";
-  // 仅允许同源相对路径，防止开放重定向（拒绝 //evil.com、/\evil.com 等）——AUTH-5
-  const safeNext =
-    next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\")
-      ? next
-      : "/";
-
-  // Supabase 返回错误（如链接过期）。
-  // 密码重置链接（next 指向 /reset-password）出错 → 回重置页提示重新申请；
-  // 其他 → 回登录页带通用错误（不透传原始 error，防信息泄露——AUTH-3）。
-  if (error) {
-    console.error("[auth/callback] Supabase error param:", error);
-    if (next.startsWith("/reset-password")) {
-      return NextResponse.redirect(`${origin}/reset-password?error=expired`);
-    }
-    return NextResponse.redirect(`${origin}/login?error=link_invalid`);
+  const tokenHash = searchParams.get("token_hash");
+  const type = searchParams.get("type");
+  const next = getSafeAuthNext(searchParams.get("next"));
+  const isRecoveryRequest = type === "recovery" || new URL(next, origin).pathname === "/reset-password";
+  const failurePath = isRecoveryRequest ? "/reset-password?error=expired" : "/login?error=link_invalid";
+  const response = NextResponse.redirect(new URL(failurePath, origin));
+  response.headers.set("Cache-Control", "private, no-store");
+  if (searchParams.get("error")) return response;
+  if (!code && !tokenHash) {
+    response.headers.set("location", new URL("/login", origin).toString());
+    return response;
   }
 
-  if (code) {
-    // 先决定成功目的地
-    let destination: string;
-    if (type === "recovery") {
-      destination = `${origin}/reset-password?from=email`;
-    } else if (type === "signup" || type === "email") {
-      // 邮箱确认后已建立 session，自动登录跳首页
-      destination = `${origin}/?verified=1`;
-    } else {
-      // OAuth 或未指定 type：跳 next（默认 /，已校验同源）
-      destination = `${origin}${safeNext}`;
-    }
-
-    // 先构造响应，再把 supabase client 绑定到它上面：
-    // getAll 读入站 cookie（含 PKCE verifier），setAll 直接写到该响应的 Set-Cookie
-    const response = NextResponse.redirect(destination);
+  try {
+    // 所有 cookie 都写到最终响应上，失败时也保留 SDK 的清理操作。
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
+        global: { fetch: fetchWithAuthTimeout },
         cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
+          getAll() { return request.cookies.getAll(); },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              response.cookies.set(name, value, options)
-            );
+            cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
           },
         },
       }
     );
+    if (tokenHash && type !== "recovery" && type !== "signup" && type !== "email") return response;
+    const { data, error } = tokenHash && (type === "recovery" || type === "signup" || type === "email")
+      ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
+      : await supabase.auth.exchangeCodeForSession(code!);
+    if (error || !data.user || !data.session) return response;
 
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (exchangeError) {
-      console.error("Auth callback error:", exchangeError.message);
-      // 密码重置流程交换失败（链接过期/已用）→ 回重置页提示重新申请
-      if (type === "recovery") {
-        return NextResponse.redirect(`${origin}/reset-password?error=expired`);
-      }
-      // 不透传原始错误消息（AUTH-3），仅服务端日志
-      return NextResponse.redirect(`${origin}/login?error=link_invalid`);
-    }
-
-    // 密码重置流程：设一个短时效、非敏感标记 cookie，reset-password 页据此确认
-    // 确实来自 recovery 回调（而非已登录用户手动访问 ?from=email）——AUTH-2 加固
-    if (type === "recovery") {
-      response.cookies.set("pw_recovery", "1", {
-        maxAge: 300,
-        path: "/",
-        sameSite: "lax",
-        httpOnly: false,
+    // SDK 从 PKCE verifier 中恢复流程类型，兼容没有 type 参数的旧邮件。
+    const isRecovery = type === "recovery" || ("redirectType" in data && data.redirectType === "recovery");
+    let destination = next;
+    if (isRecovery) {
+      destination = "/reset-password?from=email";
+      response.cookies.set(RECOVERY_COOKIE, createRecoveryToken(data.user.id), {
+        maxAge: RECOVERY_MAX_AGE, path: "/", sameSite: "lax", httpOnly: true, secure: origin.startsWith("https://"),
       });
+    } else {
+      // 普通登录后清除先前账号的恢复标记，防止旧表单误用新会话。
+      response.cookies.set(RECOVERY_COOKIE, "", { maxAge: 0, path: "/" });
     }
-
-    // session cookie 已写在 response 上，随 302 落到浏览器
-    return response;
+    response.headers.set("location", new URL(destination, origin).toString());
+  } catch {
+    // 只返回本地错误标识，邮件令牌和上游错误不进入页面或日志。
+    response.headers.set("location", new URL(failurePath, origin).toString());
   }
-
-  // 没有 code 也没有 error，回登录页
-  return NextResponse.redirect(`${origin}/login`);
+  return response;
 }

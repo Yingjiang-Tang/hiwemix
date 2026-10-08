@@ -85,6 +85,40 @@ export interface I18nDict {
   registerErrorMismatch: string;
   registerLoginLink: string;
   registerErrorFailed: string;
+  authShowPassword: string;
+  authHidePassword: string;
+  authErrorRateLimit: string;
+  authErrorEmail: string;
+  authErrorPasswordRequirements: string;
+  authErrorSamePassword: string;
+  authPasswordTooLong: string;
+  authEmailUnconfirmed: string;
+  authEmailUnavailable: string;
+  authResendVerification: string;
+  authVerificationSent: string;
+  authChangeEmail: string;
+  authResendIn: (seconds: number) => string;
+  authEmailHint: string;
+  authDidntReceive: string;
+  authCheckingEmail: string;
+  resetTitle: string;
+  resetSubtitle: string;
+  resetSendButton: string;
+  resetResendButton: string;
+  resetCheckEmailTitle: string;
+  resetSentMessage: (email: string) => string;
+  resetInstructions: string;
+  resetNewTitle: string;
+  resetNewSubtitle: string;
+  resetNewPassword: string;
+  resetConfirmPassword: string;
+  resetSubmitButton: string;
+  resetExpired: string;
+  resetSessionExpired: string;
+  resetAccountChanged: string;
+  resetSendFailed: string;
+  resetUpdateFailed: string;
+  resetVerified: string;
   panelTitle: string;
   make: string;
   colorCode: string;
@@ -267,9 +301,9 @@ export const ENGLISH_DEFAULTS: I18nDict = {
   logout: "Logout",
   loginWelcome: "Welcome back",
   loginSubtitle: "Enter your credentials to access the system",
-  loginEmail: "Username",
+  loginEmail: "Email",
   loginPassword: "Password",
-  loginPlaceholderEmail: "Enter your username",
+  loginPlaceholderEmail: "you@example.com",
   loginPlaceholderPassword: "Enter your password",
   loginButton: "Get started",
   loginSigningIn: "Signing in...",
@@ -284,7 +318,7 @@ export const ENGLISH_DEFAULTS: I18nDict = {
   brandSlogan: "CAR REFINISH FORMULA SYSTEM",
   officialWebsite: "Official website",
   loginMobileTitle: "Welcome to HAIWEN",
-  loginErrorEmpty: "Please enter username and password",
+  loginErrorEmpty: "Please enter your email and password",
   loginErrorNetwork: "Network error, please retry",
   loginErrorFailed: "Login failed",
   loginErrorInvalid: "Invalid email or password. If you signed up with Google or Facebook, use the social login buttons below.",
@@ -301,7 +335,7 @@ export const ENGLISH_DEFAULTS: I18nDict = {
   registerConfirmLabel: "Confirm Password",
   registerConfirmPlaceholder: "Re-enter password",
   registerPasswordPlaceholder: "At least 8 characters",
-  registerConfirmEmail: "Account created. Please check your email to confirm your account, then sign in.",
+  registerConfirmEmail: "Check your email for a confirmation link. If you already have an account, sign in or reset your password.",
   registerSuccess: "Registration successful, signing in...",
   backToLogin: "Back to login",
   haveAccount: "Already have an account?",
@@ -312,6 +346,40 @@ export const ENGLISH_DEFAULTS: I18nDict = {
   registerErrorMismatch: "Passwords do not match",
   registerLoginLink: "Already have an account? Sign in",
   registerErrorFailed: "Registration failed",
+  authShowPassword: "Show password",
+  authHidePassword: "Hide password",
+  authErrorRateLimit: "Too many requests. Please wait a minute and try again.",
+  authErrorEmail: "Please enter a valid email address.",
+  authErrorPasswordRequirements: "This password does not meet the security requirements. Try a stronger password.",
+  authErrorSamePassword: "Please choose a password different from your current password.",
+  authPasswordTooLong: "Password must be no more than 128 characters.",
+  authEmailUnconfirmed: "Please confirm your email before signing in. You can resend the confirmation email below.",
+  authEmailUnavailable: "This email cannot be used to create an account. Try signing in or resetting your password.",
+  authResendVerification: "Resend confirmation email",
+  authVerificationSent: "If this account needs confirmation, a new email has been sent. Please check your inbox and spam folder.",
+  authChangeEmail: "Change email",
+  authResendIn: (seconds) => `Resend in ${seconds}s`,
+  authEmailHint: "Check your spam folder too. If you requested several emails, use the most recent link.",
+  authDidntReceive: "Didn't receive the email?",
+  authCheckingEmail: "Verifying your reset link...",
+  resetTitle: "Reset your password",
+  resetSubtitle: "Enter the email associated with your account",
+  resetSendButton: "Send reset link",
+  resetResendButton: "Resend reset email",
+  resetCheckEmailTitle: "Check your email",
+  resetSentMessage: (email) => `If an account exists for ${email}, we've sent a password reset link.`,
+  resetInstructions: "Click the link in the email to reset your password.",
+  resetNewTitle: "Set new password",
+  resetNewSubtitle: "Enter your new password below",
+  resetNewPassword: "New password",
+  resetConfirmPassword: "Confirm password",
+  resetSubmitButton: "Reset password",
+  resetExpired: "This password reset link has expired or has already been used. Please request a new link.",
+  resetSessionExpired: "Your reset session has expired. Please request a new link.",
+  resetAccountChanged: "The signed-in account has changed. Please request a new reset link for the correct account.",
+  resetSendFailed: "Unable to send the email. Please try again later.",
+  resetUpdateFailed: "Unable to update your password. Please try again.",
+  resetVerified: "Email verified. You can now set your new password.",
   panelTitle: "Formula Search",
   make: "Make",
   colorCode: "Color Code",

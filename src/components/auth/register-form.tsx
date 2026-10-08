@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,10 @@ import { Spinner } from "@/components/ui/spinner";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { useLang } from "@/components/LanguageContext";
 import { createClient } from "@/lib/supabase/client";
-import { getErrorMessage } from "@/lib/error-utils";
-import { getEmailRedirectTo } from "@/lib/auth-redirect";
+import { getAuthErrorMessage, isAuthRateLimit } from "@/lib/auth-errors";
+import { useEmailCooldown } from "@/lib/use-email-cooldown";
+import { PasswordInput } from "@/components/auth/password-input";
+import { getEmailRedirectTo, getSafeAuthNext } from "@/lib/auth-redirect";
 import Link from "next/link";
 
 // shadcn login-04 双栏注册表单：左图右表单，保留项目原有 Supabase 注册逻辑与 i18n 文案
@@ -21,109 +23,100 @@ export function RegisterForm({
 }: React.ComponentPropsWithoutRef<"div">) {
   const { t } = useLang();
   const router = useRouter();
-
+  const searchParams = useSearchParams();
+  const next = getSafeAuthNext(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [facebookLoading, setFacebookLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [pending, setPending] = useState<"email" | "google" | "facebook" | "resend" | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [info, setInfo] = useState("");
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const busy = useRef(false);
+  const { cooldown, startCooldown, isCoolingDown } = useEmailCooldown("signup_cooldown_at");
+  const loading = pending === "email";
+  const googleLoading = pending === "google";
+  const facebookLoading = pending === "facebook";
+  const blocked = pending !== null;
+  const waitingForEmail = Boolean(verificationEmail);
 
-  // 邮箱+密码直接注册：signUp 同时创建用户并发送验证邮件
-  async function handleRegister(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email.trim() || !password || !confirmPassword) return;
-    if (password.length < 8) {
-      setError(t.registerErrorPassword);
-      return;
+  useEffect(() => {
+    function onPageshow(event: PageTransitionEvent) {
+      if (event.persisted) { busy.current = false; setPending(null); }
     }
-    if (password !== confirmPassword) {
-      setError(t.registerErrorMismatch);
-      return;
-    }
+    window.addEventListener("pageshow", onPageshow);
+    return () => window.removeEventListener("pageshow", onPageshow);
+  }, []);
+  function finish() { busy.current = false; setPending(null); }
 
-    setLoading(true);
-    setError("");
-    setInfo("");
+  async function handleRegister(event: React.FormEvent) {
+    event.preventDefault();
+    if (busy.current || waitingForEmail || !email.trim() || !password || !confirmPassword) return;
+    if (password.length < 8) { setError({ code: "invalid_password" }); return; }
+    if (password.length > 128) { setError({ code: "password_too_long" }); return; }
+    if (password !== confirmPassword) { setError({ code: "password_mismatch" }); return; }
+    if (isCoolingDown()) { setError({ code: "rate_limit" }); return; }
+    busy.current = true;
+    setPending("email"); setError(null); setInfo("");
+    let navigating = false;
     try {
-      const supabase = createClient();
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          // signup 确认成功后回调路由会自动登录并跳 /?verified=1，next 仅用于 OAuth 等其他场景
-          emailRedirectTo: getEmailRedirectTo("/"),
-        },
+      const { data, error: signUpError } = await createClient().auth.signUp({
+        email: email.trim(), password,
+        options: { emailRedirectTo: getEmailRedirectTo(next, { type: "signup" }) },
       });
-
       if (signUpError) {
-        setError(getErrorMessage(signUpError, t.registerErrorFailed));
-        setLoading(false);
+        if (isAuthRateLimit(signUpError)) startCooldown();
+        setError(signUpError);
         return;
       }
-
-      // signUp 返回 session=null 时，说明 Supabase 开启了邮箱确认，需要用户点邮件链接
       if (!data.session) {
+        setVerificationEmail(email.trim());
         setInfo(t.registerConfirmEmail);
-        setLoading(false);
+        setPassword(""); setConfirmPassword("");
+        startCooldown();
         return;
       }
-
-      // Supabase 关闭了邮箱确认（或已在 SSR 端自动登录），直接跳转首页
-      router.push("/");
+      navigating = true;
+      router.replace(next);
       router.refresh();
-    } catch (err) {
-      setError(getErrorMessage(err, t.registerErrorFailed));
-      setLoading(false);
-    }
+    } catch (err) { setError(err); }
+    finally { if (!navigating) finish(); }
   }
 
-  // Google OAuth 登录
-  async function handleGoogleLogin() {
-    setGoogleLoading(true);
-    setError("");
-    setInfo("");
+  async function handleOAuth(provider: "google" | "facebook") {
+    if (busy.current || waitingForEmail) return;
+    busy.current = true;
+    setPending(provider); setError(null); setInfo("");
+    let navigating = false;
     try {
-      const supabase = createClient();
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
+      const { data, error: oauthError } = await createClient().auth.signInWithOAuth({
+        provider, options: { redirectTo: getEmailRedirectTo(next), skipBrowserRedirect: true },
       });
-      if (oauthError) {
-        setError(getErrorMessage(oauthError, t.oauthGoogleFailed));
-        setGoogleLoading(false);
-      }
-    } catch {
-      setError(t.oauthUnavailable);
-      setGoogleLoading(false);
-    }
+      if (oauthError) { setError(oauthError); return; }
+      if (!data.url) { setError({ code: "oauth_unavailable" }); return; }
+      window.location.assign(data.url);
+      navigating = true;
+    } catch (err) { setError(err); }
+    finally { if (!navigating) finish(); }
   }
 
-  // Facebook OAuth 登录
-  async function handleFacebookLogin() {
-    setFacebookLoading(true);
-    setError("");
-    setInfo("");
+  async function resendVerification() {
+    if (busy.current || isCoolingDown() || !verificationEmail) return;
+    busy.current = true;
+    setPending("resend"); setError(null);
     try {
-      const supabase = createClient();
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: "facebook",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
+      const { error: resendError } = await createClient().auth.resend({
+        type: "signup", email: verificationEmail,
+        options: { emailRedirectTo: getEmailRedirectTo(next, { type: "signup" }) },
       });
-      if (oauthError) {
-        setError(getErrorMessage(oauthError, t.oauthFacebookFailed));
-        setFacebookLoading(false);
+      if (resendError) {
+        if (isAuthRateLimit(resendError)) startCooldown();
+        setError(resendError);
+        return;
       }
-    } catch {
-      setError(t.oauthUnavailable);
-      setFacebookLoading(false);
-    }
+      startCooldown(); setInfo(t.authVerificationSent);
+    } catch (err) { setError(err); }
+    finally { finish(); }
   }
 
   return (
@@ -141,6 +134,13 @@ export function RegisterForm({
             <Label htmlFor="email">{t.loginEmail}</Label>
             <Input
               id="email"
+              name="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              disabled={blocked || waitingForEmail}
+              className="max-md:h-11"
               type="email"
               placeholder={t.loginPlaceholderEmail}
               value={email}
@@ -152,8 +152,12 @@ export function RegisterForm({
 
           <div className="grid gap-2">
             <Label htmlFor="password">{t.loginPassword}</Label>
-            <Input
+            <PasswordInput
               id="password"
+              name="password"
+              autoComplete="new-password"
+              maxLength={128}
+              disabled={blocked || waitingForEmail}
               type="password"
               placeholder={t.registerPasswordPlaceholder}
               value={password}
@@ -165,8 +169,12 @@ export function RegisterForm({
 
           <div className="grid gap-2">
             <Label htmlFor="confirmPassword">{t.registerConfirmLabel}</Label>
-            <Input
+            <PasswordInput
               id="confirmPassword"
+              name="confirmPassword"
+              autoComplete="new-password"
+              maxLength={128}
+              disabled={blocked || waitingForEmail}
               type="password"
               placeholder={t.registerConfirmPlaceholder}
               value={confirmPassword}
@@ -178,10 +186,10 @@ export function RegisterForm({
 
           <Button
             type="submit"
-            disabled={loading}
+            disabled={blocked || waitingForEmail || cooldown > 0}
             className="h-11 w-full rounded-xl text-sm font-medium"
           >
-            {loading ? <Spinner className="size-4" /> : t.registerButton}
+            {loading ? <Spinner className="size-4" /> : cooldown > 0 && !waitingForEmail ? t.authResendIn(cooldown) : t.registerButton}
           </Button>
 
           {/* 分隔线 */}
@@ -197,8 +205,8 @@ export function RegisterForm({
             <Button
               type="button"
               variant="outline"
-              disabled={loading || googleLoading}
-              onClick={handleGoogleLogin}
+              disabled={blocked || waitingForEmail}
+              onClick={() => void handleOAuth("google")}
               className="h-11 w-full rounded-xl text-sm font-medium text-foreground transition-all hover:scale-[1.01] hover:bg-muted/50"
             >
               {googleLoading ? (
@@ -232,8 +240,8 @@ export function RegisterForm({
             <Button
               type="button"
               variant="outline"
-              disabled={loading || facebookLoading}
-              onClick={handleFacebookLogin}
+              disabled={blocked || waitingForEmail}
+              onClick={() => void handleOAuth("facebook")}
               className="h-11 w-full rounded-xl text-sm font-medium text-foreground transition-all hover:scale-[1.01] hover:bg-muted/50"
             >
               {facebookLoading ? (
@@ -262,13 +270,24 @@ export function RegisterForm({
             </div>
           )}
 
+          {waitingForEmail && (
+            <div className="grid gap-2 text-center text-sm text-muted-foreground">
+              <p className="break-words font-medium text-foreground">{verificationEmail}</p>
+              <p>{t.authEmailHint}</p>
+              <Button type="button" variant="outline" onClick={() => void resendVerification()} disabled={blocked || cooldown > 0} className="h-11 w-full rounded-xl text-sm font-medium">
+                {pending === "resend" ? <Spinner className="size-4" /> : cooldown > 0 ? t.authResendIn(cooldown) : t.authResendVerification}
+              </Button>
+              <button type="button" disabled={blocked} onClick={() => { setVerificationEmail(""); setInfo(""); setError(null); }} className="font-medium text-primary hover:underline max-md:min-h-11 max-md:min-w-11">{t.authChangeEmail}</button>
+            </div>
+          )}
+
           {/* 错误提示 */}
-          {error && (
+          {Boolean(error) && (
             <div
               role="alert"
               className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-2xs text-destructive"
             >
-              {error}
+              {getAuthErrorMessage(error, t, t.registerErrorFailed)}
             </div>
           )}
 
@@ -276,8 +295,8 @@ export function RegisterForm({
           <div className="mt-auto pt-6 text-center text-sm text-muted-foreground">
             {t.haveAccount}{" "}
             <Link
-              href="/login"
-              className="font-medium text-primary underline underline-offset-4 hover:opacity-80"
+              href={{ pathname: "/login", query: { next } }}
+              className="font-medium text-primary underline underline-offset-4 hover:opacity-80 max-md:inline-flex max-md:min-h-11 max-md:items-center"
             >
               {t.loginLink}
             </Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,10 @@ import { Spinner } from "@/components/ui/spinner";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { useLang } from "@/components/LanguageContext";
 import { createClient } from "@/lib/supabase/client";
-import { getErrorMessage } from "@/lib/error-utils";
+import { getAuthErrorMessage, isAuthRateLimit } from "@/lib/auth-errors";
+import { getEmailRedirectTo, getSafeAuthNext } from "@/lib/auth-redirect";
+import { useEmailCooldown } from "@/lib/use-email-cooldown";
+import { PasswordInput } from "@/components/auth/password-input";
 import Link from "next/link";
 
 // shadcn login-04 双栏登录表单：左表单 + 右图片，保留项目原有 Supabase 认证逻辑与 i18n 文案
@@ -20,131 +23,93 @@ export function LoginForm({
   const { t } = useLang();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const next = getSafeAuthNext(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [facebookLoading, setFacebookLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [pending, setPending] = useState<"email" | "google" | "facebook" | "resend" | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [success, setSuccess] = useState("");
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const busy = useRef(false);
+  const { cooldown, startCooldown, isCoolingDown } = useEmailCooldown("signup_cooldown_at");
+  const loading = pending === "email";
+  const googleLoading = pending === "google";
+  const facebookLoading = pending === "facebook";
+  const blocked = pending !== null;
 
-  // 显示密码重置成功 / 邮箱确认成功 / 回调错误的消息
   useEffect(() => {
-    if (searchParams.get("reset") === "success") {
-      setSuccess(t.loginResetSuccess);
-    }
-    const errParam = searchParams.get("error");
-    if (errParam) {
-      // 只接受白名单标识符，映射到本地化文案；绝不透传上游原始错误字符串（防信息泄露——AUTH-3）
-      setError(errParam === "link_invalid" ? t.loginErrorLink : t.loginErrorFailed);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  // OAuth 跳转后若用户点浏览器「返回」，bfcache 恢复页面时重置 loading，避免按钮卡死（AUTH-9）
+    setSuccess(searchParams.get("reset") === "success" ? t.loginResetSuccess : "");
+    if (searchParams.get("error")) setError({ code: "link_invalid" });
+  }, [searchParams, t.loginResetSuccess]);
   useEffect(() => {
-    function onPageshow(e: PageTransitionEvent) {
-      if (e.persisted) {
-        setLoading(false);
-        setGoogleLoading(false);
-        setFacebookLoading(false);
-      }
+    function onPageshow(event: PageTransitionEvent) {
+      if (event.persisted) { busy.current = false; setPending(null); }
     }
     window.addEventListener("pageshow", onPageshow);
     return () => window.removeEventListener("pageshow", onPageshow);
   }, []);
 
-  // 邮箱+密码登录
-  async function handleEmailLogin(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email.trim() || !password) return;
-    setLoading(true);
-    setError("");
-    setSuccess("");
+  function finish() { busy.current = false; setPending(null); }
+
+  async function handleEmailLogin(event: React.FormEvent) {
+    event.preventDefault();
+    if (busy.current || !email.trim() || !password) return;
+    busy.current = true;
+    setPending("email"); setError(null); setSuccess(""); setVerificationEmail("");
+    let navigating = false;
     try {
-      const supabase = createClient();
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      const { error: loginError } = await createClient().auth.signInWithPassword({ email: email.trim(), password });
       if (loginError) {
-        const msg = getErrorMessage(loginError, t.loginErrorFailed);
-        if (msg.toLowerCase().includes("credentials")) {
-          setError(t.loginErrorInvalid);
-        } else {
-          setError(msg);
-        }
-        setLoading(false);
+        if (loginError.code === "email_not_confirmed") setVerificationEmail(email.trim());
+        setError(loginError);
         return;
       }
-      // 登录成功：回到登录前想访问的页面（next 参数，同源校验防开放重定向），否则去首页
-      const next = searchParams.get("next");
-      let safeNext = "/";
-      if (next) {
-        try {
-          // 用 URL 解析校验同源：拒绝 //evil.com、/\evil.com、编码反斜杠等所有变体（对齐 auth/callback 的 AUTH-5）
-          const u = new URL(next, window.location.origin);
-          if (u.origin === window.location.origin) safeNext = next;
-        } catch {
-          // 非法 URL → 回首页
-        }
-      }
-      router.push(safeNext);
-    } catch (err) {
-      setError(getErrorMessage(err, t.loginErrorFailed));
-      setLoading(false);
-    }
+      navigating = true;
+      router.replace(next);
+      router.refresh();
+    } catch (err) { setError(err); }
+    finally { if (!navigating) finish(); }
   }
 
-  // Google OAuth 登录
-  async function handleGoogleLogin() {
-    setGoogleLoading(true);
-    setError("");
-    setSuccess("");
+  async function handleOAuth(provider: "google" | "facebook") {
+    if (busy.current) return;
+    busy.current = true;
+    setPending(provider); setError(null); setSuccess("");
+    let navigating = false;
     try {
-      const supabase = createClient();
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
+      const { data, error: oauthError } = await createClient().auth.signInWithOAuth({
+        provider, options: { redirectTo: getEmailRedirectTo(next), skipBrowserRedirect: true },
       });
-      if (oauthError) {
-        setError(getErrorMessage(oauthError, t.oauthGoogleFailed));
-        setGoogleLoading(false);
-      }
-    } catch {
-      setError(t.oauthUnavailable);
-      setGoogleLoading(false);
-    }
+      if (oauthError) { setError(oauthError); return; }
+      if (!data.url) { setError({ code: "oauth_unavailable" }); return; }
+      window.location.assign(data.url);
+      navigating = true;
+    } catch (err) { setError(err); }
+    finally { if (!navigating) finish(); }
   }
 
-  // Facebook OAuth 登录
-  async function handleFacebookLogin() {
-    setFacebookLoading(true);
-    setError("");
-    setSuccess("");
+  async function resendVerification() {
+    if (busy.current || isCoolingDown() || !verificationEmail) return;
+    busy.current = true;
+    setPending("resend"); setError(null); setSuccess("");
     try {
-      const supabase = createClient();
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: "facebook",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
+      const { error: resendError } = await createClient().auth.resend({
+        type: "signup", email: verificationEmail,
+        options: { emailRedirectTo: getEmailRedirectTo(next, { type: "signup" }) },
       });
-      if (oauthError) {
-        setError(getErrorMessage(oauthError, t.oauthFacebookFailed));
-        setFacebookLoading(false);
+      if (resendError) {
+        if (isAuthRateLimit(resendError)) startCooldown();
+        setError(resendError);
+        return;
       }
-    } catch {
-      setError(t.oauthUnavailable);
-      setFacebookLoading(false);
-    }
+      startCooldown(); setSuccess(t.authVerificationSent);
+    } catch (err) { setError(err); }
+    finally { finish(); }
   }
 
   return (
-    <AuthCard {...props}>
-      <form className="flex min-h-[700px] flex-col p-6 md:p-8" onSubmit={handleEmailLogin} autoComplete="off">
+    <AuthCard className={className} {...props}>
+      <form className="flex min-h-[700px] flex-col p-6 md:p-8" onSubmit={handleEmailLogin}>
             <div className="mt-5 flex flex-col gap-6">
               <div className="flex flex-col items-center gap-2 text-center">
                 <h1 className="text-2xl font-bold text-foreground">{t.loginWelcome}</h1>
@@ -157,11 +122,17 @@ export function LoginForm({
                 <Label htmlFor="email">{t.loginEmail}</Label>
                 <Input
                   id="email"
+                  name="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  disabled={blocked}
+                  className="max-md:h-11"
                   type="email"
                   placeholder={t.loginPlaceholderEmail}
-                  autoComplete="off"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); setVerificationEmail(""); }}
                   required
                 />
               </div>
@@ -171,16 +142,18 @@ export function LoginForm({
                   <Label htmlFor="password">{t.loginPassword}</Label>
                   <Link
                     href="/reset-password"
-                    className="ml-auto text-sm text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+                    className="max-md:inline-flex max-md:min-h-11 max-md:items-center ml-auto text-sm text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
                   >
                     {t.forgotPassword}
                   </Link>
                 </div>
-                <Input
+                <PasswordInput
                   id="password"
+                  name="password"
                   type="password"
                   placeholder={t.loginPlaceholderPassword}
-                  autoComplete="off"
+                  autoComplete="current-password"
+                  disabled={blocked}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -189,7 +162,7 @@ export function LoginForm({
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={blocked}
                 className="h-11 w-full rounded-xl text-sm font-medium"
               >
                 {loading ? <Spinner className="size-4" /> : t.loginButton}
@@ -208,8 +181,8 @@ export function LoginForm({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={loading || googleLoading}
-                  onClick={handleGoogleLogin}
+                  disabled={blocked}
+                  onClick={() => void handleOAuth("google")}
                   className="h-11 w-full rounded-xl text-sm font-medium text-foreground transition-all hover:scale-[1.01] hover:bg-muted/50"
                 >
                   {googleLoading ? (
@@ -243,8 +216,8 @@ export function LoginForm({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={loading || facebookLoading}
-                  onClick={handleFacebookLogin}
+                  disabled={blocked}
+                  onClick={() => void handleOAuth("facebook")}
                   className="h-11 w-full rounded-xl text-sm font-medium text-foreground transition-all hover:scale-[1.01] hover:bg-muted/50"
                 >
                   {facebookLoading ? (
@@ -266,7 +239,7 @@ export function LoginForm({
               {/* 成功提示 */}
               {success && (
                 <div
-                  role="alert"
+                  role="status"
                   className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-2xs text-primary"
                 >
                   {success}
@@ -274,12 +247,21 @@ export function LoginForm({
               )}
 
               {/* 错误提示 */}
-              {error && (
+              {Boolean(error) && (
                 <div
                   role="alert"
                   className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-2xs text-destructive"
                 >
-                  {error}
+                  {getAuthErrorMessage(error, t, t.loginErrorFailed)}
+                </div>
+              )}
+
+              {verificationEmail && (
+                <div className="grid gap-2 text-center text-sm text-muted-foreground">
+                  <p>{t.authEmailHint}</p>
+                  <Button type="button" variant="outline" onClick={() => void resendVerification()} disabled={blocked || cooldown > 0} className="h-11 w-full rounded-xl text-sm font-medium">
+                    {pending === "resend" ? <Spinner className="size-4" /> : cooldown > 0 ? t.authResendIn(cooldown) : t.authResendVerification}
+                  </Button>
                 </div>
               )}
 
@@ -287,8 +269,8 @@ export function LoginForm({
               <div className="mt-auto pt-6 text-center text-sm text-muted-foreground">
                 {t.noAccount}{" "}
                 <Link
-                  href="/register"
-                  className="font-medium text-primary underline underline-offset-4 hover:opacity-80"
+                  href={{ pathname: "/register", query: { next } }}
+                  className="font-medium text-primary underline underline-offset-4 hover:opacity-80 max-md:inline-flex max-md:min-h-11 max-md:items-center"
                 >
                   {t.signUp}
                 </Link>

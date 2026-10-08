@@ -192,6 +192,21 @@ export interface Toner {
 // TDS 文档主表
 export type DocType = 'tds' | 'msds' | 'sds' | 'manual'
 
+// 客户端认证状态：权限的最终判断仍由服务端执行。
+export interface AuthUser {
+  id: string
+  email: string
+  role: string
+}
+
+export interface AuthContextValue {
+  user: AuthUser | null
+  loading: boolean
+  login: (user: AuthUser) => void
+  logout: () => Promise<void>
+  refreshUser: () => Promise<void>
+}
+
 export interface Guide {
   id: string
   categoryId: string

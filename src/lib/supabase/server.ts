@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { fetchWithAuthTimeout } from "@/lib/auth-fetch";
 
 // 服务端 Supabase 客户端 — 用于 API Routes / Server Components
 // 通过 cookies() 自动读取并刷新 session
@@ -10,6 +11,7 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: { fetch: fetchWithAuthTimeout },
       cookies: {
         getAll() {
           return cookieStore.getAll();

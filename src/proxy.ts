@@ -29,7 +29,7 @@ export async function proxy(req: NextRequest) {
 
   // 公开路由，不需要认证（全站内容已锁定：仅认证页 + auth 回调 + 静态资源）
   // 精确匹配的路由（页面）
-  const exactPublic = ["/login", "/register", "/reset-password"];
+  const exactPublic = ["/login", "/register", "/reset-password", "/auth/recovery"];
   // 前缀匹配的路由（API + 静态资源）
   // 注意：/api/auth/login、/api/auth/register 路由并不存在，不列入白名单（避免未来误开放）
   const prefixPublic = [
@@ -48,25 +48,30 @@ export async function proxy(req: NextRequest) {
   const { supabaseResponse, user } = await updateSession(req);
 
   // 未登录 → 返回 401（API）或重定向到登录页（页面，带上原目标便于登录后跳回）
+  let response: NextResponse;
   if (!user) {
     if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+      response = NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+    } else {
+      const next = encodeURIComponent(pathname + req.nextUrl.search);
+      response = NextResponse.redirect(new URL(`/login?next=${next}`, req.url));
     }
-    const next = encodeURIComponent(pathname + req.nextUrl.search);
-    return NextResponse.redirect(new URL(`/login?next=${next}`, req.url));
+  } else {
+    // 将用户信息附加到 request header；具体管理员授权仍由各接口检查。
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-user-id", user.id);
+    requestHeaders.set("x-user-email", user.email ?? "");
+    response = NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  // 将用户信息附加到 request header，供下游 API 路由使用
-  // admin 角色的具体授权检查在各 API 路由中独立完成
-  const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-user-id", user.id);
-  requestHeaders.set("x-user-email", user.email ?? "");
-
-  // 复制 supabase 写入的 session cookie 到最终响应
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  // 重定向和 401 也需保留会话清理，刷新凭据的响应禁止被共享缓存。
   supabaseResponse.cookies.getAll().forEach((c) => {
     response.cookies.set(c.name, c.value, c);
   });
+  for (const name of ["cache-control", "expires", "pragma"]) {
+    const value = supabaseResponse.headers.get(name);
+    if (value) response.headers.set(name, value);
+  }
 
   return response;
 }
