@@ -486,9 +486,6 @@ export default function SearchResults({
   // 手机端：品牌筛选栏折叠/展开
   const [filterExpanded, setFilterExpanded] = useState(false);
 
-  // sticky 品牌筛选栏
-  const barRef = useRef<HTMLDivElement>(null);
-
   // 新搜索产生新的 rows 时，重置品牌筛选为「全部品牌」（新结果里不一定还有之前选中的品牌）
   useEffect(() => {
     setActiveMake(ALL_MAKES);
