@@ -1,3 +1,4 @@
+import { safeJson, adminWriteError } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { requireSupabaseAuth, requireSupabaseAdmin } from "@/lib/auth";
 import { applyRateLimit, ADMIN_LIMIT } from "@/lib/rate-limit";
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
   if (limitRes_GET) return limitRes_GET;
   const { error } = await checkAdmin();
   if (error) return error;
-  return NextResponse.json(await getBrands());
+  return safeJson(() => getBrands());
 }
 
 export async function POST(req: NextRequest) {
@@ -28,11 +29,13 @@ export async function POST(req: NextRequest) {
   if (error) return error;
   let body: CarMake;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "请求格式错误" }, { status: 400 }); }
-  if (!body.id || !body.name || !body.region) {
+  if (!body?.id || !body.name || !body.region) {
     return NextResponse.json({ error: "缺少必填字段（id/name/region）" }, { status: 400 });
   }
-  const saved = await saveBrand(body);
-  return NextResponse.json(saved, { status: 201 });
+  try {
+    const saved = await saveBrand(body, true);
+    return NextResponse.json(saved, { status: 201 });
+  } catch (e) { return adminWriteError(e); }
 }
 
 export async function PUT(req: NextRequest) {
@@ -42,11 +45,13 @@ export async function PUT(req: NextRequest) {
   if (error) return error;
   let body: CarMake;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "请求格式错误" }, { status: 400 }); }
-  if (!body.id) {
+  if (!body?.id) {
     return NextResponse.json({ error: "缺少 ID" }, { status: 400 });
   }
-  const saved = await saveBrand(body);
-  return NextResponse.json(saved);
+  try {
+    const saved = await saveBrand(body);
+    return NextResponse.json(saved);
+  } catch (e) { return adminWriteError(e); }
 }
 
 export async function DELETE(req: NextRequest) {
@@ -56,8 +61,10 @@ export async function DELETE(req: NextRequest) {
   if (error) return error;
   let body: { id?: string };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "请求格式错误" }, { status: 400 }); }
-  const { id } = body;
+  const id = body?.id;
   if (!id) return NextResponse.json({ error: "缺少 ID" }, { status: 400 });
-  await deleteBrand(id);
-  return NextResponse.json({ success: true });
+  try {
+    await deleteBrand(id);
+    return NextResponse.json({ success: true });
+  } catch (e) { return adminWriteError(e); }
 }

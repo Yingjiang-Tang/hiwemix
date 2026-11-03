@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAdminJson } from "@/lib/admin-fetch";
+import DataLoadError from "./DataLoadError";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { Guide, GuideCategory, DocType } from "@/types";
@@ -50,6 +53,7 @@ const EMPTY_FORM = {
   content: "",
   contentZh: "",
   isPublished: true,
+  sortOrder: 0,
 };
 
 // 分类筛选「全部」哨兵值（Base UI SelectItem 不接受空字符串 value，用 "all" 表示不筛选）
@@ -59,6 +63,7 @@ export default function TdsPanel() {
   const [guides, setGuides] = useState<Guide[]>([]);
   const [categories, setCategories] = useState<GuideCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [filterCat, setFilterCat] = useState("");
   const [filterDocType, setFilterDocType] = useState<string>("");
   // 移动端搜索框（桌面端无搜索框，空 query 时不影响桌面端结果）
@@ -72,33 +77,32 @@ export default function TdsPanel() {
   const [page, setPage] = useState(0);
   const [previewLang, setPreviewLang] = useState<"en" | "zh">("zh");
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const editorRevision = useRef(0);
+  useEffect(() => () => { editorRevision.current++; }, []);
+  function resetPending() { editorRevision.current++; setUploading(false); setSaving(false); }
   const ROWS_PER_PAGE = 10;
   const guideIdEdited = useRef(false);
   const catIdEdited = useRef(false);
   // 移动端两栏布局状态（与 ColorsPanel/BrandsPanel 同款模式）
   const [isEditing, setIsEditing] = useState(false);
-  function closeEditor() { setIsEditing(false); }
+  function closeEditor() { resetPending(); setIsEditing(false); }
   // portal 需要在客户端 mounted 后才能访问 document
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
   const fetchGuides = useCallback(async () => {
+    setLoading(true);
     try {
-      const r = await fetch("/api/admin/tds");
-      if (r.ok) setGuides(await r.json());
-    } catch {}
-    setLoading(false);
+      const [nextGuides, nextCategories] = await Promise.all([
+        fetchAdminJson<Guide[]>("/api/admin/tds"), fetchAdminJson<GuideCategory[]>("/api/admin/tds-categories"),
+      ]);
+      setGuides(nextGuides); setCategories(nextCategories); setLoadError(false);
+    } catch { setLoadError(true); }
+    finally { setLoading(false); }
   }, []);
-  const fetchCategories = useCallback(async () => {
-    try {
-      const r = await fetch("/api/admin/tds-categories");
-      if (r.ok) setCategories(await r.json());
-    } catch {}
-  }, []);
-  useEffect(() => {
-    fetchGuides();
-    fetchCategories();
-  }, [fetchGuides, fetchCategories]);
+  const fetchCategories = fetchGuides;
+  useEffect(() => { void fetchGuides(); }, [fetchGuides]);
 
   // 标题自动生成 ID
   useEffect(() => {
@@ -113,6 +117,7 @@ export default function TdsPanel() {
   }, [catForm.name]);
 
   function openCreate() {
+    resetPending();
     setEditing(null);
     setForm({ ...EMPTY_FORM, categoryId: categories[0]?.id || "" });
     setError("");
@@ -122,6 +127,7 @@ export default function TdsPanel() {
 
   // 移动端新增文档：直接进入编辑页面，不弹 Dialog（Dialog 通过 Portal 渲染到 body，CSS 容器无法屏蔽）
   function openCreateMobile() {
+    resetPending();
     setEditing(null);
     setForm({ ...EMPTY_FORM, categoryId: categories[0]?.id || "" });
     setError("");
@@ -130,6 +136,7 @@ export default function TdsPanel() {
   }
 
   function openEdit(g: Guide) {
+    resetPending();
     setEditing(g);
     setForm({
       id: g.id,
@@ -145,6 +152,7 @@ export default function TdsPanel() {
       content: g.content,
       contentZh: g.contentZh,
       isPublished: g.isPublished,
+      sortOrder: g.sortOrder,
     });
     setError("");
     setShowModal(true);
@@ -152,6 +160,7 @@ export default function TdsPanel() {
 
   // 移动端行内编辑：直接进入编辑页面
   function openEditMobile(g: Guide) {
+    resetPending();
     setEditing(g);
     setForm({
       id: g.id,
@@ -167,24 +176,29 @@ export default function TdsPanel() {
       content: g.content,
       contentZh: g.contentZh,
       isPublished: g.isPublished,
+      sortOrder: g.sortOrder,
     });
     setError("");
     setIsEditing(true);
   }
 
   async function handleSave() {
+    if (uploading || saving) return;
+    const revision = editorRevision.current;
     setError("");
     if (!form.id || !form.categoryId || !form.title || !form.titleZh) {
       setError("必填字段不能为空");
       return;
     }
+    setSaving(true);
     try {
       const m = editing ? "PUT" : "POST";
       const r = await fetch("/api/admin/tds", {
         method: m,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, sortOrder: 0 }),
+        body: JSON.stringify(form),
       });
+      if (revision !== editorRevision.current) return;
       if (r.ok) {
         setShowModal(false);
         closeEditor();
@@ -194,8 +208,8 @@ export default function TdsPanel() {
         setError(d.error || "保存失败");
       }
     } catch {
-      setError("网络错误，请重试");
-    }
+      if (revision === editorRevision.current) setError("网络错误，请重试");
+    } finally { if (revision === editorRevision.current) setSaving(false); }
   }
 
   async function handleDelete(g: Guide) {
@@ -246,7 +260,6 @@ export default function TdsPanel() {
         body: JSON.stringify({ id: cat.id }),
       });
       if (res.ok) {
-        fetchCategories();
         fetchGuides();
       } else {
         const d = await res.json();
@@ -258,6 +271,7 @@ export default function TdsPanel() {
   }
 
   async function handleUploadCover(file: File) {
+    const revision = ++editorRevision.current;
     setUploading(true);
     try {
       const fd = new FormData();
@@ -265,15 +279,15 @@ export default function TdsPanel() {
       const r = await fetch("/api/admin/tds-upload", { method: "POST", body: fd });
       if (r.ok) {
         const d = await r.json();
-        setForm((prev) => ({ ...prev, coverImage: d.url }));
+        if (revision === editorRevision.current) setForm((prev) => ({ ...prev, coverImage: d.url }));
       } else {
         const d = await r.json();
-        alert(d.error || "上传失败");
+        if (revision === editorRevision.current) setError(d.error || "上传失败");
       }
     } catch {
-      alert("网络错误，请重试");
+      if (revision === editorRevision.current) setError("网络错误，请重试");
     } finally {
-      setUploading(false);
+      if (revision === editorRevision.current) setUploading(false);
     }
   }
 
@@ -300,6 +314,7 @@ export default function TdsPanel() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
   const pageRows = filtered.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE);
 
+  if (loadError) return <DataLoadError onRetry={fetchGuides} />;
   if (loading) {
     return (
       <div className="flex justify-center py-4">
@@ -333,7 +348,7 @@ export default function TdsPanel() {
                 <SelectTrigger className="h-9 w-full rounded-lg">
                   <SelectValue placeholder="请选择" />
                 </SelectTrigger>
-                <SelectContent className="z-[100] max-h-[200px]">
+                <SelectContent data-admin-data className="z-[100] max-h-[200px]">
                   {categories.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.nameZh}
@@ -348,7 +363,7 @@ export default function TdsPanel() {
                 <SelectTrigger className="h-9 w-full rounded-lg">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-[100]">
+                <SelectContent data-admin-data className="z-[100]">
                   <SelectItem value="tds">TDS</SelectItem>
                   <SelectItem value="msds">MSDS</SelectItem>
                   <SelectItem value="sds">SDS</SelectItem>
@@ -378,7 +393,7 @@ export default function TdsPanel() {
                 <SelectTrigger className="h-9 w-full rounded-lg">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="z-[100]">
+                <SelectContent data-admin-data className="z-[100]">
                   <SelectItem value="true">已发布</SelectItem>
                   <SelectItem value="false">草稿</SelectItem>
                 </SelectContent>
@@ -508,7 +523,7 @@ export default function TdsPanel() {
           <SelectTrigger className="h-9 min-w-[140px] rounded-lg text-sm">
             <SelectValue placeholder="全部分类" />
           </SelectTrigger>
-          <SelectContent className="z-[100] max-h-[200px]">
+          <SelectContent data-admin-data className="z-[100] max-h-[200px]">
             <SelectItem value={ALL_CATEGORIES}>All</SelectItem>
             {categories.map((c) => (
               <SelectItem key={c.id} value={c.id}>
@@ -521,7 +536,7 @@ export default function TdsPanel() {
           <SelectTrigger className="h-9 min-w-[120px] rounded-lg text-sm">
             <SelectValue placeholder="全部类型" />
           </SelectTrigger>
-          <SelectContent className="z-[100]">
+          <SelectContent data-admin-data className="z-[100]">
             <SelectItem value="tds">TDS</SelectItem>
             <SelectItem value="msds">MSDS</SelectItem>
             <SelectItem value="sds">SDS</SelectItem>
@@ -642,8 +657,8 @@ export default function TdsPanel() {
       </div>
 
       {/* 新增/编辑文档对话框 */}
-      <Dialog open={showModal} onOpenChange={(v) => { if (!v) setShowModal(false); }}>
-        <DialogContent className="!max-w-[1400px] flex flex-col gap-0 bg-card max-h-[90vh] p-0 overflow-hidden">
+      <Dialog open={showModal} onOpenChange={(v) => { if (!v) { resetPending(); setShowModal(false); } }}>
+        <DialogContent data-admin-data className="!max-w-[1400px] flex flex-col gap-0 bg-card max-h-[90vh] p-0 overflow-hidden">
           <div className="flex flex-1 flex-col gap-0 overflow-hidden">
             <DialogHeader className="border-b border-border px-6 py-3">
               <DialogTitle>{editing ? "编辑文档" : "新增文档"}</DialogTitle>
@@ -654,10 +669,10 @@ export default function TdsPanel() {
           </div>
 
           <DialogFooter className="border-t border-border bg-muted/30 px-6 py-3 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={() => setShowModal(false)} className="rounded-lg text-sm">
+            <Button variant="outline" onClick={() => { resetPending(); setShowModal(false); }} className="rounded-lg text-sm">
               取消
             </Button>
-            <Button onClick={handleSave} className="rounded-lg bg-primary hover:bg-primary/80">
+            <Button disabled={uploading || saving} onClick={handleSave} className="rounded-lg bg-primary hover:bg-primary/80">
               保存
             </Button>
           </DialogFooter>
@@ -667,7 +682,7 @@ export default function TdsPanel() {
 
       {/* 分类管理对话框 */}
       <Dialog open={showCatModal} onOpenChange={(v) => { if (!v) setShowCatModal(false); }}>
-        <DialogContent className="max-w-sm bg-card">
+        <DialogContent data-admin-data className="max-w-sm bg-card">
           <DialogHeader>
             <DialogTitle>管理分类</DialogTitle>
           </DialogHeader>
@@ -757,7 +772,7 @@ export default function TdsPanel() {
               <SelectTrigger className="h-9 flex-1 rounded-lg text-sm">
                 <SelectValue placeholder="全部分类" />
               </SelectTrigger>
-              <SelectContent className="z-[100] max-h-[200px]">
+              <SelectContent data-admin-data className="z-[100] max-h-[200px]">
                 <SelectItem value={ALL_CATEGORIES}>All</SelectItem>
                 {categories.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
@@ -825,7 +840,7 @@ export default function TdsPanel() {
           {/* 移动端 Cancel/Save 按钮 */}
           <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border -mx-5 -mb-5 px-5 pb-0">
             <Button variant="outline" onClick={closeEditor} className="rounded-lg text-sm">取消</Button>
-            <Button onClick={handleSave} className="rounded-lg bg-primary text-sm hover:bg-primary/80">保存</Button>
+            <Button disabled={uploading || saving} onClick={handleSave} className="rounded-lg bg-primary text-sm hover:bg-primary/80">保存</Button>
           </div>
         </div>
       </div>

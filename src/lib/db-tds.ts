@@ -49,7 +49,7 @@ export async function getGuideById(id: string): Promise<Guide | null> {
 export async function saveGuideCategory(cat: GuideCategory): Promise<GuideCategory> {
   const { data, error } = await getSupabaseAdmin()
     .from("guide_categories")
-    .upsert({
+    .insert({
       id: cat.id,
       name: cat.name,
       name_zh: cat.nameZh,
@@ -65,14 +65,15 @@ export async function saveGuideCategory(cat: GuideCategory): Promise<GuideCatego
 }
 
 export async function deleteGuideCategory(id: string): Promise<void> {
+  const { count, error: countError } = await getSupabaseAdmin().from("guides").select("id", { count: "exact", head: true }).eq("category_id", id);
+  if (countError) throw countError;
+  if (count) throw new Error(`分类仍关联 ${count} 篇文档，请先移动或删除关联文档`);
   const { error } = await getSupabaseAdmin().from("guide_categories").delete().eq("id", id);
   if (error) throw error;
 }
 
-export async function saveGuide(guide: Guide): Promise<Guide> {
-  const { data, error } = await getSupabaseAdmin()
-    .from("guides")
-    .upsert({
+export async function saveGuide(guide: Guide, isNew = false): Promise<Guide> {
+  const row = {
       id: guide.id,
       category_id: guide.categoryId,
       product_sku: guide.productSku ?? null,
@@ -85,11 +86,13 @@ export async function saveGuide(guide: Guide): Promise<Guide> {
       cover_image: guide.coverImage ?? null,
       content: guide.content ?? "",
       content_zh: guide.contentZh ?? "",
-      sort_order: guide.sortOrder ?? 0,
+      // 编辑未传排序时保留原值，避免普通内容编辑重置列表顺序。
+      ...(guide.sortOrder != null ? { sort_order: guide.sortOrder } : isNew ? { sort_order: 0 } : {}),
       is_published: guide.isPublished,
-    })
-    .select()
-    .single();
+    };
+  const table = getSupabaseAdmin().from("guides");
+  const query = isNew ? table.insert(row) : table.update(row).eq("id", guide.id);
+  const { data, error } = await query.select().single();
   if (error) throw error;
   return mapGuideRow(data as Record<string, unknown>);
 }

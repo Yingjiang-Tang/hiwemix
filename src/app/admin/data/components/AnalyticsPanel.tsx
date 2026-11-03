@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -98,21 +98,25 @@ export default function AnalyticsPanel() {
   const [error, setError] = useState("");
   const [data, setData] = useState<AnalyticsSummary | null>(null);
 
+  const requestRevision = useRef(0);
   const fetchData = useCallback(async () => {
+    const revision = ++requestRevision.current;
     setLoading(true);
     setError("");
     try {
       const response = await fetch(`/api/admin/analytics?days=${days}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      setData((await response.json()) as AnalyticsSummary);
+      const nextData = await response.json() as AnalyticsSummary;
+      if (revision === requestRevision.current) setData(nextData);
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : "加载失败");
+      if (revision === requestRevision.current) setError(fetchError instanceof Error ? fetchError.message : "加载失败");
     } finally {
-      setLoading(false);
+      if (revision === requestRevision.current) setLoading(false);
     }
   }, [days]);
 
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  const invalidateRequest = useCallback(() => { requestRevision.current++; }, []);
+  useEffect(() => { void fetchData(); return invalidateRequest; }, [fetchData, invalidateRequest]);
 
   const maxDaily = Math.max(1, ...(data?.dailyViews ?? []).map((item) => item.count));
   const insights = data?.insights;
@@ -129,7 +133,7 @@ export default function AnalyticsPanel() {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="font-heading text-lg font-semibold">分析中心</h2>
-          <p className="mt-1 text-sm text-muted-foreground">网站使用、搜索质量与调漆运营指标</p>
+          <p className="mt-1 text-sm text-muted-foreground">网站使用、搜索质量与调漆运营指标（UTC 日期）</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {DAY_OPTIONS.map((option) => (

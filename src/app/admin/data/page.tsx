@@ -1,9 +1,7 @@
 ﻿"use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
-import { useAuth } from "@/components/AuthContext";
 import BrandsPanel from "./components/BrandsPanel";
 import ColorsPanel from "./components/ColorsPanel";
 import VariantsPanel from "./components/VariantsPanel";
@@ -13,7 +11,6 @@ import AnalyticsPanel from "./components/AnalyticsPanel";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Spinner } from "@/components/ui/spinner";
 import { Tag, Droplet, Layers, Beaker, FileText, BarChart3, Plus } from "lucide-react";
 
 const TABS = [
@@ -29,7 +26,7 @@ type TabKey = (typeof TABS)[number]["key"];
 
 function SideNav({ activeTab, onSelect, onClose }: { activeTab: TabKey; onSelect: (k: TabKey) => void; onClose?: () => void }) {
   return (
-    <nav>
+    <nav data-admin-data>
       <div className="flex flex-col gap-0.5 py-3">
         {TABS.map((tab) => {
           const Icon = tab.icon;
@@ -61,29 +58,14 @@ function SideNav({ activeTab, onSelect, onClose }: { activeTab: TabKey; onSelect
 }
 
 export default function DataManagementPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+  // 管理员权限已由服务端 admin/layout 校验，避免客户端角色加载时误跳转。
   const [activeTab, setActiveTab] = useState<TabKey>("brands");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  useEffect(() => {
-    if (!loading && (!user || user.role !== "admin")) {
-      router.push("/login");
-    }
-  }, [user, loading, router]);
-
   useEffect(() => { setMobileNavOpen(false); }, [activeTab]);
 
-  if (loading || !user || user.role !== "admin") {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Spinner className="size-8" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen overflow-x-clip bg-background">
+    <div data-admin-data className="min-h-screen overflow-x-clip bg-background">
       <SiteHeader />
 
       {/* 移动端：Header 下方独立一栏放汉堡菜单按钮（与 Header 右侧汉堡按钮对齐） */}
@@ -95,7 +77,7 @@ export default function DataManagementPage() {
           <button
             onClick={() => setMobileNavOpen((v) => !v)}
             aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
-            className="inline-flex size-9 items-center justify-center rounded-lg text-foreground"
+            className="inline-flex size-9 max-md:size-11 items-center justify-center rounded-lg text-foreground"
           >
             <span className="relative flex size-5 flex-col items-center justify-center">
               <span
@@ -115,7 +97,7 @@ export default function DataManagementPage() {
               />
             </span>
           </button>
-          <div id="mobile-brand-action-portal" className="ml-auto flex items-center" />
+          <div data-admin-data id="mobile-brand-action-portal" className="ml-auto flex items-center" />
         </div>
       </div>
 
@@ -134,7 +116,7 @@ export default function DataManagementPage() {
         </Sheet>
 
         {/* 右侧主区 — min-w-0：允许 flex 子项收缩到视口宽，表格才能在自己的容器内横向滚动（否则 min-w-max 的表格会把 main 撑宽被外层 clip 裁剪） */}
-        <main className="min-w-0 flex-1 min-h-[calc(100vh-64px)] px-6 py-6 sm:px-8 md:px-[60px]">
+        <main data-admin-data className="min-w-0 flex-1 min-h-[calc(100vh-64px)] px-6 py-6 sm:px-8 md:px-[60px]">
           {activeTab === "brands" && <BrandsPanel />}
           {activeTab === "colors" && <ColorsPanel />}
           {activeTab === "variants" && <VariantsPanel />}

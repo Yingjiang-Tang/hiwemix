@@ -273,17 +273,20 @@ function mapFormulaRow(row: Record<string, unknown>, tonerMap?: Map<string, Tone
 
 // --- Brands ---
 
-export async function saveBrand(brand: CarMake): Promise<CarMake> {
-  const { data, error } = await getSupabaseAdmin()
-    .from("brands")
-    .upsert({ id: brand.id, name: brand.name, region: brand.region })
-    .select()
-    .single();
+export async function saveBrand(brand: CarMake, isNew = false): Promise<CarMake> {
+  const table = getSupabaseAdmin().from("brands");
+  const row = { id: brand.id, name: brand.name, region: brand.region };
+  const query = isNew ? table.insert(row) : table.update(row).eq("id", brand.id);
+  const { data, error } = await query.select().single();
   if (error) throw error;
   return data as CarMake;
 }
 
 export async function deleteBrand(id: string): Promise<void> {
+  // 禁止从品牌入口级联删除颜色及配方。
+  const { count, error: countError } = await getSupabaseAdmin().from("colors").select("id", { count: "exact", head: true }).eq("make_id", id);
+  if (countError) throw countError;
+  if (count) throw new Error(`品牌仍关联 ${count} 个颜色，请先处理关联颜色`);
   const { error } = await getSupabaseAdmin().from("brands").delete().eq("id", id);
   if (error) throw error;
 }
@@ -346,7 +349,7 @@ export async function saveColor(
   });
   if (error) {
     // 23505 = unique_violation（主键冲突）：给出可读的重复提示
-    if (error.code === "23505") {
+    if (isNew && error.code === "23505" && (error.message.includes("colors_pkey") || error.message.startsWith("color id "))) {
       throw new Error(`颜色 ID「${color.id}」已存在，无法重复新增。请修改颜色代码/类型，或使用编辑功能。`);
     }
     throw new Error(error.message || JSON.stringify(error));

@@ -1,57 +1,10 @@
+import { safeJson, adminWriteError } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { checkSupabaseAdmin } from "@/lib/auth";
 import { applyRateLimit, ADMIN_LIMIT } from "@/lib/rate-limit";
 import { getFormulas, saveFormula, deleteFormula } from "@/lib/db-formula";
-import { getSupabaseAdmin } from "@/lib/supabase-server";
+import { validateFormula } from "@/lib/admin-validation";
 import type { Formula } from "@/types";
-
-// 从 Supabase Storage 公开 URL 提取相对路径（去掉 /storage/v1/object/public/<bucket>/ 前缀）
-// 例：https://xxx.supabase.co/storage/v1/object/public/formula-images/abc.jpg → "abc.jpg"
-function extractStoragePath(publicUrl: string, bucket: string): string | null {
-  const marker = `/object/public/${bucket}/`;
-  const idx = publicUrl.indexOf(marker);
-  if (idx < 0) return null;
-  const path = publicUrl.slice(idx + marker.length);
-  return path || null;
-}
-
-function validateFormula(body: Formula): string | null {
-  if (body.paint_system === "2K" && body.formula_type !== "Single Stage") {
-    return "2K 体系只能使用 Single Stage";
-  }
-  if (body.paint_system === "1K" && !["Two Stages", "Three Stages"].includes(body.formula_type)) {
-    return "1K 体系只能选择 Two Stages 或 Three Stages";
-  }
-  if (body.formula_type !== "Three Stages") {
-    const hasGroup = body.components.some((c) => c.component_group != null);
-    if (hasGroup) return "非 Three Stages 配方不能设置 component_group";
-  }
-  if (body.formula_type === "Three Stages") {
-    const missing = body.components.filter((c) => c.component_group == null).map(c => c.toner_code || "(空)");
-    if (missing.length > 0) return `Three Stages 配方的每个色母都必须选择分组（缺失分组：${missing.join(", ")}）`;
-    const pearlComps = body.components.filter(c => c.component_group === "Pearl Paint");
-    const groundComps = body.components.filter(c => c.component_group === "Ground Paint");
-    // 补全：Three Stages 必须两组都存在（与 FormulasPanel UI 校验对齐），否则放行残缺配方
-    if (pearlComps.length === 0) return "Three Stages 配方必须包含 Pearl Paint 色母组分";
-    if (groundComps.length === 0) return "Three Stages 配方必须包含 Ground Paint 色母组分";
-    const pearlSum = pearlComps.reduce((sum, c) => sum + c.percentage, 0);
-    const groundSum = groundComps.reduce((sum, c) => sum + c.percentage, 0);
-    if (Math.abs(pearlSum - 100) > 1) {
-      return `Pearl Paint 组分百分比总和为 ${pearlSum.toFixed(1)}%，应接近 100%`;
-    }
-    if (Math.abs(groundSum - 100) > 1) {
-      return `Ground Paint 组分百分比总和为 ${groundSum.toFixed(1)}%，应接近 100%`;
-    }
-  } else {
-    // 补全：空组件列表直接拒绝（无组件即无配方）
-    if (body.components.length === 0) return "配方至少需要一个色母组件";
-    const totalPct = body.components.reduce((sum, c) => sum + c.percentage, 0);
-    if (Math.abs(totalPct - 100) > 1) {
-      return `色母百分比总和为 ${totalPct.toFixed(1)}%，应接近 100%`;
-    }
-  }
-  return null;
-}
 
 export async function GET(req: NextRequest) {
   // 管理后台限流：每分钟 60 次
@@ -59,7 +12,7 @@ export async function GET(req: NextRequest) {
   if (limitRes_GET) return limitRes_GET;
   const { error } = await checkSupabaseAdmin();
   if (error) return error;
-  return NextResponse.json(await getFormulas());
+  return safeJson(() => getFormulas());
 }
 
 export async function POST(req: NextRequest) {
@@ -71,9 +24,6 @@ export async function POST(req: NextRequest) {
   let body: Formula;
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
-  }
-  if (!body.id || !body.color_id) {
-    return NextResponse.json({ error: "缺少必填字段（id/color_id）" }, { status: 400 });
   }
   const validationError = validateFormula(body);
   if (validationError) {
@@ -107,9 +57,6 @@ export async function PUT(req: NextRequest) {
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
   }
-  if (!body.id) {
-    return NextResponse.json({ error: "缺少 ID" }, { status: 400 });
-  }
   const validationError = validateFormula(body);
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });
@@ -139,27 +86,11 @@ export async function DELETE(req: NextRequest) {
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
   }
-  const { id } = body;
+  const id = body?.id;
   if (!id) return NextResponse.json({ error: "缺少 ID" }, { status: 400 });
-  // 先读取 image_url，删除后清理 storage（best-effort：失败仅记日志，不影响接口返回）
-  const { data: row } = await getSupabaseAdmin()
-    .from("formulas")
-    .select("image_url")
-    .eq("id", id)
-    .maybeSingle();
-  await deleteFormula(id);
-  const oldUrl = (row?.image_url ?? "") as string;
-  if (oldUrl) {
-    const path = extractStoragePath(oldUrl, "formula-images");
-    if (path) {
-      const { error: rmErr } = await getSupabaseAdmin()
-        .storage
-        .from("formula-images")
-        .remove([path]);
-      if (rmErr) {
-        console.warn(`[DELETE /api/admin/formulas] storage remove failed: ${oldUrl}`, rmErr);
-      }
-    }
-  }
-  return NextResponse.json({ success: true });
+  try {
+    // 图片可能被其他配方引用；删除记录时保留存储文件。
+    await deleteFormula(id);
+    return NextResponse.json({ success: true });
+  } catch (e) { return adminWriteError(e); }
 }

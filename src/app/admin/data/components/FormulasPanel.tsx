@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo, type CSSProperties, type FocusEvent } from "react";
+import { fetchAdminJson } from "@/lib/admin-fetch";
+import DataLoadError from "./DataLoadError";
+
+import { useState, useEffect, useCallback, useRef, useMemo, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import type { Formula, FormulaComponent, FormulaType, ComponentGroup, Color, ColorVariant, YearEntry } from "@/types";
+import type { Formula, FormulaComponent, FormulaType, ComponentGroup, Color, ColorVariant } from "@/types";
 import type { Toner, CarMake } from "@/types";
 import { generateUniqueFormulaId } from "@/lib/id-generator";
 import { hexToRgb, filterTonersBySystem, matchingToners, matchingColors } from "./formula-helpers";
@@ -20,16 +23,6 @@ const PEARL_GROUPS: ComponentGroup[] = ["Pearl Paint", "Ground Paint"];
 
 const EMPTY_COMPONENT: FormulaComponent = { toner_code: "", toner_name: "", percentage: 0, grams_per_100g: 0 };
 
-// 从 Supabase Storage 公开 URL 提取相对路径（去掉 /storage/v1/object/public/<bucket>/ 前缀）
-// 例：https://xxx.supabase.co/storage/v1/object/public/formula-images/abc.jpg → "abc.jpg"
-function extractStoragePath(publicUrl: string, bucket: string): string | null {
-  const marker = `/object/public/${bucket}/`;
-  const idx = publicUrl.indexOf(marker);
-  if (idx < 0) return null;
-  const path = publicUrl.slice(idx + marker.length);
-  return path || null;
-}
-
 export default function FormulasPanel() {
   const [formulas, setFormulas] = useState<Formula[]>([]);
   const [colors, setColors] = useState<Color[]>([]);
@@ -37,9 +30,13 @@ export default function FormulasPanel() {
   const [toners, setToners] = useState<Toner[]>([]);
   const [brands, setBrands] = useState<CarMake[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [form, setForm] = useState({ id: "", color_id: "", variant_id: "", version: "v1", paint_system: "2K" as Formula["paint_system"], formula_type: AUTO_2K_TYPE, notes: "", year: undefined as number | undefined, image_url: "" });
-  const [initialImageUrl, setInitialImageUrl] = useState("");
+  const [form, setForm] = useState({ id: "", color_id: "", variant_id: "", version: "v1", paint_system: "2K" as Formula["paint_system"], formula_type: AUTO_2K_TYPE, notes: "", image_url: "" });
+  const editorRevision = useRef(0);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => () => { editorRevision.current++; }, []);
+  function resetPending() { editorRevision.current++; setUploadingImage(false); setSaving(false); }
   const [uploadingImage, setUploadingImage] = useState(false);
   const [components, setComponents] = useState<FormulaComponent[]>([]);
   const [error, setError] = useState("");
@@ -48,19 +45,6 @@ export default function FormulasPanel() {
   const [formulaSearch, setFormulaSearch] = useState("");
   const [formulaPage, setFormulaPage] = useState(0);
   const FORMULAS_PER_PAGE = 10;
-  const [availableYears, setAvailableYears] = useState<YearEntry[]>([]);
-  // 将 YearEntry[] 展开为所有包含的单年（用于下拉选项）
-  const expandedYears = useMemo(() => {
-    const result: number[] = [];
-    for (const e of availableYears) {
-      if (e.year_end == null) {
-        result.push(e.year);
-      } else {
-        for (let y = e.year; y <= e.year_end; y++) result.push(y);
-      }
-    }
-    return [...new Set(result)].sort((a, b) => a - b);
-  }, [availableYears]);
   const [pctInputs, setPctInputs] = useState<Record<number, string>>({});
   const [colorQuery, setColorQuery] = useState("");
   const [colorDropdownOpen, setColorDropdownOpen] = useState(false);
@@ -76,7 +60,7 @@ export default function FormulasPanel() {
   const [tonerDropdownPos, setTonerDropdownPos] = useState<{ left: number; top: number; width: number } | null>(null);
   // 移动端：编辑模式开关
   const [isEditing, setIsEditing] = useState(false);
-  function closeEditor() { setIsEditing(false); }
+  function closeEditor() { resetPending(); setIsEditing(false); }
 
   const percentageSums = useMemo(() => {
     const filled = components.filter((c) => c.toner_code.trim() !== "");
@@ -101,36 +85,39 @@ export default function FormulasPanel() {
 
   useEffect(() => { if (!selectedId && !idManuallyEdited.current && form.color_id && form.version) setForm((prev) => ({ ...prev, id: generateUniqueFormulaId(form.color_id, form.variant_id, form.version, formulas.map((f) => f.id)) })); }, [form.color_id, form.variant_id, form.version, selectedId, formulas]);
 
-  const fetchFormulas = useCallback(async () => { try { const res = await fetch("/api/admin/formulas"); if (res.ok) setFormulas(await res.json()); } catch {} setLoading(false); }, []);
-  useEffect(() => {
-    const ctrl = new AbortController();
-    fetchFormulas();
-    fetch("/api/toners", { signal: ctrl.signal }).then((r) => r.ok ? r.json() : []).then(setToners).catch(() => {});
-    fetch("/api/admin/colors", { signal: ctrl.signal }).then((r) => r.ok ? r.json() : []).then(setColors).catch(() => {});
-    fetch("/api/admin/variants", { signal: ctrl.signal }).then((r) => r.ok ? r.json() : []).then(setFormulaTypes).catch(() => {});
-    fetch("/api/admin/brands", { signal: ctrl.signal }).then((r) => r.ok ? r.json() : []).then(setBrands).catch(() => {});
-    return () => ctrl.abort();
-  }, [fetchFormulas]);
+  const fetchFormulas = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [nextFormulas, nextToners, nextColors, nextTypes, nextBrands] = await Promise.all([
+        fetchAdminJson<Formula[]>("/api/admin/formulas"), fetchAdminJson<Toner[]>("/api/toners"),
+        fetchAdminJson<Color[]>("/api/admin/colors"), fetchAdminJson<ColorVariant[]>("/api/admin/variants"),
+        fetchAdminJson<CarMake[]>("/api/admin/brands"),
+      ]);
+      setFormulas(nextFormulas); setToners(nextToners); setColors(nextColors); setFormulaTypes(nextTypes); setBrands(nextBrands);
+      setLoadError(false);
+    } catch { setLoadError(true); }
+    finally { setLoading(false); }
+  }, []);
+  useEffect(() => { void fetchFormulas(); }, [fetchFormulas]);
 
   const brandMap = useMemo(() => new Map(brands.map((b) => [b.id, b.name])), [brands]);
 
   function selectFormula(formula: Formula) {
+    resetPending();
     setSelectedId(formula.id);
-    setForm({ id: formula.id, color_id: formula.color_id, variant_id: formula.variant_id, version: formula.version, paint_system: formula.paint_system, formula_type: formula.formula_type, notes: formula.notes, year: formula.year, image_url: formula.image_url ?? "" });
-    setInitialImageUrl(formula.image_url ?? "");
+    setForm({ id: formula.id, color_id: formula.color_id, variant_id: formula.variant_id, version: formula.version, paint_system: formula.paint_system, formula_type: formula.formula_type, notes: formula.notes, image_url: formula.image_url ?? "" });
     setComponents(formula.components.map((c) => ({ ...c, grams_per_100g: c.percentage })));
     setPctInputs({});
     setError(""); setMessage("");
     const color = colors.find((c) => c.id === formula.color_id);
     if (color) { const bName = brandMap.get(color.make_id) ?? color.make_id; setColorQuery(`${color.color_code} - ${color.color_name} (${bName})`); } else { setColorQuery(formula.color_id); }
-    setAvailableYears(color?.years || []);
     setIsEditing(true);
   }
 
   function newFormula() {
-    setSelectedId(null); setForm({ id: "", color_id: "", variant_id: "", version: "v1", paint_system: "2K", formula_type: AUTO_2K_TYPE, notes: "", year: undefined, image_url: "" });
-    setInitialImageUrl("");
-    setComponents([]); setPctInputs({}); setError(""); setMessage(""); setColorQuery(""); setAvailableYears([]); idManuallyEdited.current = false;
+    resetPending();
+    setSelectedId(null); setForm({ id: "", color_id: "", variant_id: "", version: "v1", paint_system: "2K", formula_type: AUTO_2K_TYPE, notes: "", image_url: "" });
+    setComponents([]); setPctInputs({}); setError(""); setMessage(""); setColorQuery(""); idManuallyEdited.current = false;
     setIsEditing(true);
   }
 
@@ -147,27 +134,29 @@ export default function FormulasPanel() {
   }
 
   async function handleUploadImage(file: File) {
+    const revision = ++editorRevision.current;
     setUploadingImage(true);
     setError("");
     try {
       const { url } = await uploadFormulaImage(file);
-      setForm((prev) => ({ ...prev, image_url: url }));
+      if (revision === editorRevision.current) setForm((prev) => ({ ...prev, image_url: url }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "上传失败");
+      if (revision === editorRevision.current) setError(e instanceof Error ? e.message : "上传失败");
     } finally {
-      setUploadingImage(false);
+      if (revision === editorRevision.current) setUploadingImage(false);
     }
   }
 
   function handleRemoveImage() {
+    resetPending();
     setForm((prev) => ({ ...prev, image_url: "" }));
   }
 
   function handlePaintSystemChange(next: "1K" | "2K") {
     setForm((prev) => {
       if (next === "2K") return { ...prev, paint_system: next, formula_type: AUTO_2K_TYPE };
-      const availableTypes = formulaTypes.map((v) => v.name).filter((n) => n !== "Single Stage") as FormulaType[];
-      return { ...prev, paint_system: next, formula_type: availableTypes.includes(prev.formula_type as FormulaType) ? prev.formula_type : (availableTypes[0] || AUTO_2K_TYPE) };
+      const availableTypes = formulaTypes.map((v) => v.name).filter((n) => n === "Two Stages" || n === "Three Stages") as FormulaType[];
+      return { ...prev, paint_system: next, formula_type: availableTypes.includes(prev.formula_type as FormulaType) ? prev.formula_type : (availableTypes[0] || "Two Stages") };
     });
     setComponents((prev) => prev.map((c) => {
       const cleared = { ...c, toner_code: "", toner_name: "", percentage: 0, grams_per_100g: 0, rgb_r: undefined, rgb_g: undefined, rgb_b: undefined };
@@ -198,32 +187,24 @@ export default function FormulasPanel() {
   }
 
   async function handleSave() {
+    if (uploadingImage || saving) return;
+    const revision = editorRevision.current;
     setError(""); setMessage("");
     if (!form.id || !form.color_id) { setError("配方 ID 和关联颜色不能为空"); return; }
     const comps = components.filter((c) => c.toner_code.trim()).map((c) => ({ ...c, grams_per_100g: c.percentage }));
     // 变体保留：编辑时沿用已有 variant_id；新建时不关联变体（"" → null）
-    const payload: Formula = { ...form, variant_id: form.variant_id, components: comps, updated_at: "", year: form.year, image_url: form.image_url || undefined };
+    const payload: Formula = { ...form, variant_id: form.variant_id, components: comps, updated_at: "", image_url: form.image_url || undefined };
+    setSaving(true);
     try {
       const res = await fetch("/api/admin/formulas", { method: selectedId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (revision !== editorRevision.current) return;
       if (res.ok) {
         setMessage("保存成功");
-        // 保存成功后清理被替换的旧图（best-effort：从 storage 删物理文件）
-        const newUrl = form.image_url || "";
-        if (initialImageUrl && initialImageUrl !== newUrl) {
-          const oldPath = extractStoragePath(initialImageUrl, "formula-images");
-          if (oldPath) {
-            fetch("/api/admin/formula-image-delete", {
-              method: "DELETE",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ path: oldPath }),
-            }).catch(() => { /* silent: 旧图残留不影响主流程 */ });
-          }
-        }
-        setInitialImageUrl(newUrl);
         fetchFormulas(); setSelectedId(payload.id); closeEditor();
       }
       else { const data = await res.json(); setError(data.error || "保存失败"); }
-    } catch { setError("网络错误，请重试"); }
+    } catch { if (revision === editorRevision.current) setError("网络错误，请重试"); }
+    finally { if (revision === editorRevision.current) setSaving(false); }
   }
 
   async function handleDelete() {
@@ -288,12 +269,9 @@ export default function FormulasPanel() {
                         onChange={(e) => { updateComponent(globalIndex, "toner_code", e.target.value); setTonerQuery(e.target.value); setTonerDropdownFor(globalIndex); }}
                         onFocus={(e) => {
                           setTonerQuery(e.target.value); setTonerDropdownFor(globalIndex);
-                          // 仅移动端：记录输入框位置用于 fixed 定位下拉（脱离横向滚动容器裁剪）；
-                          // 桌面端容器 overflow-visible，下拉保持原 absolute 定位
-                          if (window.matchMedia("(max-width: 767px)").matches) {
-                            const r = e.currentTarget.getBoundingClientRect();
-                            setTonerDropdownPos({ left: r.left, top: r.bottom, width: r.width });
-                          }
+                          // 记录锚点位置；由 CSS 决定移动端 fixed、桌面端 absolute。
+                          const r = e.currentTarget.getBoundingClientRect();
+                          setTonerDropdownPos({ left: r.left, top: r.bottom, width: r.width });
                         }}
                         onBlur={() => { tonerBlurRef.current = setTimeout(() => { setTonerDropdownFor(null); setTonerDropdownPos(null); }, 180); }}
                         className={INPUT_CLASS}
@@ -303,8 +281,8 @@ export default function FormulasPanel() {
                         if (hits.length === 0) return null;
                         return (
                           <div
-                            className="absolute left-2 right-2 top-full z-50 mt-1 max-h-40 overflow-auto rounded-lg border border-border bg-card shadow-lg md:left-2 md:right-2 md:top-full"
-                            style={tonerDropdownPos ? { position: "fixed", left: tonerDropdownPos.left, top: tonerDropdownPos.top, width: tonerDropdownPos.width } : undefined}
+                            className="absolute left-2 right-2 top-full z-50 mt-1 max-h-40 overflow-auto rounded-lg border border-border bg-card shadow-lg max-md:fixed max-md:left-[var(--toner-left)] max-md:top-[var(--toner-top)] max-md:right-auto max-md:w-[var(--toner-width)]"
+                            style={tonerDropdownPos ? { "--toner-left": `${tonerDropdownPos.left}px`, "--toner-top": `${tonerDropdownPos.top}px`, "--toner-width": `${tonerDropdownPos.width}px` } as CSSProperties : undefined}
                           >
                             {hits.map((t) => (
                               <button
@@ -370,6 +348,7 @@ export default function FormulasPanel() {
     );
   }
 
+  if (loadError) return <DataLoadError onRetry={fetchFormulas} />;
   if (loading) return <div className="flex justify-center py-4"><Spinner /></div>;
 
   return (
@@ -451,7 +430,7 @@ export default function FormulasPanel() {
                 {matchingColors(colorQuery, colors, brands).map((c) => {
                   const bName = brandMap.get(c.make_id) ?? c.make_id;
                   return (
-                    <button key={c.id} onMouseDown={() => { setForm((prev) => ({ ...prev, color_id: c.id, variant_id: "", year: undefined })); setColorQuery(`${c.color_code} - ${c.color_name} (${bName})`); setColorDropdownOpen(false); setAvailableYears(c.years || []); }}
+                    <button key={c.id} onMouseDown={() => { setForm((prev) => ({ ...prev, color_id: c.id, variant_id: "" })); setColorQuery(`${c.color_code} - ${c.color_name} (${bName})`); setColorDropdownOpen(false); }}
                       className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted">
                       <div className="size-5 rounded border border-border" style={{ backgroundColor: c.hex_preview }} />
                       <span className="font-medium">{c.color_code}</span>
@@ -463,13 +442,7 @@ export default function FormulasPanel() {
               </div>
             )}
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-sm font-medium text-foreground/80">适用年份</Label>
-            <Select value={form.year?.toString() || ""} onValueChange={(v) => setForm({ ...form, year: v ? parseInt(v, 10) : undefined })} disabled={!form.color_id}>
-              <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue placeholder="所有年份" /></SelectTrigger>
-              <SelectContent>{expandedYears.map((y) => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
+
           <div className="flex flex-col gap-1.5">
             <Label className="text-sm font-medium text-foreground/80">版本</Label>
             <Input value={form.version} onChange={(e) => setForm({ ...form, version: e.target.value })} className="h-9 rounded-lg" />
@@ -478,15 +451,15 @@ export default function FormulasPanel() {
             <Label className="text-sm font-medium text-foreground/80">体系</Label>
             <Select value={form.paint_system} onValueChange={(v) => v ? handlePaintSystemChange(v as "1K" | "2K") : null}>
               <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue /></SelectTrigger>
-              <SelectContent>{PAINT_SYSTEMS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              <SelectContent data-admin-data>{PAINT_SYSTEMS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="flex flex-col gap-1.5">
             <Label className="text-sm font-medium text-foreground/80">配方类型</Label>
             <Select value={form.formula_type} onValueChange={(v) => v ? handleFormulaTypeChange(v as FormulaType) : null} disabled={form.paint_system === "2K"}>
               <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {(form.paint_system === "2K" ? [AUTO_2K_TYPE] : formulaTypes.map((v) => v.name).filter((n) => n !== "Single Stage")).map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              <SelectContent data-admin-data>
+                {(form.paint_system === "2K" ? [AUTO_2K_TYPE] : formulaTypes.map((v) => v.name).filter((n) => n === "Two Stages" || n === "Three Stages")).map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -539,7 +512,7 @@ export default function FormulasPanel() {
 
         <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border -mx-5 -mb-5 px-5 pb-0">
           {selectedId && <Button onClick={handleDelete} variant="outline" className="rounded-lg text-sm text-destructive border-destructive/20 hover:bg-destructive/10">删除配方</Button>}
-          <Button onClick={handleSave} disabled={!percentageValid} className="rounded-lg bg-primary text-sm hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground/30">保存配方</Button>
+          <Button onClick={handleSave} disabled={!percentageValid || uploadingImage || saving} className="rounded-lg bg-primary text-sm hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground/30">保存配方</Button>
         </div>
       </div>
     </div>

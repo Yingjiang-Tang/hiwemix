@@ -58,6 +58,7 @@ export function ColorFormFields({
 }: ColorFormFieldsProps) {
   return (
     <div className="flex flex-col gap-5">
+            {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
             {/* 基本信息卡片 */}
             <div className="rounded-xl border border-border p-5">
               <h3 className="mb-4 text-base font-semibold text-foreground/80 border-b border-border/50 pb-3">基本信息</h3>
@@ -70,7 +71,7 @@ export function ColorFormFields({
                   <Label className="text-sm font-medium text-foreground/80">品牌</Label>
                   <Select value={form.make_id} onValueChange={(v) => setForm({ ...form, make_id: v || "" })}>
                     <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue placeholder="请选择品牌" /></SelectTrigger>
-                    <SelectContent className="z-[100] max-h-[200px]">{brands.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
+                    <SelectContent data-admin-data className="z-[100] max-h-[200px]">{brands.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -111,7 +112,7 @@ export function ColorFormFields({
                           {form.color_type.length === 0 && <span className="text-sm leading-none text-muted-foreground">请选择类型</span>}
                         </div>
                       </SelectTrigger>
-                      <SelectContent className="max-h-[200px]">
+                      <SelectContent data-admin-data className="max-h-[200px]">
                         {COLOR_TYPES.map((t) => (
                           <SelectItem
                             key={t}

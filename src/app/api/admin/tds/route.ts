@@ -1,8 +1,9 @@
+import { safeJson, adminWriteError } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { checkSupabaseAdmin } from "@/lib/auth";
 import { applyRateLimit, ADMIN_LIMIT } from "@/lib/rate-limit";
 import { getGuides, saveGuide, deleteGuide } from "@/lib/db-tds";
-import type { Guide, DocType } from "@/types";
+import type { Guide } from "@/types";
 
 // 管理端：列出所有文档（含草稿）
 export async function GET(req: NextRequest) {
@@ -10,7 +11,7 @@ export async function GET(req: NextRequest) {
   if (limitRes) return limitRes;
   const { error } = await checkSupabaseAdmin();
   if (error) return error;
-  return NextResponse.json(await getGuides());
+  return safeJson(() => getGuides());
 }
 
 export async function POST(req: NextRequest) {
@@ -25,16 +26,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
   }
   const guide = body as unknown as Guide;
-  if (!guide.id || !guide.categoryId || !guide.title || !guide.titleZh) {
+  if (!guide?.id || !guide.categoryId || !guide.title || !guide.titleZh) {
     return NextResponse.json({ error: "缺少必填字段（id/categoryId/title/titleZh）" }, { status: 400 });
   }
   try {
-    const saved = await saveGuide({ ...guide, sortOrder: guide.sortOrder ?? 0 });
+    const saved = await saveGuide({ ...guide, sortOrder: guide.sortOrder ?? 0 }, true);
     return NextResponse.json(saved, { status: 201 });
   } catch (e) {
     // 内部错误脱敏：真实错误只进服务端日志
     console.error("[POST /api/admin/tds]", e);
-    return NextResponse.json({ error: "保存失败，请稍后重试" }, { status: 500 });
+    return adminWriteError(e);
   }
 }
 
@@ -50,7 +51,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
   }
   const guide = body as unknown as Guide;
-  if (!guide.id) {
+  if (!guide?.id) {
     return NextResponse.json({ error: "缺少 ID" }, { status: 400 });
   }
   try {
@@ -59,7 +60,7 @@ export async function PUT(req: NextRequest) {
   } catch (e) {
     // 内部错误脱敏：真实错误只进服务端日志
     console.error("[PUT /api/admin/tds]", e);
-    return NextResponse.json({ error: "保存失败，请稍后重试" }, { status: 500 });
+    return adminWriteError(e);
   }
 }
 
@@ -74,7 +75,7 @@ export async function DELETE(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
   }
-  const id = body.id as string;
+  const id = body?.id as string;
   if (!id) {
     return NextResponse.json({ error: "缺少 ID" }, { status: 400 });
   }

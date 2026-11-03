@@ -1,3 +1,4 @@
+import { safeJson, adminWriteError } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { checkSupabaseAdmin } from "@/lib/auth";
 import { applyRateLimit, ADMIN_LIMIT } from "@/lib/rate-limit";
@@ -9,7 +10,7 @@ export async function GET(req: NextRequest) {
   if (limitRes) return limitRes;
   const { error } = await checkSupabaseAdmin();
   if (error) return error;
-  return NextResponse.json(await getGuideCategories());
+  return safeJson(() => getGuideCategories());
 }
 
 export async function POST(req: NextRequest) {
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
   }
   const cat = body as unknown as GuideCategory;
-  if (!cat.id || !cat.name || !cat.nameZh) {
+  if (!cat?.id || !cat.name || !cat.nameZh) {
     return NextResponse.json({ error: "缺少必填字段（id/name/nameZh）" }, { status: 400 });
   }
   try {
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     // 内部错误脱敏：真实错误只进服务端日志
     console.error("[POST /api/admin/tds-categories]", e);
-    return NextResponse.json({ error: "保存失败，请稍后重试" }, { status: 500 });
+    return adminWriteError(e);
   }
 }
 
@@ -48,7 +49,7 @@ export async function DELETE(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
   }
-  const id = body.id as string;
+  const id = body?.id as string;
   if (!id) {
     return NextResponse.json({ error: "缺少 ID" }, { status: 400 });
   }
@@ -58,6 +59,6 @@ export async function DELETE(req: NextRequest) {
   } catch (e) {
     // 内部错误脱敏：真实错误只进服务端日志
     console.error("[DELETE /api/admin/tds-categories]", e);
-    return NextResponse.json({ error: "删除失败，请稍后重试" }, { status: 500 });
+    return adminWriteError(e);
   }
 }

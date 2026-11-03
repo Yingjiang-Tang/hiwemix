@@ -1,3 +1,5 @@
+import { validateColorYears } from "@/lib/admin-validation";
+import { safeJson, adminWriteError } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { checkSupabaseAdmin } from "@/lib/auth";
 import { applyRateLimit, ADMIN_LIMIT } from "@/lib/rate-limit";
@@ -11,7 +13,7 @@ export async function GET(req: NextRequest) {
   if (limitRes_GET) return limitRes_GET;
   const { error } = await checkSupabaseAdmin();
   if (error) return error;
-  return NextResponse.json(await getColors());
+  return safeJson(() => getColors());
 }
 
 export async function POST(req: NextRequest) {
@@ -22,6 +24,11 @@ export async function POST(req: NextRequest) {
   if (error) return error;
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "请求格式错误" }, { status: 400 }); }
+  if (!body || typeof body !== "object" || !Array.isArray(body.variantIds) || !body.variantIds.every((id) => typeof id === "string")) {
+    return NextResponse.json({ error: "必须提交完整的变体关联数组" }, { status: 400 });
+  }
+  const yearError = validateColorYears(body.years);
+  if (yearError) return NextResponse.json({ error: yearError }, { status: 400 });
   const { variantIds, years, ...rest } = body;
   const color = rest as unknown as Omit<Color, "variants">;
   if (!color.id || !color.make_id || !color.color_code) {
@@ -32,11 +39,7 @@ export async function POST(req: NextRequest) {
     const saved = await saveColor(color, (variantIds as string[]) ?? [], (years as YearEntry[] | undefined) ?? [], true);
     return NextResponse.json(saved, { status: 201 });
   } catch (e) {
-    console.error("[POST /api/admin/colors]", e);
-    const msg = e instanceof Error ? e.message : String(e);
-    // 只回传业务错误（如"颜色 ID 已存在"）；DB 内部错误统一脱敏
-    const isBusiness = msg.includes("已存在") || msg.includes("必须");
-    return NextResponse.json({ error: isBusiness ? msg : "保存失败，请稍后重试" }, { status: 500 });
+    return adminWriteError(e);
   }
 }
 
@@ -48,6 +51,11 @@ export async function PUT(req: NextRequest) {
   if (error) return error;
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "请求格式错误" }, { status: 400 }); }
+  if (!body || typeof body !== "object" || !Array.isArray(body.variantIds) || !body.variantIds.every((id) => typeof id === "string")) {
+    return NextResponse.json({ error: "必须提交完整的变体关联数组" }, { status: 400 });
+  }
+  const yearError = validateColorYears(body.years);
+  if (yearError) return NextResponse.json({ error: yearError }, { status: 400 });
   const { variantIds, years, ...rest } = body;
   const color = rest as unknown as Omit<Color, "variants">;
   if (!color.id) {
@@ -58,11 +66,7 @@ export async function PUT(req: NextRequest) {
     const saved = await saveColor(color, (variantIds as string[]) ?? [], (years as YearEntry[] | undefined) ?? []);
     return NextResponse.json(saved);
   } catch (e) {
-    console.error("[PUT /api/admin/colors]", e);
-    const msg = e instanceof Error ? e.message : String(e);
-    // 只回传业务错误（如"颜色 ID 已存在"）；DB 内部错误统一脱敏
-    const isBusiness = msg.includes("已存在") || msg.includes("必须");
-    return NextResponse.json({ error: isBusiness ? msg : "保存失败，请稍后重试" }, { status: 500 });
+    return adminWriteError(e);
   }
 }
 

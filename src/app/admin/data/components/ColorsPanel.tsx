@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAdminJson } from "@/lib/admin-fetch";
+import DataLoadError from "./DataLoadError";
+
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import type { CarMake, Color, ColorType, ColorVariant, YearEntry } from "@/types";
@@ -47,6 +50,7 @@ export default function ColorsPanel() {
   const [brands, setBrands] = useState<CarMake[]>([]);
   const [allVariants, setAllVariants] = useState<ColorVariant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Color | null>(null);
   const [form, setForm] = useState<ColorForm>({ id: "", make_id: "", color_code: "", color_name: "", color_type: [] as ColorType[], hex_preview: "#FFFFFF", car_model: "" });
@@ -77,16 +81,17 @@ export default function ColorsPanel() {
   }, [form.make_id, form.color_code, editing, colors]);
 
   const fetchColors = useCallback(async () => {
-    try { const res = await fetch("/api/admin/colors"); if (res.ok) setColors(await res.json()); } catch {}
-    setLoading(false);
+    setLoading(true);
+    try {
+      const [nextColors, nextBrands, nextVariants] = await Promise.all([
+        fetchAdminJson<Color[]>("/api/admin/colors"), fetchAdminJson<CarMake[]>("/api/brands"),
+        fetchAdminJson<ColorVariant[]>("/api/admin/variants"),
+      ]);
+      setColors(nextColors); setBrands(nextBrands); setAllVariants(nextVariants); setLoadError(false);
+    } catch { setLoadError(true); }
+    finally { setLoading(false); }
   }, []);
-  useEffect(() => {
-    const ctrl = new AbortController();
-    fetchColors();
-    fetch("/api/brands", { signal: ctrl.signal }).then((r) => r.ok ? r.json() : []).then(setBrands).catch(() => {});
-    fetch("/api/admin/variants", { signal: ctrl.signal }).then((r) => r.ok ? r.json() : []).then(setAllVariants).catch(() => {});
-    return () => ctrl.abort();
-  }, [fetchColors]);
+  useEffect(() => { void fetchColors(); }, [fetchColors]);
 
   useEffect(() => { setPage(0); }, [colors, searchQuery]);
   // 移动端：编辑页面开关（桌面端不使用，受 max-md:hidden 容器控制）
@@ -109,14 +114,12 @@ export default function ColorsPanel() {
     setError(""); idManuallyEdited.current = false; setIsEditing(true);
   }
   // 行内编辑：行内按钮桌面/移动端共用同一 DOM，根据点击瞬间视口决定行为
-  function openEdit(c: Color) {
+  function openEdit(c: Color, desktop: boolean) {
     setEditing(c); setForm({ id: c.id, make_id: c.make_id, color_code: c.color_code, color_name: c.color_name, color_type: c.color_type, hex_preview: c.hex_preview, car_model: c.car_model ?? "" });
     setVariantIds(c.variants.map((v) => v.id)); setYearEntries(c.years || []); setYearMode("single"); setYearInput(""); setYearEndInput("");
     setError("");
-    // 点击瞬间判断视口：桌面端弹 Dialog，移动端进入编辑页面（行内编辑按钮桌面/移动端共用同一 DOM）
-    const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches;
-    setIsEditing(!isDesktop);
-    setShowModal(isDesktop);
+    setIsEditing(!desktop);
+    setShowModal(desktop);
   }
   async function handleSave() {
     setError("");
@@ -217,7 +220,9 @@ export default function ColorsPanel() {
   // 添加 YearEntry（单年或区间）
   function addYearEntry() {
     const start = parseInt(yearInput, 10);
-    if (isNaN(start) || start < 1900 || start > 2100) return;
+    if (isNaN(start) || start < 1900 || start > 2100) { setError("请输入 1900 到 2100 之间的年份"); return; }
+    if (yearEntries.some((entry) => entry.year === start)) { setError(`起始年份 ${start} 已存在，请合并年份设置`); return; }
+    setError("");
     if (yearMode === "range") {
       const end = parseInt(yearEndInput, 10);
       if (isNaN(end) || end < start || end > 2100) return;
@@ -271,6 +276,7 @@ export default function ColorsPanel() {
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
   const pageRows = filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
+  if (loadError) return <DataLoadError onRetry={fetchColors} />;
   if (loading) return <div className="flex justify-center py-4 text-muted-foreground"><Spinner /></div>;
 
   return (
@@ -330,7 +336,7 @@ export default function ColorsPanel() {
                 </TableCell>
                 <TableCell className="py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
-                    <button onClick={() => openEdit(row.originalColor)} className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary"><Edit className="size-4" /></button>
+                    <button onClick={() => openEdit(row.originalColor, true)} className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary"><Edit className="size-4" /></button>
                     <button onClick={() => handleDelete(row.originalColor)} aria-label="删除颜色" title="删除颜色" className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="size-4" /></button>
                   </div>
                 </TableCell>
@@ -350,7 +356,7 @@ export default function ColorsPanel() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={showModal} onOpenChange={(v) => { if (!v) setShowModal(false); }}>
-        <DialogContent className="max-w-2xl bg-card !max-w-[650px]">
+        <DialogContent data-admin-data className="max-w-2xl bg-card !max-w-[650px]">
           <DialogHeader><DialogTitle>{editing ? "编辑颜色" : "新增颜色"}</DialogTitle></DialogHeader>
           <div className="max-h-[70vh] overflow-y-auto">
             <ColorFormFields
@@ -393,7 +399,7 @@ export default function ColorsPanel() {
 
       {/* 删除确认弹窗：列出该颜色下会级联删除的配方 */}
       <Dialog open={deleteTarget != null} onOpenChange={(v) => { if (!v && !deleteLoading) { setDeleteTarget(null); setDeleteFormulaList([]); } }}>
-        <DialogContent className="max-w-lg bg-card">
+        <DialogContent data-admin-data className="max-w-lg bg-card">
           <DialogHeader>
             <DialogTitle>删除颜色「{deleteTarget?.color_name}」</DialogTitle>
           </DialogHeader>
@@ -499,7 +505,7 @@ export default function ColorsPanel() {
                 </TableCell>
                 <TableCell className="py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
-                    <button onClick={() => openEdit(row.originalColor)} className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary"><Edit className="size-4" /></button>
+                    <button onClick={() => openEdit(row.originalColor, false)} className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary"><Edit className="size-4" /></button>
                     <button onClick={() => handleDelete(row.originalColor)} aria-label="删除颜色" title="删除颜色" className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="size-4" /></button>
                   </div>
                 </TableCell>

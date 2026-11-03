@@ -1,5 +1,8 @@
 "use client";
 
+import { fetchAdminJson } from "@/lib/admin-fetch";
+import DataLoadError from "./DataLoadError";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { CarMake, Region } from "@/types";
@@ -33,6 +36,8 @@ import { ArrowLeft, Edit, Trash2, Plus, X } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 export default function BrandsPanel() {
+  const [loadError, setLoadError] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [brands, setBrands] = useState<CarMake[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [showBrandModal, setShowBrandModal] = useState(false);
@@ -55,32 +60,23 @@ export default function BrandsPanel() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  const fetchBrands = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/brands");
-      if (res.ok) setBrands(await res.json());
-    } catch {}
-  }, []);
-
   const defaultRegionSet = useRef(false);
-  const fetchRegions = useCallback(async () => {
+  const fetchBrands = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await fetch("/api/admin/regions");
-      if (res.ok) {
-        const data: Region[] = await res.json();
-        setRegions(data);
-        if (!defaultRegionSet.current && data.length > 0) {
-          defaultRegionSet.current = true;
-          setBrandForm((prev) => (prev.region ? prev : { ...prev, region: data[0].code }));
-        }
+      const [nextBrands, nextRegions] = await Promise.all([
+        fetchAdminJson<CarMake[]>("/api/admin/brands"), fetchAdminJson<Region[]>("/api/admin/regions"),
+      ]);
+      setBrands(nextBrands); setRegions(nextRegions); setLoadError(false);
+      if (!defaultRegionSet.current && nextRegions.length) {
+        defaultRegionSet.current = true;
+        setBrandForm((prev) => prev.region ? prev : { ...prev, region: nextRegions[0].code });
       }
-    } catch {}
+    } catch { setLoadError(true); }
+    finally { setLoading(false); }
   }, []);
-
-  useEffect(() => {
-    fetchBrands();
-    fetchRegions();
-  }, [fetchBrands, fetchRegions]);
+  const fetchRegions = fetchBrands;
+  useEffect(() => { void fetchBrands(); }, [fetchBrands]);
 
   useEffect(() => { setPage(0); }, [brands]);
 
@@ -108,15 +104,12 @@ export default function BrandsPanel() {
     setIsEditing(true);
   }
 
-  function openEditBrand(brand: CarMake) {
+  function openEditBrand(brand: CarMake, desktop = true) {
     setEditing(brand);
     setBrandForm({ id: brand.id, name: brand.name, region: brand.region });
     setBrandError("");
     setIsEditing(true);
-    // 桌面端（≥768px）弹出 Dialog；移动端通过 isEditing 切换到编辑页面（行内编辑按钮桌面移动端共用同一 DOM）
-    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
-      setShowBrandModal(true);
-    }
+    setShowBrandModal(desktop);
   }
 
   function openCreateRegion() {
@@ -164,6 +157,9 @@ export default function BrandsPanel() {
 
   const totalPages = Math.max(1, Math.ceil(brands.length / ROWS_PER_PAGE));
   const pageRows = brands.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE);
+
+  if (loadError) return <DataLoadError onRetry={fetchBrands} />;
+  if (loading) return <p role="status">加载中...</p>;
 
   return (
     <>
@@ -226,7 +222,7 @@ export default function BrandsPanel() {
 
       {/* Brand create/edit dialog */}
       <Dialog open={showBrandModal} onOpenChange={(v) => { if (!v) setShowBrandModal(false); }}>
-        <DialogContent className="max-w-sm bg-card">
+        <DialogContent data-admin-data className="max-w-sm bg-card">
           <DialogHeader><DialogTitle>{editing ? "编辑品牌" : "新增品牌"}</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-1.5">
@@ -246,7 +242,7 @@ export default function BrandsPanel() {
               <Label className="text-sm font-medium text-foreground/80">产地</Label>
               <Select value={brandForm.region} onValueChange={(v) => setBrandForm({ ...brandForm, region: v || "" })}>
                 <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue /></SelectTrigger>
-                <SelectContent className="z-[100] max-h-[200px]">
+                <SelectContent data-admin-data className="z-[100] max-h-[200px]">
                   {regions.map((r) => (<SelectItem key={r.code} value={r.code}>{r.code}</SelectItem>))}
                 </SelectContent>
               </Select>
@@ -262,7 +258,7 @@ export default function BrandsPanel() {
 
       {/* Region delete confirmation */}
       <Dialog open={!!regionToDelete} onOpenChange={() => setRegionToDelete(null)}>
-        <DialogContent className="max-w-sm bg-card">
+        <DialogContent data-admin-data className="max-w-sm bg-card">
           <DialogHeader><DialogTitle>确认删除</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">确定删除产地「{regionToDelete}」吗？此操作不可撤销。</p>
           <DialogFooter>
@@ -277,7 +273,7 @@ export default function BrandsPanel() {
 
       {/* Region create dialog */}
       <Dialog open={showRegionModal} onOpenChange={(v) => { if (!v) setShowRegionModal(false); }}>
-        <DialogContent className="max-w-sm bg-card">
+        <DialogContent data-admin-data className="max-w-sm bg-card">
           <DialogHeader><DialogTitle>新增产地</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             <div>
@@ -334,7 +330,7 @@ export default function BrandsPanel() {
           }
         }}
       >
-        <DialogContent className="max-w-sm bg-card">
+        <DialogContent data-admin-data className="max-w-sm bg-card">
           <DialogHeader>
             <DialogTitle>新增产地 / 品牌</DialogTitle>
           </DialogHeader>
@@ -422,7 +418,7 @@ export default function BrandsPanel() {
                   <TableCell className="py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
                       <button
-                        onClick={() => openEditBrand(brand)}
+                        onClick={() => openEditBrand(brand, false)}
                         className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                       >
                         <Edit className="size-4" />
@@ -480,7 +476,7 @@ export default function BrandsPanel() {
               <Label className="text-sm font-medium text-foreground/80">产地</Label>
               <Select value={brandForm.region} onValueChange={(v) => setBrandForm({ ...brandForm, region: v || "" })}>
                 <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue /></SelectTrigger>
-                <SelectContent className="z-[100] max-h-[200px]">
+                <SelectContent data-admin-data className="z-[100] max-h-[200px]">
                   {regions.map((r) => (<SelectItem key={r.code} value={r.code}>{r.code}</SelectItem>))}
                 </SelectContent>
               </Select>

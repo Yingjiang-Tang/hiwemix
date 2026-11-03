@@ -860,3 +860,14 @@ html, body {
   .hero-shiny-mobile { display: none !important; }
   .hero-shiny-desktop { display: inline-block !important; }
 }
+
+/* 管理模块包含表格、弹窗和 Select Portal：仅移动端统一深层触摸目标尺寸。 */
+@media (max-width: 767.98px) {
+  [data-admin-data] :is(button, [role="button"], [role="combobox"], [role="option"], input:not([type="checkbox"]):not([type="hidden"])) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  [data-admin-data] label:has(input:is([type="checkbox"], [type="file"])) {
+    min-height: 44px;
+  }
+}
