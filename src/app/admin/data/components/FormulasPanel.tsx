@@ -201,7 +201,7 @@ export default function FormulasPanel() {
     setError(""); setMessage("");
     if (!form.id || !form.color_id) { setError("配方 ID 和关联颜色不能为空"); return; }
     const comps = components.filter((c) => c.toner_code.trim()).map((c) => ({ ...c, grams_per_100g: c.percentage }));
-    // 变体保留：selectFormula 已把已有 variant_id 写进 form；新建时由用户选择（不选则为 "" → null）
+    // 变体保留：编辑时沿用已有 variant_id；新建时不关联变体（"" → null）
     const payload: Formula = { ...form, variant_id: form.variant_id, components: comps, updated_at: "", year: form.year, image_url: form.image_url || undefined };
     try {
       const res = await fetch("/api/admin/formulas", { method: selectedId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -468,17 +468,6 @@ export default function FormulasPanel() {
             <Select value={form.year?.toString() || ""} onValueChange={(v) => setForm({ ...form, year: v ? parseInt(v, 10) : undefined })} disabled={!form.color_id}>
               <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue placeholder="所有年份" /></SelectTrigger>
               <SelectContent>{expandedYears.map((y) => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-sm font-medium text-foreground/80">关联变体</Label>
-            <Select value={form.variant_id} onValueChange={(v) => setForm({ ...form, variant_id: v || "" })}>
-              <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue placeholder="不关联变体" /></SelectTrigger>
-              <SelectContent>
-                {(colors.find((c) => c.id === form.color_id)?.variants ?? []).map((v) => (
-                  <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
-                ))}
-              </SelectContent>
             </Select>
           </div>
           <div className="flex flex-col gap-1.5">
