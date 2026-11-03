@@ -61,7 +61,7 @@ export default function FormulasPanel() {
   const tonerBlurRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
-  // 移动端：色母下拉用 fixed 定位（脱离表格横向滚动容器，避免被 overflow 裁剪）
+  // 色母下拉脱离表格横向滚动容器，避免被 overflow 裁剪。
   const [tonerDropdownPos, setTonerDropdownPos] = useState<{ left: number; top: number; width: number } | null>(null);
   // 移动端：编辑模式开关
   const [isEditing, setIsEditing] = useState(false);
@@ -259,16 +259,15 @@ export default function FormulasPanel() {
     const title = group ?? "色母组件";
     const filtered = group ? components.filter((c) => c.component_group === group) : components;
     return (
-      <div key={group ?? "regular"} className="mt-4">
-        <div className="flex justify-between items-center mb-3">
+      <div key={group ?? "regular"}>
+        <div className="flex justify-between items-center mb-4">
           <h3 className="text-base font-semibold text-foreground">{title}</h3>
           <Button onClick={() => addComponent(group)} variant="outline" size="sm" className="rounded-lg text-sm"><Plus className="size-4" /> 添加色母</Button>
         </div>
 
-        {/* 移动端：表格固定最小宽度实现横向滑动（百分比列宽下用 min-w-max 撑开不可控，故用固定 px）；
-            色母下拉用 fixed 定位避免被裁剪；桌面端：md:overflow-visible + md:min-w-0 保持原样 */}
-        <div className="max-md:[&_div[data-slot='table-container']]:overflow-x-auto md:[&_div[data-slot='table-container']]:overflow-visible rounded-lg border border-border max-h-none">
-          <Table className="min-w-[760px] md:min-w-0">
+        {/* 表格保持最小可读宽度，空间不足时在表内横向滚动；色母下拉固定定位避免裁剪。 */}
+        <div className="rounded-lg border border-border [&_div[data-slot='table-container']]:overflow-x-auto">
+          <Table className="min-w-[760px]">
             <TableHeader>
               <TableRow className="bg-muted/80">
                 <TableHead className="w-[22%] py-2 text-xs font-semibold text-muted-foreground uppercase">色母编号</TableHead>
@@ -292,7 +291,7 @@ export default function FormulasPanel() {
                         onChange={(e) => { updateComponent(globalIndex, "toner_code", e.target.value); setTonerQuery(e.target.value); setTonerDropdownFor(globalIndex); }}
                         onFocus={(e) => {
                           setTonerQuery(e.target.value); setTonerDropdownFor(globalIndex);
-                          // 记录锚点位置；由 CSS 决定移动端 fixed、桌面端 absolute。
+                          // 记录锚点位置，让下拉与色母输入框对齐。
                           const r = e.currentTarget.getBoundingClientRect();
                           setTonerDropdownPos({ left: r.left, top: r.bottom, width: r.width });
                         }}
@@ -304,7 +303,7 @@ export default function FormulasPanel() {
                         if (hits.length === 0) return null;
                         return (
                           <div
-                            className="absolute left-2 right-2 top-full z-50 mt-1 max-h-40 overflow-auto rounded-lg border border-border bg-card shadow-lg max-md:fixed max-md:left-[var(--toner-left)] max-md:top-[var(--toner-top)] max-md:right-auto max-md:w-[var(--toner-width)]"
+                            className="fixed left-[var(--toner-left)] top-[var(--toner-top)] z-[100] mt-1 max-h-40 w-[var(--toner-width)] overflow-auto rounded-lg border border-border bg-card shadow-lg"
                             style={tonerDropdownPos ? { "--toner-left": `${tonerDropdownPos.left}px`, "--toner-top": `${tonerDropdownPos.top}px`, "--toner-width": `${tonerDropdownPos.width}px` } as CSSProperties : undefined}
                           >
                             {hits.map((t) => (
@@ -433,7 +432,7 @@ export default function FormulasPanel() {
       </div>
 
       {/* 右栏：配方编辑 */}
-      <div className={`flex-1 rounded-xl border border-border p-5 pb-8 shadow-sm ${!isEditing ? "max-md:hidden" : ""}`}>
+      <div className={`min-w-0 flex-1 rounded-xl border border-border p-6 pb-8 shadow-sm max-md:p-5 max-md:pb-6 ${!isEditing ? "max-md:hidden" : ""}`}>
         {/* 移动端编辑面板返回栏 */}
         <div className="md:hidden flex items-center gap-2 border-b border-border pb-3 mb-4 -mx-5 px-5">
           <button onClick={closeEditor} className="inline-flex size-9 items-center justify-center rounded-lg text-foreground" aria-label="返回">
@@ -441,12 +440,13 @@ export default function FormulasPanel() {
           </button>
           <span className="text-sm font-medium">{selectedId ? "编辑配方" : "新增配方"}</span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
+        <h3 className="mb-5 text-base font-semibold text-foreground">基本信息</h3>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+          <div className="flex min-w-0 flex-col gap-2">
             <Label className="text-sm font-medium text-foreground/80">配方 ID</Label>
             <Input value={form.id} onChange={(e) => { idManuallyEdited.current = true; setForm({ ...form, id: e.target.value }); }} disabled={!!selectedId} className="h-9 rounded-lg" />
           </div>
-          <div className="relative flex flex-col gap-1.5">
+          <div className="relative flex min-w-0 flex-col gap-2">
             <Label className="text-sm font-medium text-foreground/80">关联颜色</Label>
             <Input value={colorQuery} onChange={(e) => { setColorQuery(e.target.value); setColorDropdownOpen(true); if (colorBlurRef.current) { clearTimeout(colorBlurRef.current); colorBlurRef.current = null; } }} onFocus={() => { setColorDropdownOpen(true); if (colorBlurRef.current) { clearTimeout(colorBlurRef.current); colorBlurRef.current = null; } }} onBlur={() => { colorBlurRef.current = setTimeout(() => setColorDropdownOpen(false), 150); }} className="h-9 rounded-lg" placeholder="搜索颜色代码、名称、品牌..." />
             {colorDropdownOpen && matchingColors(colorQuery, colors, brands).length > 0 && (
@@ -467,18 +467,18 @@ export default function FormulasPanel() {
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex min-w-0 flex-col gap-2">
             <Label className="text-sm font-medium text-foreground/80">版本</Label>
             <Input value={form.version} onChange={(e) => setForm({ ...form, version: e.target.value })} className="h-9 rounded-lg" />
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex min-w-0 flex-col gap-2">
             <Label className="text-sm font-medium text-foreground/80">体系</Label>
             <Select value={form.paint_system} onValueChange={(v) => v ? handlePaintSystemChange(v as "1K" | "2K") : null}>
               <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue /></SelectTrigger>
               <SelectContent data-admin-data>{PAINT_SYSTEMS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex min-w-0 flex-col gap-2">
             <Label className="text-sm font-medium text-foreground/80">配方类型</Label>
             <Select value={form.formula_type} onValueChange={(v) => v ? handleFormulaTypeChange(v as FormulaType) : null} disabled={form.paint_system === "2K"}>
               <SelectTrigger className="h-9 w-full rounded-lg"><SelectValue /></SelectTrigger>
@@ -488,16 +488,16 @@ export default function FormulasPanel() {
             </Select>
           </div>
         </div>
-        <fieldset className="mt-3 flex min-w-0 flex-col gap-2 rounded-lg border border-border p-3">
-          <legend className="px-1 text-sm font-medium">配方适用年份</legend>
+        <fieldset className="mt-8 flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-muted/20 p-4">
+          <legend className="px-2 text-sm font-semibold">配方适用年份</legend>
           <Label htmlFor="formula-year-mode">年份设置（必选）</Label>
           <select id="formula-year-mode" value={yearMode} onChange={(e) => setYearMode(e.target.value as typeof yearMode)} className={`${INPUT_CLASS} max-md:min-h-11`}>
             <option value="" disabled>请选择年份设置</option>
             <option value="custom">自定义年份</option>
             <option value="inherit">沿用颜色年份</option>
           </select>
-          <p className="text-xs text-muted-foreground">颜色适用年份：{formatYears(selectedColor?.years ?? []) || "未设置"}</p>
-          {yearMode === "inherit" && <p className="text-xs text-muted-foreground">随颜色年份调整；不代表已逐个核实配方适用范围。</p>}
+          <p className="text-xs leading-relaxed text-muted-foreground">颜色适用年份：{formatYears(selectedColor?.years ?? []) || "未设置"}</p>
+          {yearMode === "inherit" && <p className="text-xs leading-relaxed text-muted-foreground">随颜色年份调整；不代表已逐个核实配方适用范围。</p>}
           {yearMode === "custom" && <>
             {years.map((entry, index) => (
               <div key={index} className="flex min-w-0 items-center gap-2 max-md:flex-wrap">
@@ -508,27 +508,27 @@ export default function FormulasPanel() {
               </div>
             ))}
             <Button type="button" variant="outline" className="self-start" onClick={() => setYears((prev) => [...prev, { year: selectedColor?.years?.[0]?.year ?? new Date().getFullYear() }])}><Plus className="size-4" />添加年份或区间</Button>
-            <p className="text-xs text-muted-foreground">结束年份留空表示单年；可添加多个区间，不能跨越颜色年份的空档。</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">结束年份留空表示单年；可添加多个区间，不能跨越颜色年份的空档。</p>
           </>}
           {overlapping.length > 0 && <p role="status" className="text-sm text-amber-700">年份与同颜色、体系和工序的配方重叠：{overlapping.map((other) => other.id).join("、")}。允许作为备选配方保存。</p>}
         </fieldset>
-        <div className="flex flex-col gap-1.5 mt-3">
+        <div className="mt-6 flex flex-col gap-2">
           <Label className="text-sm font-medium text-foreground/80">施工备注</Label>
-          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="min-h-[60px] w-full rounded-lg border border-border p-3 text-sm outline-none focus:border-primary" />
+          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="min-h-[88px] w-full rounded-lg border border-border p-3 text-sm outline-none focus:border-primary" />
         </div>
 
         {/* 颜色参考图（OEM 车体照片）：存在则首页/抽屉/我的配方卡片优先显示，否则回退静态图 */}
-        <div className="flex flex-col gap-1.5 mt-3">
+        <div className="mt-6 flex flex-col gap-3">
           <Label className="text-sm font-medium text-foreground/80">颜色参考图</Label>
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-4 max-md:flex-col">
             {form.image_url ? (
-              <img src={form.image_url} alt="颜色参考图" className="size-24 rounded-md border border-border object-cover" />
+              <img src={form.image_url} alt="颜色参考图" className="size-24 shrink-0 rounded-md border border-border object-cover" />
             ) : (
-              <div className="flex size-24 items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground">无</div>
+              <div className="flex size-24 shrink-0 items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground">无</div>
             )}
-            <div className="flex flex-1 flex-col gap-1.5">
+            <div className="flex min-w-0 flex-1 flex-col gap-3 max-md:w-full">
               <Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://... 或下方上传" className="h-9 rounded-lg" />
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-3 text-xs hover:bg-muted">
                   <Upload className="size-3" />
                   {uploadingImage ? "上传中..." : form.image_url ? "替换图片" : "上传图片到 Supabase Storage"}
@@ -549,16 +549,16 @@ export default function FormulasPanel() {
           </div>
         </div>
 
-        <div className="mt-2 flex-1 min-h-0 overflow-visible">
+        <div className="mt-8 min-h-0 flex-1 overflow-visible border-t border-border pt-6">
           {form.formula_type === "Three Stages" ? (
-            <div className="flex flex-col gap-4">{PEARL_GROUPS.map((g) => renderComponentTable(g))}</div>
+            <div className="flex flex-col gap-6">{PEARL_GROUPS.map((g) => renderComponentTable(g))}</div>
           ) : renderComponentTable()}
         </div>
 
         {error && <p className="text-sm font-medium text-destructive mt-3">{error}</p>}
         {message && <p className="text-sm font-medium text-green-600 mt-3">{message}</p>}
 
-        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border -mx-5 -mb-5 px-5 pb-0">
+        <div className="-mx-6 mt-6 flex justify-end gap-3 border-t border-border px-6 pt-5 max-md:-mx-5 max-md:px-5">
           {selectedId && <Button onClick={handleDelete} variant="outline" className="rounded-lg text-sm text-destructive border-destructive/20 hover:bg-destructive/10">删除配方</Button>}
           <Button onClick={handleSave} disabled={!yearMode || !percentageValid || uploadingImage || saving} className="rounded-lg bg-primary text-sm hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground/30">保存配方</Button>
         </div>
