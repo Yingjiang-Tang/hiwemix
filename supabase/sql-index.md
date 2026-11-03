@@ -26,6 +26,6 @@
 
 ## 后续迁移入口
 
-- `supabase-migrations/20261103000000_formula_years.sql`：配方年份增量迁移，已在隔离 PostgreSQL 17 验证，生产尚未执行。先执行并验证旧入口兼容，再发布应用；不要重跑根目录旧年份回填脚本。完整步骤见 `docs/design/formula-year-release.md`。
+- `supabase-migrations/20261103000000_formula_years.sql`：配方年份增量迁移，已在隔离 PostgreSQL 17 验证，2026-11-03 已在生产执行并核验。不要重跑根目录旧年份回填脚本。完整步骤见 `docs/design/formula-year-release.md`。
 
 新的数据库变更请一律放入 `supabase-migrations/`（时间戳命名），并在此处同步更新对应条目的状态（🟢→⚪ 表示已并入正式迁移体系）。
