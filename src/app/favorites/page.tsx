@@ -1,5 +1,7 @@
 "use client";
 
+import { effectiveFormulaYears, formatYears, formulaYearMode } from "@/lib/formula-years";
+
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -267,6 +269,7 @@ export default function FavoritesPage() {
                         <p className="truncate text-[16px] font-normal capitalize leading-tight text-muted-foreground">
                           {snap.make_name}
                         </p>
+                        {formula && color && <p className="mt-1 text-xs text-muted-foreground">{formatYears(effectiveFormulaYears(formula, color)) || t.yearsUnspecified} · {formulaYearMode(formula) === "custom" ? t.yearsCustom : t.yearsInherited}</p>}
                       </div>
                     </div>
                   );

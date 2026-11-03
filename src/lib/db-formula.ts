@@ -1,6 +1,7 @@
 import { createClient } from "./supabase/server";
 import { getSupabaseAdmin } from "./supabase-server";
 import { getToners } from "./db-toner";
+import { normalizeYears } from "./formula-years";
 import type {
   CarMake,
   Color,
@@ -107,7 +108,7 @@ export async function getFormulas(): Promise<Formula[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("formulas")
-    .select("*, formula_components(*)")
+    .select("*, formula_components(*), formula_years(year, year_end)")
     .order("updated_at", { ascending: false });
   if (error) throw error;
   // toner 目录拉取失败：本次回退空 map（不阻塞公式返回），缓存已清空、下次调用会重试
@@ -266,6 +267,8 @@ function mapFormulaRow(row: Record<string, unknown>, tonerMap?: Map<string, Tone
     notes: String(row.notes ?? ""),
     updated_at: String(row.updated_at ?? ""),
     image_url: row.image_url ? String(row.image_url) : undefined,
+    year_mode: row.year_mode === "custom" ? "custom" : "inherit",
+    years: normalizeYears(((row.formula_years as YearEntry[] | null) ?? []).map((e) => ({ year: e.year, year_end: e.year_end ?? undefined }))),
   };
 }
 
@@ -352,7 +355,7 @@ export async function saveColor(
     if (isNew && error.code === "23505" && (error.message.includes("colors_pkey") || error.message.startsWith("color id "))) {
       throw new Error(`颜色 ID「${color.id}」已存在，无法重复新增。请修改颜色代码/类型，或使用编辑功能。`);
     }
-    throw new Error(error.message || JSON.stringify(error));
+    throw error;
   }
   // RPC 返回 SETOF → data 为行数组，取首行（与旧实现的单行返回契约一致）
   const row = Array.isArray(data) ? (data[0] as Color) : (data as Color);
@@ -367,9 +370,7 @@ export async function deleteColor(id: string): Promise<void> {
 // --- Formulas（含色母组件全量同步）---
 
 /**
- * 保存配方（主行 + 色母组件全量同步）。
- * 通过 RPC 在单个 Postgres 事务内完成三步（写主行 → 删旧组件 → 插新组件），
- * 避免中途失败留下"主行已存、组件被删光"的空壳配方。
+ * 在同一事务保存配方、色母组件及年份；缺少年份字段的旧编辑保留原设置。
  * @param isNew true = 创建语义（ID 已存在时报 23505 冲突，不覆盖）；false = 更新语义（upsert）
  */
 export async function saveFormula(formula: Formula, isNew = false): Promise<Formula> {
@@ -390,7 +391,7 @@ export async function saveFormula(formula: Formula, isNew = false): Promise<Form
     return row;
   });
 
-  const { data, error } = await getSupabaseAdmin().rpc("save_formula_with_components", {
+  const { error } = await getSupabaseAdmin().rpc("save_formula_with_years", {
     p_id: formula.id,
     p_color_id: formula.color_id,
     p_variant_id: formula.variant_id || null,
@@ -401,6 +402,8 @@ export async function saveFormula(formula: Formula, isNew = false): Promise<Form
     p_components: components,
     p_image_url: formula.image_url || null,
     p_is_new: isNew,
+    p_year_mode: formula.year_mode ?? null,
+    p_years: formula.years === undefined ? null : normalizeYears(formula.years),
   });
   if (error) {
     // 并发创建撞 ID：DB 抛 23505 → 转成可读中文错误，避免静默覆盖
@@ -409,9 +412,10 @@ export async function saveFormula(formula: Formula, isNew = false): Promise<Form
     }
     throw error;
   }
-  // RPC 返回 SETOF → data 为行数组，取首行（与旧实现的单行返回契约一致）
-  const row = Array.isArray(data) ? (data[0] as Formula) : (data as Formula);
-  return row;
+  const { data: saved, error: readError } = await getSupabaseAdmin().from("formulas")
+    .select("*, formula_components(*), formula_years(year, year_end)").eq("id", formula.id).single();
+  if (readError) throw readError;
+  return mapFormulaRow(saved);
 }
 
 export async function deleteFormula(id: string): Promise<void> {

@@ -11,7 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "validate:links": "node scripts/validate-toner-links.mjs"
+    "validate:links": "node scripts/validate-toner-links.mjs",
+    "test:db-years": "node scripts/test-formula-years-db.mjs",
+    "test:e2e:years": "playwright test --config playwright.years.config.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -45,6 +47,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "pg": "^8.23.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.11"

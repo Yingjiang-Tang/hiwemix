@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
   }
-  const validationError = validateFormula(body);
+  const validationError = validateFormula(body, true);
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });
   }
@@ -42,8 +42,7 @@ export async function POST(req: NextRequest) {
     if (e instanceof Error && e.message.includes("已存在")) {
       return NextResponse.json({ error: e.message }, { status: 409 });
     }
-    console.error("[POST /api/admin/formulas]", e);
-    return NextResponse.json({ error: "保存配方失败，请稍后重试" }, { status: 500 });
+    return adminWriteError(e);
   }
 }
 
@@ -71,8 +70,7 @@ export async function PUT(req: NextRequest) {
     const saved = await saveFormula(body, false);
     return NextResponse.json(saved);
   } catch (e: unknown) {
-    console.error("[PUT /api/admin/formulas]", e);
-    return NextResponse.json({ error: "保存配方失败，请稍后重试" }, { status: 500 });
+    return adminWriteError(e);
   }
 }
 

@@ -3,7 +3,7 @@ export interface Region {
   code: string           // 产地代码，例如 "JPN"、"EUR"
 }
 
-// 年份条目（color_years 表中的一行）
+// 年份条目（颜色与配方复用相同的单年/区间结构）
 export interface YearEntry {
   year: number          // 起始年份；若 year_end 为空则为单一年份
   year_end?: number     // 结束年份；undefined/null 表示单年（不展开）
@@ -71,7 +71,8 @@ export interface Formula {
   components: FormulaComponent[]
   notes: string            // 施工备注，例如 "建议喷涂2遍底色"
   updated_at: string
-  year?: number            // 适用年份（可选，用于反规范化搜索）
+  year_mode?: "inherit" | "custom" // 缺失仅用于兼容旧快照；接口读取总是返回模式
+  years?: YearEntry[]       // 自定义适用年份；沿用模式存空数组
   color_name?: string      // 颜色名称（可选，用于快速搜索）
   image_url?: string       // OEM 颜色参考图 URL（Supabase Storage 公开桶 formula-images）
 }
@@ -92,6 +93,13 @@ export interface SearchResult {
   formulas: Formula[]
 }
 
+export interface FormulaDrawerProps {
+  result: SearchResult | null;
+  onClose: () => void;
+  initialFormulaIdx?: number;
+  formulaId?: string;
+}
+
 // 配方完整快照（个人保存/对比共用）：Drawer 可直接渲染，无需再 fetch 反查
 export interface FormulaSnapshot {
   formula_id: string
@@ -105,7 +113,6 @@ export interface FormulaTableRow {
   formula: Formula
   variant: ColorVariant | undefined  // 通过 formula.variant_id 在 color.variants 中查找
   makeName: string                    // 通过 brands 解析 make_id -> name
-  yearEntry?: YearEntry             // 展平后的年份条目（可能是单年或区间）
 }
 
 // 系统设置

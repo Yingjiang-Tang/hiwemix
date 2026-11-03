@@ -1,4 +1,5 @@
 import { yearEntryContains } from "@/lib/formula-utils";
+import { effectiveFormulaYears, formulaYearMode } from "@/lib/formula-years";
 import type {
   CarMake,
   Color,
@@ -50,40 +51,24 @@ export function searchFormulas(
     filtered = filtered.filter((color) => color.color_type.includes(params.color_type as ColorType));
   }
 
-  if (params.year) {
-    const searchYear = Number.parseInt(params.year, 10);
-    if (!Number.isNaN(searchYear)) {
-      filtered = filtered.filter((color) =>
-        color.years?.some((entry) => yearEntryContains(entry, searchYear))
-      );
-    }
-  }
-
+  const searchYear = params.year ? Number(params.year) : undefined;
   const results = filtered.map((color) => ({
     color,
-    formulas: formulas.filter((formula) => formula.color_id === color.id),
-  }));
+    formulas: formulas.filter((formula) => formula.color_id === color.id &&
+      (searchYear === undefined || (Number.isInteger(searchYear) && effectiveFormulaYears(formula, color).some((entry) => yearEntryContains(entry, searchYear)))))
+      .sort((a, b) => searchYear === undefined ? 0 : Number(formulaYearMode(a) === "inherit") - Number(formulaYearMode(b) === "inherit")),
+  })).filter((result) => result.formulas.length > 0);
   const makeNameById = new Map(brands.map((brand) => [brand.id, brand.name]));
-  const searchYear = params.year ? Number.parseInt(params.year, 10) : undefined;
   const rows: FormulaTableRow[] = [];
 
   for (const result of results) {
-    const matchedEntries = searchYear !== undefined && !Number.isNaN(searchYear)
-      ? result.color.years?.filter((entry) => yearEntryContains(entry, searchYear)) ?? []
-      : result.color.years?.length
-        ? result.color.years
-        : [undefined];
-
     for (const formula of result.formulas) {
-      for (const entry of matchedEntries) {
-        rows.push({
-          color: result.color,
-          formula,
-          variant: result.color.variants.find((variant) => variant.id === formula.variant_id),
-          makeName: makeNameById.get(result.color.make_id) ?? result.color.make_id,
-          yearEntry: entry,
-        });
-      }
+      rows.push({
+        color: result.color,
+        formula,
+        variant: result.color.variants.find((variant) => variant.id === formula.variant_id),
+        makeName: makeNameById.get(result.color.make_id) ?? result.color.make_id,
+      });
     }
   }
 

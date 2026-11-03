@@ -7,7 +7,7 @@ import { useFavorites } from "@/components/FavoritesContext";
 import { colorSwatchStyle, cn } from "@/lib/utils";
 import { getColorPhotoCandidates, getFormulaImageCandidates } from "@/lib/color-photo";
 import type { FormulaTableRow } from "@/types";
-import { formatYearEntry } from "@/lib/formula-utils";
+import { effectiveFormulaYears, formatYears, formulaYearMode } from "@/lib/formula-years";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -49,9 +49,11 @@ function VariantSubCard({
   row: FormulaTableRow;
   onClick: () => void;
 }) {
+  const { t } = useLang();
   const hex = row.color.hex_preview;
   const displayTitle = row.variant?.name || row.formula.version;
-  const displayYear = row.variant?.year_range || (row.yearEntry ? formatYearEntry(row.yearEntry) : "");
+  const displayYear = formatYears(effectiveFormulaYears(row.formula, row.color)) || t.yearsUnspecified;
+  const yearSource = formulaYearMode(row.formula) === "custom" ? t.yearsCustom : t.yearsInherited;
   const displayMeta = `${row.formula.paint_system} | ${row.formula.formula_type}`;
   // 颜色照片：四级回退 — formula.image_url → {color_id}.jpg → {CODE}.jpg → 纯色块
   const photoCandidates = getFormulaImageCandidates(row.formula, row.color);
@@ -97,6 +99,7 @@ function VariantSubCard({
         />
       )}
 
+      <span className="absolute inset-x-0 bottom-0 bg-black/65 p-1 text-center text-[10px] leading-tight text-white">{displayYear}<br />{yearSource}</span>
       {/* 悬停遮罩 */}
       <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
@@ -107,7 +110,7 @@ function VariantSubCard({
         </p>
         {displayYear && (
           <p className="max-w-full truncate text-center text-xs text-white/80">
-            {displayYear}
+            {displayYear} · {yearSource}
           </p>
         )}
         <p className="max-w-full truncate text-center text-[11px] leading-tight text-white/70">
@@ -269,6 +272,7 @@ function GroupedColorCard({
         <p className="truncate text-[16px] max-md:text-[15px] font-normal capitalize leading-tight text-muted-foreground">
           {parent.color.color_type.join(", ")}
         </p>
+        {!hasVariants && <p className="mt-1 text-xs text-muted-foreground">{formatYears(effectiveFormulaYears(parent.formula, parent.color)) || t.yearsUnspecified} · {formulaYearMode(parent.formula) === "custom" ? t.yearsCustom : t.yearsInherited}</p>}
       </div>
       {/* 线框收藏按钮：未收藏空心，已收藏实心高亮 */}
       <button

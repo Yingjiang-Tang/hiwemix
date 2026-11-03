@@ -141,6 +141,8 @@ const dict_zh = dict({
 
     colorInfo: "颜色信息", formulaVariants: "配方变体", components: "配方成分",
     makeLabel: "品牌", typeLabel: "类型", yearsLabel: "适用年份", codeLabel: "颜色代码",
+    yearsCustom: "配方自定义年份", yearsInherited: "沿用颜色年份", yearsUnspecified: "年份未设置", yearsAlternatives: "存在年份重叠的备选配方",
+    formulaSelection: "选择配方",
     print: "打印配方", copy: "复制为文本", notesLabel: "备注", updatedLabel: "更新于",
     colorTypeSolidLabel: "实色", colorTypeMetallicLabel: "金属漆", colorTypePearlLabel: "珠光漆",
     colorTypeMatteLabel: "哑光", colorTypeCandyLabel: "糖果漆", colorTypeSpecialLabel: "特殊漆",

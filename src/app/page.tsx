@@ -10,7 +10,7 @@ import HeroSection from "@/components/HeroSection";
 import VerifiedBanner from "@/components/VerifiedBanner";
 import { searchFormulas } from "@/lib/search-formulas";
 import { track, trackPageView } from "@/lib/analytics";
-import type { CarMake, Color, Formula, SearchParams, SearchResult, FormulaTableRow, YearEntry } from "@/types";
+import type { CarMake, Color, Formula, SearchParams, SearchResult, FormulaTableRow } from "@/types";
 
 // FormulaDrawer（Sheet + Tabs + KapciFormulaTable + framer-motion 依赖较重）
 // 只在用户真正打开配方抽屉时才加载 JS，首屏不打包
@@ -26,7 +26,6 @@ export default function Home() {
   const [hasSearched, setHasSearched] = useState(false);
   const [drawerResult, setDrawerResult] = useState<SearchResult | null>(null);
   const [drawerFormulaId, setDrawerFormulaId] = useState<string | undefined>();
-  const [drawerYear, setDrawerYear] = useState<YearEntry | undefined>();
   const searchPanelRef = useRef<HTMLDivElement>(null);
 
   const [hasExplored, setHasExplored] = useState(false);
@@ -72,7 +71,6 @@ export default function Home() {
     if (!r) return;
     setDrawerResult(r);
     setDrawerFormulaId(row.formula.id);
-    setDrawerYear(row.yearEntry);
   }
 
   // Explore Now 触发：解锁滚动 + 首次载入全部配方
@@ -120,7 +118,7 @@ export default function Home() {
 
         <Footer />
       </main>
-      <FormulaDrawer result={drawerResult} formulaId={drawerFormulaId} initialYear={drawerYear} onClose={() => setDrawerResult(null)} />
+      <FormulaDrawer result={drawerResult} formulaId={drawerFormulaId} onClose={() => setDrawerResult(null)} />
     </div>
   );
 }

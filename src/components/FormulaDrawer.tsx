@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import type { SearchResult, Formula, FormulaComponent, ComponentGroup, YearEntry, FormulaSnapshot } from "@/types";
+import type { SearchResult, Formula, FormulaComponent, ComponentGroup, FormulaSnapshot, FormulaDrawerProps } from "@/types";
 import { colorSwatchStyle } from "@/lib/utils";
 import { getFormulaImageCandidates } from "@/lib/color-photo";
-import { formatYearEntry } from "@/lib/formula-utils";
+import { effectiveFormulaYears, formatYears, formulaYearMode, yearsOverlap } from "@/lib/formula-years";
 import { useLang } from "@/components/LanguageContext";
 import { useFavorites } from "@/components/FavoritesContext";
 import { useCompare } from "@/components/CompareContext";
@@ -17,14 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { X, Printer, Copy, Heart, Scale } from "lucide-react";
-
-interface FormulaDrawerProps {
-  result: SearchResult | null;
-  onClose: () => void;
-  initialFormulaIdx?: number;
-  formulaId?: string;
-  initialYear?: YearEntry;
-}
 
 function formatComponents(components: FormulaComponent[]): string[] {
   const lines: string[] = ["Toner Code  |  Toner Name       |    %  |  g/100g", "-".repeat(50)];
@@ -44,6 +36,8 @@ function formatFormulaAsText(result: SearchResult, activeFormula: Formula, makeN
   lines.push(`Process: ${activeFormula.formula_type}`);
   lines.push(`Paint System: ${activeFormula.paint_system}`);
   lines.push(`Version: ${activeFormula.version}`);
+  lines.push(`Years: ${formatYears(effectiveFormulaYears(activeFormula, result.color)) || "Unspecified"}`);
+  lines.push(`Year source: ${formulaYearMode(activeFormula) === "inherit" ? "Inherited from color" : "Formula-specific"}`);
   lines.push("-".repeat(50));
 
   if (activeFormula.formula_type === "Three Stages") {
@@ -70,7 +64,7 @@ function parseHexInput(raw: string, fallback: string): string {
   return t.startsWith("#") ? t : `#${t}`;
 }
 
-export default function FormulaDrawer({ result, onClose, initialFormulaIdx, formulaId, initialYear }: FormulaDrawerProps) {
+export default function FormulaDrawer({ result, onClose, initialFormulaIdx, formulaId }: FormulaDrawerProps) {
   const { t } = useLang();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { isInCompare, toggleCompare } = useCompare();
@@ -211,7 +205,11 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
     setToastMsg(isInCompare(activeFormula.id) ? t.removedFromCompare : t.addedToCompare);
   }
 
-  const currentYear = initialYear ? formatYearEntry(initialYear) : "-";
+  const currentYears = activeFormula ? effectiveFormulaYears(activeFormula, color) : [];
+  const currentYear = formatYears(currentYears) || t.yearsUnspecified;
+  const yearSource = activeFormula && formulaYearMode(activeFormula) === "custom" ? t.yearsCustom : t.yearsInherited;
+  const hasOverlap = activeFormula && formulas.some((other) => other.id !== activeFormula.id && other.paint_system === activeFormula.paint_system &&
+    other.formula_type === activeFormula.formula_type && yearsOverlap(currentYears, effectiveFormulaYears(other, color)));
 
   return (
     <>
@@ -352,6 +350,12 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
             <div className="flex-1 overflow-auto border-b border-border px-[60px] pt-5 md:flex-[62.5%] md:border-b-0 md:border-r md:pt-[30px] md:pb-[60px] max-md:pb-0 print:pt-1 print:pb-0">
               {activeFormula && displayedFormula && (
                 <div>
+                  {formulas.length > 1 && <div className="mb-4 print:hidden">
+                    <label htmlFor="formula-selection" className="mb-1 block text-sm font-medium">{t.formulaSelection}</label>
+                    <select id="formula-selection" value={activeFormula.id} onChange={(e) => setActiveFormulaIdx(formulas.findIndex((formula) => formula.id === e.target.value))} className="min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm">
+                      {formulas.map((formula) => <option key={formula.id} value={formula.id}>{formula.version} · {formula.paint_system} · {formula.formula_type} · {formatYears(effectiveFormulaYears(formula, color)) || t.yearsUnspecified} · {formulaYearMode(formula) === "custom" ? t.yearsCustom : t.yearsInherited}</option>)}
+                    </select>
+                  </div>}
                   <div className={isGroupedType ? "print:hidden" : undefined}>
                     <KapciFormulaTable
                       key={`${activeFormula.id}-${activeGroup}`}
@@ -476,7 +480,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
                       </TableRow>
                       <TableRow>
                         <TableCell className="w-32 px-[30px] py-2.5 align-middle font-medium text-foreground/70">{t.yearsLabel}</TableCell>
-                        <TableCell className="px-[30px] py-2.5 align-middle">{currentYear}</TableCell>
+                        <TableCell className="px-[30px] py-2.5 align-middle">{currentYear}<span className="block text-xs text-muted-foreground">{yearSource}</span>{hasOverlap && <span className="block text-xs text-amber-700">{t.yearsAlternatives}</span>}</TableCell>
                       </TableRow>
                       <TableRow className="bg-muted/50">
                         <TableCell className="w-32 px-[30px] py-2.5 align-middle font-medium text-foreground/70">{t.processLabel}</TableCell>

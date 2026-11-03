@@ -1,5 +1,7 @@
 "use client";
 
+import { effectiveFormulaYears, formatYears, formulaYearMode } from "@/lib/formula-years";
+
 import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import SiteHeader from "@/components/SiteHeader";
@@ -160,7 +162,7 @@ export default function ComparePage() {
                           <TableHead key={snap.formula_id} className="min-w-32 px-4 py-3 align-top font-medium text-foreground/70">
                             <span className="text-primary">{i + 1}</span>. {snap.formula.paint_system} · {snap.formula.formula_type}
                             <span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">
-                              {snap.color.color_code} · {snap.formula.version}
+                              {snap.color.color_code} · {snap.formula.version}<br />{formatYears(effectiveFormulaYears(snap.formula, snap.color)) || t.yearsUnspecified} · {formulaYearMode(snap.formula) === "custom" ? t.yearsCustom : t.yearsInherited}
                             </span>
                           </TableHead>
                         ))}

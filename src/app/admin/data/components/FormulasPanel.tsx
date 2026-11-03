@@ -8,6 +8,9 @@ import { createPortal } from "react-dom";
 import type { Formula, FormulaComponent, FormulaType, ComponentGroup, Color, ColorVariant } from "@/types";
 import type { Toner, CarMake } from "@/types";
 import { generateUniqueFormulaId } from "@/lib/id-generator";
+import { effectiveFormulaYears, formatYears, formulaYearMode, yearsContainedBy, yearsOverlap } from "@/lib/formula-years";
+import { validateFormulaYears } from "@/lib/admin-validation";
+import type { YearEntry } from "@/types";
 import { hexToRgb, filterTonersBySystem, matchingToners, matchingColors } from "./formula-helpers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +35,8 @@ export default function FormulasPanel() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [yearMode, setYearMode] = useState<"" | "inherit" | "custom">("");
+  const [years, setYears] = useState<YearEntry[]>([]);
   const [form, setForm] = useState({ id: "", color_id: "", variant_id: "", version: "v1", paint_system: "2K" as Formula["paint_system"], formula_type: AUTO_2K_TYPE, notes: "", image_url: "" });
   const editorRevision = useRef(0);
   const [saving, setSaving] = useState(false);
@@ -105,6 +110,8 @@ export default function FormulasPanel() {
   function selectFormula(formula: Formula) {
     resetPending();
     setSelectedId(formula.id);
+    setYearMode(formulaYearMode(formula));
+    setYears((formula.years ?? []).map((entry) => ({ ...entry })));
     setForm({ id: formula.id, color_id: formula.color_id, variant_id: formula.variant_id, version: formula.version, paint_system: formula.paint_system, formula_type: formula.formula_type, notes: formula.notes, image_url: formula.image_url ?? "" });
     setComponents(formula.components.map((c) => ({ ...c, grams_per_100g: c.percentage })));
     setPctInputs({});
@@ -116,6 +123,7 @@ export default function FormulasPanel() {
 
   function newFormula() {
     resetPending();
+    setYearMode(""); setYears([]);
     setSelectedId(null); setForm({ id: "", color_id: "", variant_id: "", version: "v1", paint_system: "2K", formula_type: AUTO_2K_TYPE, notes: "", image_url: "" });
     setComponents([]); setPctInputs({}); setError(""); setMessage(""); setColorQuery(""); idManuallyEdited.current = false;
     setIsEditing(true);
@@ -191,9 +199,15 @@ export default function FormulasPanel() {
     const revision = editorRevision.current;
     setError(""); setMessage("");
     if (!form.id || !form.color_id) { setError("配方 ID 和关联颜色不能为空"); return; }
+    const yearError = validateFormulaYears({ year_mode: yearMode, years: yearMode === "inherit" ? [] : years }, true);
+    if (yearError) { setError(yearError); return; }
+    const selectedColor = colors.find((color) => color.id === form.color_id);
+    if (yearMode === "custom" && !yearsContainedBy(years, selectedColor?.years ?? [])) {
+      setError("自定义年份必须完整包含在颜色适用年份内，不能跨越空档"); return;
+    }
     const comps = components.filter((c) => c.toner_code.trim()).map((c) => ({ ...c, grams_per_100g: c.percentage }));
     // 变体保留：编辑时沿用已有 variant_id；新建时不关联变体（"" → null）
-    const payload: Formula = { ...form, variant_id: form.variant_id, components: comps, updated_at: "", image_url: form.image_url || undefined };
+    const payload: Formula = { ...form, year_mode: yearMode as "inherit" | "custom", years: yearMode === "inherit" ? [] : years, variant_id: form.variant_id, components: comps, updated_at: "", image_url: form.image_url || undefined };
     setSaving(true);
     try {
       const res = await fetch("/api/admin/formulas", { method: selectedId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -231,6 +245,15 @@ export default function FormulasPanel() {
   const visibleFormulas = filteredFormulas.slice(formulaPage * FORMULAS_PER_PAGE, formulaPage * FORMULAS_PER_PAGE + FORMULAS_PER_PAGE);
 
   const INPUT_CLASS = "w-full border border-input rounded-lg px-3 py-2 h-[38px] text-sm outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/10";
+
+  const selectedColor = colors.find((color) => color.id === form.color_id);
+  const currentYears = effectiveFormulaYears({ year_mode: yearMode || "inherit", years }, selectedColor ?? {});
+  const overlapping = yearMode && selectedColor ? formulas.filter((other) => other.id !== selectedId && other.color_id === form.color_id &&
+    other.paint_system === form.paint_system && other.formula_type === form.formula_type && yearsOverlap(currentYears, effectiveFormulaYears(other, selectedColor))) : [];
+
+  function updateYear(index: number, key: keyof YearEntry, value: string) {
+    setYears((prev) => prev.map((entry, i) => i === index ? { ...entry, [key]: value === "" ? undefined : Number(value) } : entry));
+  }
 
   function renderComponentTable(group?: ComponentGroup) {
     const title = group ?? "色母组件";
@@ -393,6 +416,7 @@ export default function FormulasPanel() {
               >
                 <span className="block font-semibold text-foreground">{colors.find((c) => c.id === f.color_id)?.color_code || f.color_id}</span>
                 <span className="block text-xs text-muted-foreground">{f.id}</span>
+                <span className="block text-xs text-muted-foreground">{formatYears(effectiveFormulaYears(f, colors.find((color) => color.id === f.color_id) ?? {})) || "年份未设置"} · {formulaYearMode(f) === "custom" ? "自定义" : "沿用颜色年份"}</span>
               </button>
             );
           })}
@@ -464,6 +488,30 @@ export default function FormulasPanel() {
             </Select>
           </div>
         </div>
+        <fieldset className="mt-3 flex min-w-0 flex-col gap-2 rounded-lg border border-border p-3">
+          <legend className="px-1 text-sm font-medium">配方适用年份</legend>
+          <Label htmlFor="formula-year-mode">年份设置（必选）</Label>
+          <select id="formula-year-mode" value={yearMode} onChange={(e) => setYearMode(e.target.value as typeof yearMode)} className={`${INPUT_CLASS} max-md:min-h-11`}>
+            <option value="" disabled>请选择年份设置</option>
+            <option value="custom">自定义年份</option>
+            <option value="inherit">沿用颜色年份</option>
+          </select>
+          <p className="text-xs text-muted-foreground">颜色适用年份：{formatYears(selectedColor?.years ?? []) || "未设置"}</p>
+          {yearMode === "inherit" && <p className="text-xs text-muted-foreground">随颜色年份调整；不代表已逐个核实配方适用范围。</p>}
+          {yearMode === "custom" && <>
+            {years.map((entry, index) => (
+              <div key={index} className="flex min-w-0 items-center gap-2 max-md:flex-wrap">
+                <input aria-label={`起始年份 ${index + 1}`} type="number" min={1900} max={2100} value={entry.year ?? ""} onChange={(e) => updateYear(index, "year", e.target.value)} className={`${INPUT_CLASS} min-w-0 flex-1`} />
+                <span>–</span>
+                <input aria-label={`结束年份 ${index + 1}`} placeholder="留空为单年" type="number" min={1900} max={2100} value={entry.year_end ?? ""} onChange={(e) => updateYear(index, "year_end", e.target.value)} className={`${INPUT_CLASS} min-w-0 flex-1`} />
+                <Button type="button" variant="outline" aria-label={`删除年份 ${index + 1}`} onClick={() => setYears((prev) => prev.filter((_, i) => i !== index))}><Trash2 className="size-4" /></Button>
+              </div>
+            ))}
+            <Button type="button" variant="outline" className="self-start" onClick={() => setYears((prev) => [...prev, { year: selectedColor?.years?.[0]?.year ?? new Date().getFullYear() }])}><Plus className="size-4" />添加年份或区间</Button>
+            <p className="text-xs text-muted-foreground">结束年份留空表示单年；可添加多个区间，不能跨越颜色年份的空档。</p>
+          </>}
+          {overlapping.length > 0 && <p role="status" className="text-sm text-amber-700">年份与同颜色、体系和工序的配方重叠：{overlapping.map((other) => other.id).join("、")}。允许作为备选配方保存。</p>}
+        </fieldset>
         <div className="flex flex-col gap-1.5 mt-3">
           <Label className="text-sm font-medium text-foreground/80">施工备注</Label>
           <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="min-h-[60px] w-full rounded-lg border border-border p-3 text-sm outline-none focus:border-primary" />
@@ -512,7 +560,7 @@ export default function FormulasPanel() {
 
         <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border -mx-5 -mb-5 px-5 pb-0">
           {selectedId && <Button onClick={handleDelete} variant="outline" className="rounded-lg text-sm text-destructive border-destructive/20 hover:bg-destructive/10">删除配方</Button>}
-          <Button onClick={handleSave} disabled={!percentageValid || uploadingImage || saving} className="rounded-lg bg-primary text-sm hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground/30">保存配方</Button>
+          <Button onClick={handleSave} disabled={!yearMode || !percentageValid || uploadingImage || saving} className="rounded-lg bg-primary text-sm hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground/30">保存配方</Button>
         </div>
       </div>
     </div>

@@ -26,6 +26,10 @@ export function jsonError(err: unknown, status = 500): NextResponse {
 }
 
 export function adminWriteError(err: unknown): NextResponse {
+  if (err && typeof err === "object" && "code" in err && err.code === "P0001" && "message" in err && typeof err.message === "string") {
+    if (err.message.startsWith("配方年份与颜色范围冲突：")) return NextResponse.json({ error: err.message }, { status: 409 });
+    if (err.message.startsWith("配方年份设置")) return NextResponse.json({ error: err.message }, { status: 400 });
+  }
   if (err && typeof err === "object" && "code" in err && err.code === "23503") {
     return NextResponse.json({ error: "仍有关联记录，请先处理关联数据" }, { status: 409 });
   }

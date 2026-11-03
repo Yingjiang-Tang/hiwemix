@@ -29,8 +29,10 @@ describe("数据写入保护", () => {
   });
   test("编辑配方保留历史变体和图片关联", async () => {
     mock.rpc.mockResolvedValue({ data: [{}], error: null });
-    await saveFormula({ id: "f", color_id: "c", variant_id: "legacy-variant", version: "v1", paint_system: "2K", formula_type: "Single Stage", notes: "", updated_at: "", image_url: "https://example.invalid/shared.jpg", components: [{ toner_code: "white", toner_name: "White", percentage: 100, grams_per_100g: 100 }] });
-    expect(mock.rpc).toHaveBeenCalledWith("save_formula_with_components", expect.objectContaining({ p_variant_id: "legacy-variant", p_image_url: "https://example.invalid/shared.jpg", p_is_new: false }));
+    mock.from.mockReturnValue(builder({ data: { id: "f", year_mode: "custom", formula_years: [{ year: 2020 }] }, error: null }));
+    const saved = await saveFormula({ id: "f", color_id: "c", variant_id: "legacy-variant", version: "v1", paint_system: "2K", formula_type: "Single Stage", notes: "", updated_at: "", image_url: "https://example.invalid/shared.jpg", components: [{ toner_code: "white", toner_name: "White", percentage: 100, grams_per_100g: 100 }] });
+    expect(saved.year_mode).toBe("custom"); expect(saved.years).toEqual([{ year: 2020 }]);
+    expect(mock.rpc).toHaveBeenCalledWith("save_formula_with_years", expect.objectContaining({ p_variant_id: "legacy-variant", p_image_url: "https://example.invalid/shared.jpg", p_is_new: false, p_year_mode: null, p_years: null }));
   });
   test("颜色重复 ID 的事务异常仍返回清楚的业务错误", async () => {
     mock.rpc.mockResolvedValue({ data: null, error: { code: "23505", message: "color id c already exists" } });

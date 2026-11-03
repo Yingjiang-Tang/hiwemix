@@ -1,8 +1,10 @@
 import type { YearEntry } from "@/types";
 
-export function validateFormula(value: unknown): string | null {
+export function validateFormula(value: unknown, isNew = false): string | null {
   if (!value || typeof value !== "object") return "请求格式错误";
   const body = value as Record<string, unknown>;
+  const yearError = validateFormulaYears(body, isNew);
+  if (yearError) return yearError;
   for (const key of ["id", "color_id", "version"]) {
     if (typeof body[key] !== "string" || !body[key].trim()) return `缺少必填字段（${key}）`;
   }
@@ -31,6 +33,17 @@ export function validateFormula(value: unknown): string | null {
     // 与表单一致：每组总和与 100 的误差必须小于 0.01。
     if (Math.abs((sums.get(group) ?? 0) - 100) >= 0.01) return `${group}组分百分比总和应为 100%`;
   }
+  return null;
+}
+
+export function validateFormulaYears(body: Record<string, unknown>, isNew = false): string | null {
+  if (!("year_mode" in body) && !("years" in body) && !isNew) return null;
+  if (body.year_mode !== "inherit" && body.year_mode !== "custom") return "请选择自定义年份或沿用颜色年份";
+  const error = validateColorYears(body.years);
+  if (error) return error;
+  const entries = body.years as YearEntry[];
+  if (body.year_mode === "custom" && entries.length === 0) return "自定义年份不能为空";
+  if (body.year_mode === "inherit" && entries.length !== 0) return "沿用颜色年份时不能提交自定义年份";
   return null;
 }
 

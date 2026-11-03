@@ -161,6 +161,11 @@ export interface I18nDict {
   makeLabel: string;
   typeLabel: string;
   yearsLabel: string;
+  yearsCustom: string;
+  formulaSelection: string;
+  yearsInherited: string;
+  yearsUnspecified: string;
+  yearsAlternatives: string;
   codeLabel: string;
   print: string;
   copy: string;
@@ -422,6 +427,11 @@ export const ENGLISH_DEFAULTS: I18nDict = {
   makeLabel: "Make",
   typeLabel: "Type",
   yearsLabel: "Years",
+  yearsCustom: "Formula-specific years",
+  formulaSelection: "Select formula",
+  yearsInherited: "Inherited from color",
+  yearsUnspecified: "Years unspecified",
+  yearsAlternatives: "Overlapping alternatives available",
   codeLabel: "Code",
   print: "Print",
   copy: "Copy",

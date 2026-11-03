@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { searchFormulas } from "@/lib/search-formulas";
+import { effectiveFormulaYears } from "@/lib/formula-years";
 import type { CarMake, Color, Formula } from "@/types";
 
 const brands: CarMake[] = [
@@ -67,15 +68,15 @@ describe("searchFormulas", () => {
     expect(result.rows).toHaveLength(1);
     expect(result.rows[0]).toMatchObject({
       makeName: "Toyota",
-      yearEntry: { year: 2018, year_end: 2022 },
       formula: { id: "toyota_040_v1" },
     });
   });
 
-  test("没有年份条件时为每个年份条目生成可打开的配方行", () => {
+  test("没有年份条件时每个配方仅出现一次，保留完整适用范围", () => {
     const result = searchFormulas(colors, formulas, brands, { make_id: "toyota" });
 
-    expect(result.rows.map((row) => row.yearEntry)).toEqual([
+    expect(result.rows).toHaveLength(1);
+    expect(effectiveFormulaYears(result.rows[0].formula, result.rows[0].color)).toEqual([
       { year: 2018, year_end: 2022 },
       { year: 2024 },
     ]);
