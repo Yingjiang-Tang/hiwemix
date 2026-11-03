@@ -12,6 +12,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "validate:links": "node scripts/validate-toner-links.mjs",
+    "test:db-toners": "node scripts/test-toner-links-db.mjs",
+    "test:e2e:toners": "playwright test --config playwright.toners.config.ts",
     "test:db-years": "node scripts/test-formula-years-db.mjs",
     "test:e2e:years": "playwright test --config playwright.years.config.ts"
   },

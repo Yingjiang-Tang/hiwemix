@@ -3,6 +3,7 @@ import { checkSupabaseAdmin } from "@/lib/auth";
 import { applyRateLimit, ADMIN_LIMIT } from "@/lib/rate-limit";
 import { getToners, saveToner, deleteToner } from "@/lib/db-toner";
 import type { Toner } from "@/types";
+import { normalizeTonerWebsiteUrl } from "@/lib/toner-website";
 
 /** 从任意错误中提取可读消息（兼容 Supabase PostgrestError 对象） */
 function extractError(e: unknown): string {
@@ -33,10 +34,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
     }
 
-    if (!body.code || !body.tradeName || !body.nameZh || !body.category) {
+    if (!body || typeof body !== "object" || !body.code || !body.tradeName || !body.nameZh || !body.category) {
       return NextResponse.json({ error: "缺少必填字段（code/tradeName/nameZh/category）" }, { status: 400 });
     }
 
+    if (Object.hasOwn(body, "websiteUrl")) {
+      try {
+        body.websiteUrl = normalizeTonerWebsiteUrl(body.websiteUrl);
+      } catch (e) {
+        return NextResponse.json({ error: extractError(e), field: "websiteUrl" }, { status: 400 });
+      }
+    }
     const saved = await saveToner(body);
     return NextResponse.json(saved, { status: 201 });
   } catch (e: unknown) {
@@ -61,10 +69,17 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
     }
 
-    if (!body.code) {
+    if (!body || typeof body !== "object" || !body.code) {
       return NextResponse.json({ error: "缺少 code" }, { status: 400 });
     }
 
+    if (Object.hasOwn(body, "websiteUrl")) {
+      try {
+        body.websiteUrl = normalizeTonerWebsiteUrl(body.websiteUrl);
+      } catch (e) {
+        return NextResponse.json({ error: extractError(e), field: "websiteUrl" }, { status: 400 });
+      }
+    }
     const saved = await saveToner(body);
     return NextResponse.json(saved);
   } catch (e: unknown) {

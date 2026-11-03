@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Edit, Trash2, Settings, Plus, ChevronUp, ChevronDown, Eye, ExternalLink } from "lucide-react";
-import { getTonerLink } from "@/data/toner-site-links";
+import { normalizeTonerWebsiteUrl } from "@/lib/toner-website";
 
 // 色母分类标签
 const TONER_CATEGORIES: { key: TonerCategory; label: string }[] = [
@@ -243,7 +243,7 @@ function TonerSection({
         style={{ ["--card-delay" as string]: "0s" }}
       >
         {visibleToners.map((toner) => (
-          <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} hex={toner.hex} href={getTonerLink(toner.code)} />
+          <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} hex={toner.hex} href={toner.websiteUrl ?? undefined} />
         ))}
 
         {/* 折叠且还有更多时：第 5 格显示「查看更多」占位卡片（车漆流动效果） */}
@@ -292,12 +292,37 @@ function TonerSection({
 
 // ==================== 添加色母对话框 ====================
 
+function TonerWebsiteField({ id, value, onChange, disabled }: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+}) {
+  let href: string | null = null;
+  try { href = normalizeTonerWebsiteUrl(value); } catch { /* 无效网址不能打开，保存时显示校验错误。 */ }
+
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <Label htmlFor={id} className="text-sm font-medium text-foreground/80">官网产品页链接</Label>
+      <Input id={id} type="url" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} aria-describedby={`${id}-hint`} placeholder="https://www.hiwe.com/产品页面" className="h-9 min-w-0 rounded-lg max-md:h-11" />
+      <div className="flex items-center justify-between gap-2">
+        <p id={`${id}-hint`} className="text-[11px] text-muted-foreground">选填，清空并保存可解除关联</p>
+        <Button type="button" variant="outline" disabled={!href || disabled} onClick={() => { if (href) window.open(href, "_blank", "noopener,noreferrer"); }} className="shrink-0 rounded-lg max-md:min-h-11">
+          <ExternalLink className="size-4" />打开验证
+        </Button>
+      </div>
+      <p className="text-[11px] text-muted-foreground">仅支持 hiwe.com 官网，请打开核对产品编号和名称。</p>
+    </div>
+  );
+}
+
 const ADD_FORM_INITIAL = {
   category: "" as TonerCategory | "",
   code: "",
   tradeName: "",
   nameZh: "",
   hex: "#808080",
+  websiteUrl: "",
 };
 
 function AddMaterialDialog({
@@ -308,11 +333,13 @@ function AddMaterialDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  onSave: (toner: Toner) => void;
+  onSave: (toner: Toner) => Promise<void>;
   existingCodes: string[];
 }) {
   const [form, setForm] = useState(ADD_FORM_INITIAL);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   // 每次打开时重置表单 + 自动生成代码
   useEffect(() => {
@@ -328,12 +355,20 @@ function AddMaterialDialog({
     setForm((prev) => ({ ...prev, code: newCode }));
   }, [form.category, open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function handleSave() {
+  async function handleSave() {
+    if (savingRef.current) return;
     setError("");
     if (!form.category) { setError("请选择所属分类"); return; }
     if (!form.code.trim()) { setError("产品代码不能为空"); return; }
     if (!form.tradeName.trim()) { setError("英文名称不能为空"); return; }
     if (!form.nameZh.trim()) { setError("中文名称不能为空"); return; }
+    let websiteUrl: string | null;
+    try {
+      websiteUrl = normalizeTonerWebsiteUrl(form.websiteUrl);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "官网链接格式错误");
+      return;
+    }
 
     const { r, g, b } = hexToRgb(form.hex);
     const newToner: Toner = {
@@ -342,18 +377,28 @@ function AddMaterialDialog({
       nameZh: form.nameZh.trim(),
       category: form.category as TonerCategory,
       hex: form.hex,
+      websiteUrl,
       rgb_r: r,
       rgb_g: g,
       rgb_b: b,
     };
 
-    onSave(newToner);
-    onClose();
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      await onSave(newToner);
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "保存失败，请重试");
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
   }
 
   return (
-      <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-        <DialogContent className="max-w-sm bg-card z-[1500] shadow-xl ring-1 ring-foreground/10">
+      <Dialog open={open} onOpenChange={(v) => { if (!v && !savingRef.current) onClose(); }}>
+        <DialogContent showCloseButton={!saving} className="max-w-sm max-h-[85dvh] overflow-y-auto bg-card z-[1500] shadow-xl ring-1 ring-foreground/10 max-md:[&_[data-slot=dialog-close]]:size-11">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
               <Plus className="size-5 text-primary" />
@@ -361,7 +406,7 @@ function AddMaterialDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-5 py-2">
+        <fieldset disabled={saving} className="flex min-w-0 flex-col gap-5 py-2 max-md:[&_input]:min-h-11 max-md:[&_[data-slot=select-trigger]]:min-h-11">
           {/* 所属分类 */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-sm font-medium text-foreground/80">所属分类</Label>
@@ -446,15 +491,17 @@ function AddMaterialDialog({
             </div>
           </div>
 
+          <TonerWebsiteField id="add-toner-website" value={form.websiteUrl} onChange={(websiteUrl) => setForm({ ...form, websiteUrl })} disabled={saving} />
+
           {/* 错误提示 */}
           {error && (
-            <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-2xs font-medium text-destructive">{error}</p>
+            <p role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-2xs font-medium text-destructive">{error}</p>
           )}
-        </div>
+        </fieldset>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="rounded-[6px]">取消</Button>
-          <Button onClick={handleSave} className="rounded-[6px] bg-primary hover:bg-primary/80">保存提交</Button>
+          <Button variant="outline" onClick={onClose} disabled={saving} className="rounded-[6px] max-md:min-h-11">取消</Button>
+          <Button onClick={handleSave} disabled={saving} className="rounded-[6px] bg-primary hover:bg-primary/80 max-md:min-h-11">{saving ? "保存中…" : "保存提交"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -479,14 +526,16 @@ function ManagementModal({
   open: boolean;
   onClose: () => void;
   items: Toner[];
-  onUpdateItem: (toner: Toner) => void;
+  onUpdateItem: (toner: Toner) => Promise<void>;
   onDeleteItem: (code: string) => void;
-  onAddItem: (toner: Toner) => void;
+  onAddItem: (toner: Toner) => Promise<void>;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingItem, setEditingItem] = useState<Toner | null>(null);
-  const [editForm, setEditForm] = useState({ tradeName: "", nameZh: "", category: "" as TonerCategory | "", hex: "#FFFFFF" });
+  const [editForm, setEditForm] = useState({ tradeName: "", nameZh: "", category: "" as TonerCategory | "", hex: "#FFFFFF", websiteUrl: "" });
   const [editError, setEditError] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const editSavingRef = useRef(false);
   const [addOpen, setAddOpen] = useState(false);
 
   // 重置搜索/编辑状态
@@ -528,14 +577,23 @@ function ManagementModal({
       nameZh: item.nameZh,
       category: item.category,
       hex: item.hex,
+      websiteUrl: item.websiteUrl ?? "",
     });
     setEditError("");
   }
 
   async function handleEditSave() {
+    if (editSavingRef.current) return;
     setEditError("");
     if (!editForm.tradeName || !editForm.nameZh || !editForm.category) {
-      setEditError("所有字段不能为空");
+      setEditError("英文商品名、中文品名和所属分类不能为空");
+      return;
+    }
+    let websiteUrl: string | null;
+    try {
+      websiteUrl = normalizeTonerWebsiteUrl(editForm.websiteUrl);
+    } catch (e) {
+      setEditError(e instanceof Error ? e.message : "官网链接格式错误");
       return;
     }
     const { r, g, b } = hexToRgb(editForm.hex);
@@ -545,17 +603,22 @@ function ManagementModal({
       nameZh: editForm.nameZh,
       category: editForm.category as TonerCategory,
       hex: editForm.hex,
+      websiteUrl,
       rgb_r: r,
       rgb_g: g,
       rgb_b: b,
     };
+    editSavingRef.current = true;
+    setEditSaving(true);
     try {
       await onUpdateItem(updated);
-    } catch {
-      setEditError("保存失败，请重试");
-      return;
+      setEditingItem(null);
+    } catch (e) {
+      setEditError(e instanceof Error ? e.message : "保存失败，请重试");
+    } finally {
+      editSavingRef.current = false;
+      setEditSaving(false);
     }
-    setEditingItem(null);
   }
 
   function handleDelete(item: Toner) {
@@ -599,8 +662,9 @@ function ManagementModal({
               </span>
               <Button
                   variant="default"
+                  aria-label="添加色母"
                   onClick={() => setAddOpen(true)}
-                    className="inline-flex items-center justify-center h-8 rounded-[6px] text-2xs leading-none text-white max-md:w-9 max-md:h-9 max-md:min-w-9 max-md:p-0 max-md:rounded-full max-md:shrink-0"
+                    className="inline-flex items-center justify-center h-8 rounded-[6px] text-2xs leading-none text-white max-md:w-11 max-md:h-11 max-md:min-w-11 max-md:p-0 max-md:rounded-full max-md:shrink-0"
                 >
                   <Plus className="mr-1 size-4 max-md:mr-0 max-md:text-white max-md:w-[18px] max-md:h-[18px]" />
                   <span className="max-md:hidden">添加色母</span>
@@ -651,7 +715,7 @@ function ManagementModal({
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => openEdit(row.original)}
-                          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary max-md:size-11"
                           aria-label="编辑"
                         >
                           <Edit className="size-4" />
@@ -680,13 +744,13 @@ function ManagementModal({
       </DialogContent>
 
       {/* ===== 编辑子弹窗（独立 Dialog，Portal 到 body） ===== */}
-        <Dialog open={!!editingItem} onOpenChange={(v) => { if (!v) setEditingItem(null); }}>
-          <DialogContent className="max-w-sm bg-card z-[1500] shadow-xl ring-1 ring-foreground/10">
+        <Dialog open={!!editingItem} onOpenChange={(v) => { if (!v && !editSavingRef.current) setEditingItem(null); }}>
+          <DialogContent showCloseButton={!editSaving} className="max-w-sm max-h-[85dvh] overflow-y-auto bg-card z-[1500] shadow-xl ring-1 ring-foreground/10 max-md:[&_[data-slot=dialog-close]]:size-11">
           <DialogHeader>
             <DialogTitle>编辑色母 — {editingItem?.code}</DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-col gap-5 py-2">
+          <fieldset disabled={editSaving} className="flex min-w-0 flex-col gap-5 py-2 max-md:[&_input]:min-h-11 max-md:[&_[data-slot=select-trigger]]:min-h-11">
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-medium text-foreground/80">色母代码</Label>
               <p className="text-sm font-semibold text-foreground">{editingItem?.code}</p>
@@ -757,14 +821,16 @@ function ManagementModal({
               </div>
             </div>
 
+            <TonerWebsiteField id="edit-toner-website" value={editForm.websiteUrl} onChange={(websiteUrl) => setEditForm({ ...editForm, websiteUrl })} disabled={editSaving} />
+
             {editError && (
-              <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-2xs font-medium text-destructive">{editError}</p>
+              <p role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-2xs font-medium text-destructive">{editError}</p>
             )}
-          </div>
+          </fieldset>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingItem(null)} className="rounded-lg">取消</Button>
-            <Button onClick={handleEditSave} className="rounded-lg bg-primary hover:bg-primary/80">保存</Button>
+            <Button variant="outline" onClick={() => setEditingItem(null)} disabled={editSaving} className="rounded-lg max-md:min-h-11">取消</Button>
+            <Button onClick={handleEditSave} disabled={editSaving} className="rounded-lg bg-primary hover:bg-primary/80 max-md:min-h-11">{editSaving ? "保存中…" : "保存"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -876,23 +942,17 @@ export default function TonerPage() {
   }, []);
 
   const handleAddItem = useCallback(async (newToner: Toner) => {
-    try {
-      const res = await fetch("/api/admin/toners", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newToner),
-      });
-      if (res.ok) {
-        const saved = await res.json();
-        setToners((prev) => [...prev, saved as Toner]);
-      } else {
-        const d = await res.json();
-        alert(d.error || "新增失败");
-      }
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error("[handleAddItem]", msg);
-      alert("网络错误，请重试：" + msg);
+    const res = await fetch("/api/admin/toners", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newToner),
+    });
+    if (res.ok) {
+      const saved = await res.json();
+      setToners((prev) => [...prev, saved as Toner]);
+    } else {
+      const d = await res.json();
+      throw new Error(d.error || "新增失败");
     }
   }, []);
 
@@ -970,8 +1030,9 @@ export default function TonerPage() {
               <Button
                 variant="outline"
                 size="sm"
+                aria-label="管理色母"
                 onClick={() => setManageOpen(true)}
-                className="inline-flex items-center justify-center h-9 shrink-0 rounded-lg gap-1.5 text-sm leading-none max-md:w-9 max-md:h-9 max-md:min-w-9 max-md:p-0 max-md:rounded-full"
+                className="inline-flex items-center justify-center h-9 shrink-0 rounded-lg gap-1.5 text-sm leading-none max-md:w-11 max-md:h-11 max-md:min-w-11 max-md:p-0 max-md:rounded-full"
               >
                 <Settings className="size-4 max-md:m-0" />
                 <span className="max-md:hidden">管理色母</span>
@@ -1006,7 +1067,7 @@ export default function TonerPage() {
             style={{ ["--card-delay" as string]: "0s" }}
           >
             {filteredToners.map((toner) => (
-              <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} hex={toner.hex} href={getTonerLink(toner.code)} />
+              <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} hex={toner.hex} href={toner.websiteUrl ?? undefined} />
             ))}
           </div>
         )}

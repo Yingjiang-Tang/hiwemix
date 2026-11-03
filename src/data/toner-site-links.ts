@@ -1,4 +1,4 @@
-// 色母 → 官网产品页链接映射（2026-08-18 Firecrawl 全站抓取生成）
+// 历史官网链接快照（2026-08-18 Firecrawl 全站抓取生成），仅供迁移校验，页面链接由数据库管理。
 // 官网 https://www.hiwe.com 为建站平台站点，产品页 slug 含色母代码，97/121 个色母可匹配
 import type { Toner } from "@/types";
 

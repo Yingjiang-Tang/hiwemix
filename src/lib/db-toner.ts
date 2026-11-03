@@ -4,6 +4,7 @@
 import { createClient } from "./supabase/server";
 import { getSupabaseAdmin } from "./supabase-server";
 import type { Toner } from "@/types";
+import { normalizeTonerWebsiteUrl } from "./toner-website";
 
 // ====== 读（SSR 客户端，受 RLS SELECT 策略保护：仅已登录用户） ======
 
@@ -67,6 +68,7 @@ function mapTonerRow(row: Record<string, unknown>): Toner {
     nameZh: row.name_zh as string,
     category: row.category as Toner["category"],
     hex: (row.hex as string) ?? "#FFFFFF",
+    websiteUrl: (row.website_url as string | null) ?? null,
   };
   if (row.rgb_r != null) {
     t.rgb_r = Number(row.rgb_r);
@@ -76,7 +78,7 @@ function mapTonerRow(row: Record<string, unknown>): Toner {
   return t;
 }
 
-// 注意：toners 表当前不包含 rgb_r/g/b 列（仅 code/trade_name/name_zh/category/hex）
+// 注意：toners 表不包含 rgb_r/g/b 列
 // RGB 数据由前端 hex 值和色母静态数据派生，无需持久化到数据库
 function toTonerRow(toner: Toner): Record<string, unknown> {
   return {
@@ -85,5 +87,7 @@ function toTonerRow(toner: Toner): Record<string, unknown> {
     name_zh: toner.nameZh,
     category: toner.category,
     hex: toner.hex,
+    // 旧客户端省略链接时不参与 upsert 更新；明确留空才解除关联。
+    ...(toner.websiteUrl !== undefined ? { website_url: normalizeTonerWebsiteUrl(toner.websiteUrl) } : {}),
   };
 }

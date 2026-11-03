@@ -191,6 +191,7 @@ export interface Toner {
   nameZh: string          // 中文品名，例如 "纯白"
   category: TonerCategory
   hex: string             // 颜色预览 hex，例如 "#FFFFFF"
+  websiteUrl?: string | null // 官网产品页链接，空值表示未关联
   rgb_r?: number          // RGB Red 分量 (0-255)
   rgb_g?: number          // RGB Green 分量 (0-255)
   rgb_b?: number          // RGB Blue 分量 (0-255)

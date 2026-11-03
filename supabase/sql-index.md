@@ -26,6 +26,7 @@
 
 ## 后续迁移入口
 
+- `supabase-migrations/20261103000001_toner_website_url.sql`：色母官网链接迁移，新增 `website_url` 并首次回填历史链接；重跑不覆盖手动修改或解除。已在隔离 PostgreSQL 验证，2026-11-03 用户已在生产执行并核验（116 个色母，97 个已关联官网链接）。验证步骤见 `docs/design/toner-website-release.md`。
 - `supabase-migrations/20261103000000_formula_years.sql`：配方年份增量迁移，已在隔离 PostgreSQL 17 验证，2026-11-03 已在生产执行并核验。不要重跑根目录旧年份回填脚本。完整步骤见 `docs/design/formula-year-release.md`。
 
 新的数据库变更请一律放入 `supabase-migrations/`（时间戳命名），并在此处同步更新对应条目的状态（🟢→⚪ 表示已并入正式迁移体系）。
