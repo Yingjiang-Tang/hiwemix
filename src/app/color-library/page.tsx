@@ -18,6 +18,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -292,11 +293,12 @@ function TonerSection({
 
 // ==================== 添加色母对话框 ====================
 
-function TonerWebsiteField({ id, value, onChange, disabled }: {
+function TonerWebsiteField({ id, value, onChange, disabled, multiline = false }: {
   id: string;
   value: string;
   onChange: (value: string) => void;
   disabled: boolean;
+  multiline?: boolean;
 }) {
   let href: string | null = null;
   try { href = normalizeTonerWebsiteUrl(value); } catch { /* 无效网址不能打开，保存时显示校验错误。 */ }
@@ -304,7 +306,11 @@ function TonerWebsiteField({ id, value, onChange, disabled }: {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
       <Label htmlFor={id} className="text-sm font-medium text-foreground/80">官网产品页链接</Label>
-      <Input id={id} type="url" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} aria-describedby={`${id}-hint`} placeholder="https://www.hiwe.com/产品页面" className="h-9 min-w-0 rounded-lg max-md:h-11" />
+      {multiline ? (
+        <textarea id={id} value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} aria-describedby={`${id}-hint`} placeholder="https://www.hiwe.com/产品页面" rows={3} inputMode="url" autoCapitalize="none" spellCheck={false} className="min-h-24 w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 font-mono text-sm leading-6 break-all outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 max-md:text-base" />
+      ) : (
+        <Input id={id} type="url" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} aria-describedby={`${id}-hint`} placeholder="https://www.hiwe.com/产品页面" className="h-9 min-w-0 rounded-lg max-md:h-11" />
+      )}
       <div className="flex items-center justify-between gap-2">
         <p id={`${id}-hint`} className="text-[11px] text-muted-foreground">选填，清空并保存可解除关联</p>
         <Button type="button" variant="outline" disabled={!href || disabled} onClick={() => { if (href) window.open(href, "_blank", "noopener,noreferrer"); }} className="shrink-0 rounded-lg max-md:min-h-11">
@@ -745,92 +751,99 @@ function ManagementModal({
 
       {/* ===== 编辑子弹窗（独立 Dialog，Portal 到 body） ===== */}
         <Dialog open={!!editingItem} onOpenChange={(v) => { if (!v && !editSavingRef.current) setEditingItem(null); }}>
-          <DialogContent showCloseButton={!editSaving} className="max-w-sm max-h-[85dvh] overflow-y-auto bg-card z-[1500] shadow-xl ring-1 ring-foreground/10 max-md:[&_[data-slot=dialog-close]]:size-11">
-          <DialogHeader>
-            <DialogTitle>编辑色母 — {editingItem?.code}</DialogTitle>
+          <DialogContent showCloseButton={!editSaving} className="flex max-h-[90dvh] w-[calc(100%-2rem)] max-w-[640px] flex-col gap-0 overflow-hidden rounded-2xl bg-card p-0 z-[1500] shadow-xl ring-1 ring-foreground/10 sm:max-w-[640px] max-md:[&_[data-slot=dialog-close]]:size-11">
+          <DialogHeader className="shrink-0 border-b border-border px-7 py-6 max-md:px-5 max-md:py-5">
+            <DialogTitle className="pr-8 text-xl font-semibold">编辑色母 — {editingItem?.code}</DialogTitle>
+            <DialogDescription>更新色母信息与官网产品页关联。</DialogDescription>
           </DialogHeader>
 
-          <fieldset disabled={editSaving} className="flex min-w-0 flex-col gap-5 py-2 max-md:[&_input]:min-h-11 max-md:[&_[data-slot=select-trigger]]:min-h-11">
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-medium text-foreground/80">色母代码</Label>
-              <p className="text-sm font-semibold text-foreground">{editingItem?.code}</p>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-medium text-foreground/80">英文商品名</Label>
-              <Input
-                value={editForm.tradeName}
-                onChange={(e) => setEditForm({ ...editForm, tradeName: e.target.value })}
-                className="h-9 rounded-lg"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-medium text-foreground/80">中文品名</Label>
-              <Input
-                value={editForm.nameZh}
-                onChange={(e) => setEditForm({ ...editForm, nameZh: e.target.value })}
-                className="h-9 rounded-lg"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-medium text-foreground/80">所属分类</Label>
-              <Select
-                value={editForm.category}
-                onValueChange={(v) => setEditForm({ ...editForm, category: (v as TonerCategory) || "" })}
-              >
-                <SelectTrigger className="h-9 w-full rounded-lg">
-                  <SelectValue />
-                </SelectTrigger>
-                 <SelectContent className="z-[1600] max-h-[200px]">
-                  {TONER_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-medium text-foreground/80">预览色 HEX</Label>
-              <div className="flex items-center gap-3 rounded-lg border border-border p-3">
-                <div className="relative flex-shrink-0">
-                  <div
-                    className="size-10 cursor-pointer rounded-md border-2 border-input"
-                    style={{ backgroundColor: editForm.hex }}
-                  />
-                  <input
-                    type="color"
-                    value={editForm.hex}
-                    onChange={(e) => setEditForm({ ...editForm, hex: e.target.value })}
-                    className="absolute inset-0 cursor-pointer opacity-0"
+          {/* 基本信息两列排布，官网长链接独立展示；矮屏仅滚动表单，操作区保持可见。 */}
+          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+            <fieldset disabled={editSaving} className="min-w-0 px-7 py-6 max-md:px-5 max-md:py-5">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-5 max-md:grid-cols-1">
+                <div className="flex min-w-0 flex-col gap-2">
+                  <Label htmlFor="edit-toner-trade-name" className="text-sm font-medium text-foreground/80">英文商品名</Label>
+                  <Input
+                    id="edit-toner-trade-name"
+                    value={editForm.tradeName}
+                    onChange={(e) => setEditForm({ ...editForm, tradeName: e.target.value })}
+                    className="h-11 rounded-lg"
                   />
                 </div>
-                <Input
-                  value={editForm.hex}
-                  onChange={(e) => {
-                    let raw = e.target.value;
-                    if (!raw.startsWith("#")) raw = "#" + raw;
-                    if (/^#[0-9a-fA-F]{0,6}$/.test(raw)) {
-                      setEditForm({ ...editForm, hex: raw.length === 7 ? raw.toUpperCase() : raw });
-                    }
-                  }}
-                  className="h-9 flex-1 rounded-lg font-mono"
-                  maxLength={7}
-                />
+
+                <div className="flex min-w-0 flex-col gap-2">
+                  <Label htmlFor="edit-toner-name-zh" className="text-sm font-medium text-foreground/80">中文品名</Label>
+                  <Input
+                    id="edit-toner-name-zh"
+                    value={editForm.nameZh}
+                    onChange={(e) => setEditForm({ ...editForm, nameZh: e.target.value })}
+                    className="h-11 rounded-lg"
+                  />
+                </div>
+
+                <div className="flex min-w-0 flex-col gap-2">
+                  <Label htmlFor="edit-toner-category" className="text-sm font-medium text-foreground/80">所属分类</Label>
+                  <Select
+                    value={editForm.category}
+                    onValueChange={(v) => setEditForm({ ...editForm, category: (v as TonerCategory) || "" })}
+                  >
+                    <SelectTrigger id="edit-toner-category" className="h-11 w-full rounded-lg data-[size=default]:h-11">
+                      <SelectValue>{TONER_CATEGORIES.find((cat) => cat.key === editForm.category)?.label}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="z-[1600] max-h-[200px]">
+                      {TONER_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat.key} value={cat.key}>{cat.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex min-w-0 flex-col gap-2">
+                  <Label htmlFor="edit-toner-hex" className="text-sm font-medium text-foreground/80">预览色 HEX</Label>
+                  <div className="flex items-center gap-3">
+                    <div className="relative size-11 shrink-0">
+                      <div
+                        className="size-11 cursor-pointer rounded-lg border border-input"
+                        style={{ backgroundColor: editForm.hex }}
+                      />
+                      <input
+                        type="color"
+                        aria-label="选择预览色"
+                        value={editForm.hex}
+                        onChange={(e) => setEditForm({ ...editForm, hex: e.target.value })}
+                        className="absolute inset-0 size-full cursor-pointer opacity-0"
+                      />
+                    </div>
+                    <Input
+                      id="edit-toner-hex"
+                      value={editForm.hex}
+                      onChange={(e) => {
+                        let raw = e.target.value;
+                        if (!raw.startsWith("#")) raw = "#" + raw;
+                        if (/^#[0-9a-fA-F]{0,6}$/.test(raw)) {
+                          setEditForm({ ...editForm, hex: raw.length === 7 ? raw.toUpperCase() : raw });
+                        }
+                      }}
+                      className="h-11 flex-1 rounded-lg font-mono"
+                      maxLength={7}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <TonerWebsiteField id="edit-toner-website" value={editForm.websiteUrl} onChange={(websiteUrl) => setEditForm({ ...editForm, websiteUrl })} disabled={editSaving} />
+              <div className="mt-6 border-t border-border pt-6">
+                <TonerWebsiteField id="edit-toner-website" value={editForm.websiteUrl} onChange={(websiteUrl) => setEditForm({ ...editForm, websiteUrl })} disabled={editSaving} multiline />
+              </div>
 
-            {editError && (
-              <p role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-2xs font-medium text-destructive">{editError}</p>
-            )}
-          </fieldset>
+              {editError && (
+                <p role="alert" className="mt-4 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-2xs font-medium text-destructive">{editError}</p>
+              )}
+            </fieldset>
+          </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingItem(null)} disabled={editSaving} className="rounded-lg max-md:min-h-11">取消</Button>
-            <Button onClick={handleEditSave} disabled={editSaving} className="rounded-lg bg-primary hover:bg-primary/80 max-md:min-h-11">{editSaving ? "保存中…" : "保存"}</Button>
+          <DialogFooter className="mx-0 mb-0 shrink-0 flex-row gap-3 rounded-none bg-muted/30 px-7 py-4 max-md:px-5">
+            <Button variant="outline" onClick={() => setEditingItem(null)} disabled={editSaving} className="h-11 min-w-22 rounded-lg px-5 max-md:flex-1">取消</Button>
+            <Button onClick={handleEditSave} disabled={editSaving} className="h-11 min-w-22 rounded-lg bg-primary px-5 hover:bg-primary/80 max-md:flex-1">{editSaving ? "保存中…" : "保存"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
