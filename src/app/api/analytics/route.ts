@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { requireSupabaseAuth } from "@/lib/auth";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { insertAnalyticsEvent } from "@/lib/db-analytics";
 import { LANG_COOKIE, VISITOR_COOKIE } from "@/lib/cookies";
 import type { AnalyticsEventType, FormulaActionType } from "@/types";
 
-// 埋点限流：公开端点，防刷，每 IP 每分钟 120 次
+// 埋点限流：每 IP 每分钟 120 次
 const LIMIT = { prefix: "analytics", maxRequests: 120, windowMs: 60_000 };
 
 const ALLOWED_TYPES: AnalyticsEventType[] = ["page_view", "search", "formula_view", "color_view", "formula_action"];
@@ -18,10 +19,20 @@ const MAX_VALUE_LEN = 200;
 const VISITOR_MAX_AGE = 60 * 60 * 24 * 365; // 1 年
 const VISITOR_ID_RE = /^[A-Za-z0-9-]{8,64}$/; // 合法 UUID / cookie 值
 
-/** POST /api/analytics — 写入一条行为事件；首次访问时生成并下发 visitor_id cookie */
+/** POST /api/analytics — 采集普通用户的行为事件，跳过已登录管理员。 */
 export async function POST(req: NextRequest) {
   const limitRes = applyRateLimit(req, LIMIT);
   if (limitRes) return limitRes;
+
+  // 以服务端验证的账号角色为准，不依赖前端状态或请求内的角色字段。
+  try {
+    const { user, error } = await requireSupabaseAuth();
+    if (error) return error;
+    if (user.role === "admin") return NextResponse.json({ ok: true });
+  } catch {
+    // 无法确认角色时不采集，避免管理员因查询失败被计为普通访客。
+    return NextResponse.json({ error: "analytics unavailable" }, { status: 503 });
+  }
 
   let body: unknown;
   try {

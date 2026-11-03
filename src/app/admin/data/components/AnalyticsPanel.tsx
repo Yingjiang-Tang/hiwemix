@@ -134,6 +134,7 @@ export default function AnalyticsPanel() {
         <div>
           <h2 className="font-heading text-lg font-semibold">分析中心</h2>
           <p className="mt-1 text-sm text-muted-foreground">网站使用、搜索质量与调漆运营指标（UTC 日期）</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">已登录管理员的操作不再采集；历史匿名记录保留，无法区分账号角色。</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {DAY_OPTIONS.map((option) => (
