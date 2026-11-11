@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, useId } from "react";
 import Image from "next/image";
 import { useLang } from "@/components/LanguageContext";
 import { useFavorites } from "@/components/FavoritesContext";
@@ -10,18 +10,18 @@ import type { FormulaTableRow } from "@/types";
 import { effectiveFormulaYears, formatYears, formulaYearMode } from "@/lib/formula-years";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { SearchSlash, ChevronUp, ChevronDown, Eye, Heart } from "lucide-react";
 
 // 品牌筛选「全部品牌」选项的值
 const ALL_MAKES = "all";
 
-// 品牌筛选 TabsTrigger 样式：
-//   桌面端（≥768px）保持药丸选中底（data-active:bg-muted）
-//   移动端（<768px）选中态去药丸底、文字变蓝（效果与品牌筛选栏一致）
-const brandTrigger =
-  "h-9 flex-none gap-1.5 rounded-full px-4 text-sm data-active:bg-muted max-md:data-active:bg-transparent! dark:max-md:data-active:bg-transparent! max-md:data-active:shadow-none! max-md:data-active:text-primary max-md:h-10 max-md:w-full max-md:justify-start";
+// 品牌筛选采用等高网格按钮，选中态在明暗主题下都保留品牌蓝。
+const brandTrigger = cn(
+  "inline-flex h-14 w-full min-w-0 items-center gap-2 rounded-lg border border-border px-3 py-2 text-start text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+  "aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:text-primary dark:aria-pressed:bg-primary/20"
+);
 
 export interface SearchResultsProps {
   rows: FormulaTableRow[];
@@ -487,13 +487,31 @@ export default function SearchResults({
   const { t } = useLang();
   // 品牌筛选：默认「全部品牌」，选中某个品牌后只显示该品牌的分段
   const [activeMake, setActiveMake] = useState<string>(ALL_MAKES);
-  // 手机端：品牌筛选栏折叠/展开
+  // 两端共用折叠状态；列数和两行可见范围只由 CSS 决定。
   const [filterExpanded, setFilterExpanded] = useState(false);
+  const filterId = useId();
+  const filterListRef = useRef<HTMLDivElement>(null);
+  const selectedMakeRef = useRef<HTMLParagraphElement>(null);
 
   // 新搜索产生新的 rows 时，重置品牌筛选为「全部品牌」（新结果里不一定还有之前选中的品牌）
   useEffect(() => {
     setActiveMake(ALL_MAKES);
+    setFilterExpanded(false);
   }, [rows]);
+
+  useEffect(() => {
+    // 浏览器可能保留折叠前的滚动位置，展开和收起后都从列表顶部开始。
+    if (filterListRef.current) filterListRef.current.scrollTop = 0;
+  }, [filterExpanded, rows]);
+
+  function handleMakeSelect(value: string) {
+    setActiveMake(value);
+    setFilterExpanded(false);
+    // 展开区的选中项可能在收起后被隐藏，将焦点交给始终可见的当前品牌提示。
+    if (filterExpanded && value !== ALL_MAKES) {
+      requestAnimationFrame(() => selectedMakeRef.current?.focus({ preventScroll: true }));
+    }
+  }
 
   if (isLoading) {
     return (
@@ -555,11 +573,20 @@ export default function SearchResults({
   });
 
   // 品牌筛选栏选项：全部品牌 + 每个品牌（按当前结果中出现的品牌排序）
-  const makeTabs = brandSections.map((s) => ({
+  const makeOptions = [{ value: ALL_MAKES, label: t.allMakes, count: rows.length }, ...brandSections.map((s) => ({
     value: s.makeName,
     label: s.makeName,
     count: s.colorCards.length,
-  }));
+  }))];
+
+  // 按选项数量在相应断点显示入口，避免为了判断两行溢出而读取视口。
+  const expandControl = cn(
+    "mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+    makeOptions.length <= 4 && "max-md:hidden",
+    makeOptions.length <= 8 && "md:max-lg:hidden",
+    makeOptions.length <= 12 && "lg:max-2xl:hidden",
+    makeOptions.length <= 16 && "2xl:hidden"
+  );
 
   // 选中的品牌分段（「全部品牌」时展示所有）
   const visibleSections =
@@ -572,43 +599,59 @@ export default function SearchResults({
       {/* 品牌筛选栏：外层面包使 sticky 不因负 margin 在移动端抖动 */}
       <div className="-mx-6 sm:-mx-8 md:-mx-[60px] sticky top-[79px] z-30">
         <div className="rounded-none bg-card ring-1 ring-border shadow-[var(--shadow-level-1)] px-6 py-3 sm:px-8 md:px-[60px] md:py-6">
-        {/* 手机端折叠头部 */}
-        <button
-          type="button"
-          onClick={() => setFilterExpanded((v) => !v)}
-          className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium md:hidden"
-        >
-          <span className="text-foreground">
-            {activeMake === ALL_MAKES ? t.allMakes : activeMake}
-          </span>
-          <ChevronDown className={cn("size-4 transition-transform", filterExpanded && "rotate-180")} />
-        </button>
-
-        {/* Tabs 列表：手机端折叠隐藏，桌面端始终显示 */}
-        <div className={cn(filterExpanded ? "block" : "hidden md:block")}>
-        <div className="flex min-w-0 flex-1">
-          <Tabs value={activeMake} onValueChange={(v) => { setActiveMake(v); setFilterExpanded(false); }} className="w-full">
-            <TabsList variant="default" className="group-data-horizontal/tabs:h-fit h-auto w-full flex-wrap justify-start gap-1 rounded-none bg-transparent p-0 max-md:grid max-md:grid-cols-3 max-md:gap-2">
-              <TabsTrigger value={ALL_MAKES} className={brandTrigger}>
-                {t.allMakes}
-                <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
-                  {rows.length}
-                </Badge>
-              </TabsTrigger>
-              {makeTabs.map((mk) => (
-                <TabsTrigger key={mk.value} value={mk.value} className={brandTrigger}>
-                  {mk.label}
-                  <Badge variant="secondary" className="h-5 min-w-5 rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground">
-                    {mk.count}
-                  </Badge>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-         </Tabs>
-        </div>
+          <TooltipProvider delay={300}>
+            <div
+              id={filterId}
+              ref={filterListRef}
+              role="group"
+              aria-label={t.make}
+              className={cn("min-w-0", filterExpanded && "max-h-[min(360px,50dvh)] overflow-y-auto overscroll-contain")}
+            >
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8">
+                {makeOptions.map((mk, index) => (
+                  <Tooltip key={mk.value}>
+                    <TooltipTrigger
+                      render={<button type="button" />}
+                      aria-pressed={activeMake === mk.value}
+                      onClick={() => handleMakeSelect(mk.value)}
+                      className={cn(
+                        brandTrigger,
+                        !filterExpanded && index >= 4 && "max-md:hidden",
+                        !filterExpanded && index >= 8 && "md:max-lg:hidden",
+                        !filterExpanded && index >= 12 && "lg:max-2xl:hidden",
+                        !filterExpanded && index >= 16 && "2xl:hidden"
+                      )}
+                    >
+                      <span className="line-clamp-2 min-w-0 flex-1 text-start leading-[18px] [overflow-wrap:anywhere]">{mk.label}</span>
+                      <Badge variant="secondary" className="h-5 min-w-8 shrink-0 justify-center rounded-full bg-muted px-1.5 text-[11px] leading-none text-muted-foreground tabular-nums">
+                        {mk.count}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" role="tooltip">{mk.label}</TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
+          </TooltipProvider>
+          <div className="text-center">
+            {activeMake !== ALL_MAKES && (
+              <p ref={selectedMakeRef} tabIndex={-1} role="status" className="mt-3 break-words text-sm text-muted-foreground focus-visible:outline-none">
+                {t.currentMake(activeMake)}
+              </p>
+            )}
+            <button
+              type="button"
+              aria-expanded={filterExpanded}
+              aria-controls={filterId}
+              onClick={() => setFilterExpanded((value) => !value)}
+              className={expandControl}
+            >
+              {filterExpanded ? t.collapseMakes : t.expandAllMakes}
+              <ChevronDown aria-hidden="true" className={cn("size-4 transition-transform motion-reduce:transition-none", filterExpanded && "rotate-180")} />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
       {/* 按品牌分段展示，品牌名 A→Z */}
       {visibleSections.map(({ makeName, colorCards }) => (

@@ -125,6 +125,9 @@ export interface I18nDict {
   colorName: string;
   colorType: string;
   allMakes: string;
+  expandAllMakes: string;
+  collapseMakes: string;
+  currentMake: (make: string) => string;
   colorTypeAll: string;
   colorTypeSolid: string;
   colorTypeMetallic: string;
@@ -391,6 +394,9 @@ export const ENGLISH_DEFAULTS: I18nDict = {
   colorName: "Color Name",
   colorType: "Color Type",
   allMakes: "All Makes",
+  expandAllMakes: "Show all makes",
+  collapseMakes: "Collapse makes",
+  currentMake: (make) => `Current: ${make}`,
   colorTypeAll: "All",
   colorTypeSolid: "Solid",
   colorTypeMetallic: "Metallic",
