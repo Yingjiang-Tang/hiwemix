@@ -572,8 +572,10 @@ export default function SearchResults({
     return { makeName, colorCards };
   });
 
+  // 总数与各品牌统一按颜色卡片统计，同一品牌的相同色号只计一次。
+  const totalColorCards = brandSections.reduce((total, section) => total + section.colorCards.length, 0);
   // 品牌筛选栏选项：全部品牌 + 每个品牌（按当前结果中出现的品牌排序）
-  const makeOptions = [{ value: ALL_MAKES, label: t.allMakes, count: rows.length }, ...brandSections.map((s) => ({
+  const makeOptions = [{ value: ALL_MAKES, label: t.allMakes, count: totalColorCards }, ...brandSections.map((s) => ({
     value: s.makeName,
     label: s.makeName,
     count: s.colorCards.length,
