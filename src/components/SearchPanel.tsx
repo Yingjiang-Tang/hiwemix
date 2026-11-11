@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { Search, RotateCcw, ChevronDown, Clock, X } from "lucide-react";
+import styles from "./SearchPanel.module.css";
 
 // ===== 搜索历史（localStorage，最多 10 条，最近优先） =====
 
@@ -313,12 +314,12 @@ export default function SearchPanel({
       aria-label={t.search}
       onSubmit={(e) => handleSubmit(e)}
     >
-      <section className="bg-card rounded-xl p-6 ring-1 ring-border shadow-[var(--shadow-level-1)]">
+      <section className={`${styles.panel} bg-card rounded-xl p-6 shadow-[var(--shadow-level-1)]`}>
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-8">
 
           {/* LEFT — 区域标签 */}
           <div className="lg:w-5/12 xl:w-2/5 lg:shrink-0">
-            <h2 className="font-heading font-bold leading-tight tracking-tight text-muted-foreground text-xl lg:text-2xl max-md:text-primary max-md:text-center">
+            <h2 className="font-heading font-bold leading-tight tracking-tight text-white text-xl lg:text-2xl max-md:text-center [text-shadow:0_1px_4px_rgb(7_27_60_/_60%)]">
               {t.panelTitle}
             </h2>
           </div>

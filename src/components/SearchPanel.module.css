@@ -1,0 +1,27 @@
+.panel {
+  position: relative;
+  background-image: linear-gradient(to right, rgb(7 27 60 / 45%), transparent 28%, var(--card) 44%), url("/images/search-banner-blue-purple-v1.webp");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+/* 堆叠布局只在标题区显示车漆，避免图片干扰下方表单；渐变随主题衔接卡片底色。 */
+@media (max-width: 1023.98px) {
+  .panel {
+    background-image: linear-gradient(to bottom, rgb(7 27 60 / 55%) 52px, var(--card) 72px), url("/images/search-banner-blue-purple-v1.webp");
+    background-size: 100% 100%, auto 72px;
+  }
+}
+
+/* 沿用原外描边位置，品牌渐变不占用表单布局，也不拦截交互。 */
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(to right, #2587c9, #9e2beb);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
