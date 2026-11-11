@@ -28,7 +28,7 @@ export default function Home() {
   const [drawerFormulaId, setDrawerFormulaId] = useState<string | undefined>();
   const searchPanelRef = useRef<HTMLDivElement>(null);
 
-  const [hasExplored, setHasExplored] = useState(false);
+  const [hasExplored, setHasExplored] = useState<boolean | null>(null);
 
   const dataPromiseRef = useRef<Promise<{ colors: Color[]; formulas: Formula[]; brands: CarMake[] }> | null>(null);
 
@@ -44,6 +44,14 @@ export default function Home() {
   }
 
   useEffect(() => { loadData().catch(() => {}); }, []);
+
+  useEffect(() => {
+    // 当前历史记录保留进入状态，刷新后直接恢复搜索；首次访问仍显示开屏。
+    const explored = window.history.state?.hiweHomeExplored === true;
+    setHasExplored(explored);
+    if (explored) handleSearch({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 页面访问埋点（首载一次）
   useEffect(() => { trackPageView("home"); }, []);
@@ -75,6 +83,7 @@ export default function Home() {
 
   // Explore Now 触发：解锁滚动 + 首次载入全部配方
   function handleExplore() {
+    window.history.replaceState({ ...window.history.state, hiweHomeExplored: true }, "");
     setHasExplored(true);
     if (!hasSearched) handleSearch({});
   }
@@ -83,7 +92,7 @@ export default function Home() {
   // 同步调用 scrollIntoView 会按旧布局（Hero 未移除）计算位置导致停在配方卡片区域
   useEffect(() => {
     if (hasExplored && searchPanelRef.current) {
-      searchPanelRef.current.scrollIntoView({ behavior: "smooth" });
+      searchPanelRef.current.scrollIntoView({ behavior: "instant", block: "start" });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasExplored]);
@@ -91,9 +100,9 @@ export default function Home() {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <SiteHeader useHomeTheme />
-      <main className={`relative flex-1 ${hasExplored ? "overflow-y-auto" : "overflow-hidden"}`}>
+      <main hidden={hasExplored === null} className={`relative flex-1 ${hasExplored ? "overflow-y-auto" : "overflow-hidden"}`}>
         {/* Hero：占满 main 区域，点击后隐藏 */}
-        {!hasExplored && (
+        {hasExplored === false && (
           <section className="h-full">
             <HeroSection onExplore={handleExplore} />
           </section>
