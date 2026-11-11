@@ -87,6 +87,8 @@ test("搜索匹配项、详情切换、复制和打印的年份一致", async ({
 
 test("2024 返回 B、2026 无匹配、不选年份显示三个备选", async ({ page }) => {
   for (const year of ["2024", "2026", ""]) {
+    // 每轮重新访问首页，避免复用上一轮已进入搜索的历史状态。
+    await page.goto("/color-library");
     await page.goto("/");
     await page.getByRole("button", { name: /Explore Now/i }).click();
     if (year) {
