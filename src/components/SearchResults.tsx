@@ -491,7 +491,7 @@ export default function SearchResults({
   const [filterExpanded, setFilterExpanded] = useState(false);
   const filterId = useId();
   const filterListRef = useRef<HTMLDivElement>(null);
-  const selectedMakeRef = useRef<HTMLParagraphElement>(null);
+  const expandControlRef = useRef<HTMLButtonElement>(null);
 
   // 新搜索产生新的 rows 时，重置品牌筛选为「全部品牌」（新结果里不一定还有之前选中的品牌）
   useEffect(() => {
@@ -507,9 +507,9 @@ export default function SearchResults({
   function handleMakeSelect(value: string) {
     setActiveMake(value);
     setFilterExpanded(false);
-    // 展开区的选中项可能在收起后被隐藏，将焦点交给始终可见的当前品牌提示。
+    // 展开区的选中项可能在收起后被隐藏，将焦点交给展开按钮。
     if (filterExpanded && value !== ALL_MAKES) {
-      requestAnimationFrame(() => selectedMakeRef.current?.focus({ preventScroll: true }));
+      requestAnimationFrame(() => expandControlRef.current?.focus({ preventScroll: true }));
     }
   }
 
@@ -636,12 +636,8 @@ export default function SearchResults({
             </div>
           </TooltipProvider>
           <div className="text-center">
-            {activeMake !== ALL_MAKES && (
-              <p ref={selectedMakeRef} tabIndex={-1} role="status" className="mt-3 break-words text-sm text-muted-foreground focus-visible:outline-none">
-                {t.currentMake(activeMake)}
-              </p>
-            )}
             <button
+              ref={expandControlRef}
               type="button"
               aria-expanded={filterExpanded}
               aria-controls={filterId}

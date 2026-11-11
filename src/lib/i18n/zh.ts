@@ -125,7 +125,6 @@ const dict_zh = dict({
     allMakes: "全部品牌",
     expandAllMakes: "展开全部品牌",
     collapseMakes: "收起品牌",
-    currentMake: (make) => `当前：${make}`,
     colorTypeAll: "全部", colorTypeSolid: "实色", colorTypeMetallic: "金属",
     colorTypePearl: "珠光", colorTypeMatte: "哑光", colorTypeCandy: "糖果漆",
     search: "搜索", searching: "搜索中...", reset: "重置",
