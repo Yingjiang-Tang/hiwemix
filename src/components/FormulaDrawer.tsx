@@ -210,6 +210,17 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
   const yearSource = activeFormula && formulaYearMode(activeFormula) === "custom" ? t.yearsCustom : t.yearsInherited;
   const hasOverlap = activeFormula && formulas.some((other) => other.id !== activeFormula.id && other.paint_system === activeFormula.paint_system &&
     other.formula_type === activeFormula.formula_type && yearsOverlap(currentYears, effectiveFormulaYears(other, color)));
+  const yearDetails = <>{currentYear}<span className="block text-xs text-muted-foreground">{yearSource}</span>{hasOverlap && <span className="block text-xs text-amber-700">{t.yearsAlternatives}</span>}</>;
+  const colorInfoItems = [
+    { label: t.manufacturerLabel, value: make },
+    { label: t.originLabel, value: origin },
+    { label: t.codeLabel, value: color.color_code },
+    { label: t.yearsLabel, value: yearDetails },
+    { label: t.colorName, value: color.color_name, wide: true },
+    { label: t.carModelLabel, value: color.car_model || "-", wide: true },
+    { label: t.processLabel, value: activeFormula?.formula_type || "-" },
+    { label: t.versionLabel, value: activeFormula?.version || "-" },
+  ];
 
   return (
     <>
@@ -424,17 +435,17 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
             </div>
 
             {/* 右侧：颜色预览+信息 (~37.5%) */}
-            <div className="flex-shrink-0 overflow-auto md:flex-[37.5%]">
-              {/* 颜色预览：正方形，照片优先，加载失败回退纯色块（与首页卡片一致） */}
-              <div className="px-[60px] py-5 max-md:py-[19px] print:py-1">
-                <div className="relative aspect-square w-full overflow-hidden rounded-[35px] border border-border/60">
+            <div className="flex-shrink-0 overflow-auto md:flex-[37.5%] md:px-6 md:py-6 xl:px-8 print:px-0 print:py-1">
+              {/* 桌面端限制预览高度并完整显示图片，减少右栏对页面高度的占用。 */}
+              <div className="px-[60px] py-5 max-md:py-[19px] md:p-0 print:py-1">
+                <div className="relative aspect-square w-full overflow-hidden rounded-[35px] border border-border/60 md:aspect-auto md:h-[280px] md:max-h-[35vw] md:rounded-xl print:aspect-square print:h-auto print:max-h-none">
                   {!photoFailed && photoSrc ? (
                     <Image
                       src={photoSrc}
                       alt={`${color.color_code} ${color.color_name}`}
                       fill
                       sizes="(max-width: 768px) 100vw, 37vw"
-                      className="absolute inset-0 object-cover"
+                      className="absolute inset-0 object-cover md:object-contain"
                       onError={() => {
                         // 差异化行优先专属图，加载失败时逐级回退到 {code}.jpg，再失败才退纯色块
                         if (photoIdx < photoCandidates.length - 1) {
@@ -450,12 +461,20 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
                 </div>
               </div>
 
-              <Separator />
+              <Separator className="md:hidden" />
 
-              {/* Color Information（标题 + 斑马纹表格） */}
-              <div className="px-[60px] pt-[30px] pb-[60px] print:pt-1 print:pb-1">
-                <h3 className="mb-4 text-center font-heading text-xl font-bold leading-tight text-foreground sm:text-2xl print:mb-1">{t.tabColorInfo}</h3>
-                <div className="overflow-x-auto rounded-lg border border-border text-sm">
+              {/* 桌面资料按两组排列，长字段跨列；手机保留原有资料表。 */}
+              <div className="px-[60px] pt-[30px] pb-[60px] md:mt-6 md:p-0 print:mt-1 print:pt-1 print:pb-1">
+                <h3 className="mb-4 text-center font-heading text-xl font-bold leading-tight text-foreground sm:text-2xl md:text-start md:text-lg print:mb-1">{t.tabColorInfo}</h3>
+                <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border text-sm max-md:hidden xl:grid-cols-2 print:grid-cols-1">
+                  {colorInfoItems.map((item) => (
+                    <div key={item.label} className={`grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-x-3 bg-card px-4 py-2.5 xl:grid-cols-1 xl:gap-y-1 print:py-1 ${item.wide ? "xl:col-span-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] print:col-span-1" : ""}`}>
+                      <dt className="min-w-0 text-xs font-medium text-muted-foreground [overflow-wrap:anywhere]">{item.label}</dt>
+                      <dd className="min-w-0 font-medium text-foreground [overflow-wrap:anywhere]">{item.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <div className="overflow-x-auto rounded-lg border border-border text-sm md:hidden">
                   <Table className="w-full">
                     <tbody>
                       <TableRow className="bg-muted/50">
@@ -480,7 +499,7 @@ export default function FormulaDrawer({ result, onClose, initialFormulaIdx, form
                       </TableRow>
                       <TableRow>
                         <TableCell className="w-32 px-[30px] py-2.5 align-middle font-medium text-foreground/70">{t.yearsLabel}</TableCell>
-                        <TableCell className="px-[30px] py-2.5 align-middle">{currentYear}<span className="block text-xs text-muted-foreground">{yearSource}</span>{hasOverlap && <span className="block text-xs text-amber-700">{t.yearsAlternatives}</span>}</TableCell>
+                        <TableCell className="px-[30px] py-2.5 align-middle">{yearDetails}</TableCell>
                       </TableRow>
                       <TableRow className="bg-muted/50">
                         <TableCell className="w-32 px-[30px] py-2.5 align-middle font-medium text-foreground/70">{t.processLabel}</TableCell>
