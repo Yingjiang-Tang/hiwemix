@@ -19,7 +19,7 @@ const ALL_MAKES = "all";
 
 // 品牌筛选采用等高网格按钮，选中态在明暗主题下都保留品牌蓝。
 const brandTrigger = cn(
-  "inline-flex h-14 w-full min-w-0 items-center gap-2 rounded-lg border border-border px-3 py-2 text-start text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+  "inline-flex h-10 w-full min-w-0 items-center gap-2 rounded-lg border border-border px-3 py-0 text-start text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset max-md:h-11",
   "aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:text-primary dark:aria-pressed:bg-primary/20"
 );
 
@@ -605,7 +605,7 @@ export default function SearchResults({
               ref={filterListRef}
               role="group"
               aria-label={t.make}
-              className={cn("min-w-0", filterExpanded && "max-h-[min(360px,50dvh)] overflow-y-auto overscroll-contain")}
+              className={cn("min-w-0", filterExpanded && "max-h-[min(280px,50dvh)] overflow-y-auto overscroll-contain")}
             >
               <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8">
                 {makeOptions.map((mk, index) => (
