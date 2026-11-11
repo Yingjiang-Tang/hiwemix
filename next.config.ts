@@ -10,6 +10,8 @@ const supabaseHost = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  // 本地预览使用已加入认证回调白名单的回环地址，同时放行开发资源与热更新。
+  allowedDevOrigins: ["127.0.0.1"],
   // 打开图片优化：背景图 bg-home.jpg 1.1 MB JPG 不走优化会直接砸 LCP
   images: {
     formats: ["image/avif", "image/webp"],

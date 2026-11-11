@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { isLocalPreviewRequest, LOCAL_PREVIEW_HEADER } from "@/lib/local-preview";
 
 // Next.js 16 起 Middleware 更名为 Proxy（文件约定 proxy.ts），功能不变。
 // 全站登录门禁：未登录访问任意页面/接口一律拦截，仅认证页 + 回调 + 静态资源放行。
@@ -10,11 +11,19 @@ const REDIRECT_HOSTS = ["hiwe-formula-search.vercel.app", "www.hiwemix.com"];
 
 export async function proxy(req: NextRequest) {
   const { pathname, host } = req.nextUrl;
+  // 预览标记只能由本层写入，客户端传入的同名标头一律清除。
+  req.headers.delete(LOCAL_PREVIEW_HEADER);
 
   // 旧域名 / www 统一 301 永久重定向到主域名
   if (REDIRECT_HOSTS.includes(host)) {
     const newUrl = new URL(pathname + req.nextUrl.search, `https://${NEW_DOMAIN}`);
     return NextResponse.redirect(newUrl, 301);
+  }
+
+  if (isLocalPreviewRequest(req)) {
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set(LOCAL_PREVIEW_HEADER, "1");
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   // 静态资源文件（图片、字体等）直接放行——仅限非 API/管理路径，

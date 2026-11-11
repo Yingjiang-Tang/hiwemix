@@ -10,6 +10,8 @@
 
 ## URL 配置
 
+本机运行 `npm run dev` 后，可通过 `http://127.0.0.1:3000` 或 `http://localhost:3000` 免登录浏览、搜索和查看配方。仅开放展示页面及其只读数据接口；管理操作和账号接口仍需原有认证。正式域名及生产构建（`npm run build` / `npm start`）始终保留登录验证。本地预览不记录访问统计。
+
 在 Authentication 的 URL Configuration 中：
 
 - Site URL 使用正式主域名 `https://hiwemix.com`。

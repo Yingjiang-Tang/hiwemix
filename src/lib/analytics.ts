@@ -4,6 +4,7 @@
 // 并插入 Supabase。失败静默降级（不影响用户任何操作）。
 // ============================================================
 import type { AnalyticsEventType, FormulaActionType } from "@/types";
+import { isLocalPreviewHost } from "@/lib/local-preview";
 
 export type TrackEventType = AnalyticsEventType;
 
@@ -29,6 +30,8 @@ let sentInWindow = 0;
  * 客户端节流：同一窗口(10s)内最多 5 条，防死循环/刷屏。
  */
 export async function track(event_type: TrackEventType, event_data: TrackData = {}): Promise<void> {
+  // 本机免登录预览不写入正式站点的访问统计。
+  if (typeof window !== "undefined" && isLocalPreviewHost(window.location.host)) return;
   const now = Date.now();
   if (now - lastSentAt > 10_000) {
     lastSentAt = now;

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, isLocalPreview } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 
 // Supabase Auth 用户信息
@@ -84,6 +84,7 @@ export async function checkSupabaseAdmin(): Promise<
  * 全站 proxy 门禁之外的第二道防线：即使 proxy 被绕过，路由层仍拒绝未登录请求。
  * 与 requireSupabaseAuth 的区别：不查 profiles 表，无 profile 查询失败抛错路径，更轻。 */
 export async function requireLogin(): Promise<NextResponse | null> {
+  if (await isLocalPreview()) return null;
   const supabase = await createClient();
   const {
     data: { user },
