@@ -15,7 +15,7 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
   const [videoReady, setVideoReady] = useState(false);
   const [playFailed, setPlayFailed] = useState(false);
 
-  // 仅当视频可播放后才淡入视频层，慢网下先显示渐变背景，不阻塞首屏
+  // 视频可播放后淡入，封面始终留在下层，避免过渡时露出底色。
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -57,15 +57,15 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
   const showVideo = videoReady && !playFailed;
 
   return (
-    <section className="relative h-full min-h-[640px] w-full overflow-hidden bg-gradient-to-b from-white via-[#e8f4fc] to-[#2487ca] max-md:bg-background max-md:bg-none">
-      {/* ---- 封面图：桌面端视频就绪前填充白屏；移动端因视频 hidden 始终显示 ---- */}
+    <section className="relative h-full min-h-[640px] w-full overflow-hidden bg-[#301510] max-md:bg-background max-md:bg-none">
+      {/* ---- 桌面端封面图：优先加载，并在视频淡入时保持不透明 ---- */}
       <img
         src="/video/hero-poster.jpg"
         alt=""
         aria-hidden="true"
-        className={`hidden md:block absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
-          showVideo ? "opacity-0" : "opacity-100"
-        }`}
+        loading="eager"
+        fetchPriority="high"
+        className="hidden md:block absolute inset-0 h-full w-full object-cover"
       />
       {/* ---- 背景视频层 ---- */}
       <video
