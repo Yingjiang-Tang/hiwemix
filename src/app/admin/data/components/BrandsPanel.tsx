@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, Edit, Trash2, Plus, X } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function BrandsPanel() {
   const [loadError, setLoadError] = useState(false);
@@ -159,7 +160,7 @@ export default function BrandsPanel() {
   const pageRows = brands.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE);
 
   if (loadError) return <DataLoadError onRetry={fetchBrands} />;
-  if (loading) return <p role="status">加载中...</p>;
+  if (loading) return <div role="status" className="flex justify-center py-4 text-muted-foreground"><Spinner /></div>;
 
   return (
     <>
