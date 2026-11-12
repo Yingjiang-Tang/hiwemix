@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Search, Edit, Trash2, Settings, Plus, ChevronUp, ChevronDown, Eye, ExternalLink } from "lucide-react";
 import { normalizeTonerWebsiteUrl } from "@/lib/toner-website";
+import { cn } from "@/lib/utils";
 
 // 色母分类标签
 const TONER_CATEGORIES: { key: TonerCategory; label: string }[] = [
@@ -110,11 +111,13 @@ function TonerCard({
   tradeName,
   hex,
   href,
+  className,
 }: {
   code: string;
   tradeName: string;
   hex: string;
   href?: string;
+  className?: string;
 }) {
   const inner = (
     <>
@@ -136,19 +139,19 @@ function TonerCard({
       </div>
 
       {/* 卡片下方信息块：左对齐常显，产品代码 / 英文名；有官网链接时在代码右侧显示外链图标 */}
-      <div className="mt-[45px] max-md:mt-[15px] text-left font-[family-name:var(--font-sans)]">
-        <div className="flex items-center gap-1">
-          <p className="truncate text-[20px] font-normal leading-tight text-foreground">
+      <div className="mt-[45px] max-md:mt-[15px] text-left font-[family-name:var(--font-sans)] xl:mt-8">
+        <div className="flex items-center gap-1 xl:gap-[3px]">
+          <p className="truncate text-[20px] font-normal leading-tight text-foreground xl:text-[14px]">
             {code}
           </p>
           {href && (
             <ExternalLink
               aria-hidden
-              className="size-5 shrink-0 -my-1 text-muted-foreground"
+              className="size-5 shrink-0 -my-1 text-muted-foreground xl:size-[14px]"
             />
           )}
         </div>
-        <p className="mt-2 truncate text-[16px] font-normal leading-tight text-muted-foreground">
+        <p className="mt-2 truncate text-[16px] font-normal leading-tight text-muted-foreground xl:mt-1.5 xl:text-[12px]">
           {tradeName}
         </p>
       </div>
@@ -161,19 +164,19 @@ function TonerCard({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="animate-card-row mb-[70px] max-md:mb-[30px] block w-[87.5%]"
+      className={cn("animate-card-row mb-[70px] max-md:mb-[30px] block w-[87.5%] xl:mb-[50px]", className)}
     >
       {inner}
     </a>
   ) : (
-    <div className="animate-card-row mb-[70px] max-md:mb-[30px] w-[87.5%]">{inner}</div>
+    <div className={cn("animate-card-row mb-[70px] max-md:mb-[30px] w-[87.5%] xl:mb-[50px]", className)}>{inner}</div>
   );
 }
 
 // ==================== 色母分组段落组件（首页搜索配方品牌段风格） ====================
-// 折叠时只渲染前 4 张真实卡片，第 5 格留给「查看更多」；展开后显示全部 + 「收起」
+// 折叠时窄屏显示 4 张、宽桌面显示 6 张，末格留给「查看更多」。
 
-const TONER_CARDS_PER_ROW = 5; // 每行卡片数（与网格 grid-cols-5 对应）
+const TONER_CARDS_PER_ROW = 7; // 宽桌面每行卡片数（与 xl:grid-cols-7 对应）
 const TONER_VISIBLE_WHEN_COLLAPSED = 4; // 折叠时显示的真实卡片数，第 5 格留给「查看更多」
 
 function TonerSection({
@@ -188,8 +191,8 @@ function TonerSection({
   const sectionRef = useRef<HTMLElement>(null);
   const prevExpandedRef = useRef(false);
   const needsMore = toners.length > TONER_VISIBLE_WHEN_COLLAPSED;
-  // 折叠时只渲染前 N 张 + 占位；展开时渲染全部
-  const visibleToners = needsMore && !expanded ? toners.slice(0, TONER_VISIBLE_WHEN_COLLAPSED) : toners;
+  // 多出的两张卡片通过 CSS 隐藏，较窄屏幕保留原有折叠布局。
+  const visibleToners = needsMore && !expanded ? toners.slice(0, TONER_CARDS_PER_ROW - 1) : toners;
 
   // 收起后内容变短，浏览器滚动位置会漂移到别的分类；平滑滚回本分类标题处
   useEffect(() => {
@@ -240,18 +243,18 @@ function TonerSection({
       <SectionTitle label={label} id={`toner-category-${label}`} />
       {/* 段内网格：折叠时一行，展开时可多行；--card-delay 从 0 重置交错入场动画 */}
       <div
-        className="grid grid-cols-2 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10 sm:grid-cols-3 md:grid-cols-5"
+        className="grid grid-cols-2 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-7"
         style={{ ["--card-delay" as string]: "0s" }}
       >
-        {visibleToners.map((toner) => (
-          <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} hex={toner.hex} href={toner.websiteUrl ?? undefined} />
+        {visibleToners.map((toner, index) => (
+          <TonerCard key={toner.code} code={toner.code} tradeName={toner.tradeName} hex={toner.hex} href={toner.websiteUrl ?? undefined} className={!expanded && index >= TONER_VISIBLE_WHEN_COLLAPSED ? "max-xl:hidden" : undefined} />
         ))}
 
-        {/* 折叠且还有更多时：第 5 格显示「查看更多」占位卡片（车漆流动效果） */}
+        {/* 折叠且还有更多时：末格显示「查看更多」占位卡片（车漆流动效果） */}
         {needsMore && !expanded && (
           <button
             onClick={() => setExpanded(true)}
-            className="group relative aspect-square w-[87.5%] mb-[70px] cursor-pointer overflow-hidden transition-all duration-300 ease-in-out transform-gpu [backface-visibility:hidden]"
+            className={cn("group relative aspect-square w-[87.5%] mb-[70px] cursor-pointer overflow-hidden transition-all duration-300 ease-in-out transform-gpu [backface-visibility:hidden] xl:mb-[50px]", toners.length < TONER_CARDS_PER_ROW && "xl:hidden")}
             aria-label={`${t.viewMore} ${label}`}
           >
             <div className="paint-flow absolute inset-0" />
@@ -259,8 +262,8 @@ function TonerSection({
             <div className="paint-blob right-[5%] bottom-[10%] h-[55%] w-[55%]" style={{ animationDelay: "-2s", backgroundColor: "rgba(228,113,253,0.45)" }} />
             <div className="absolute inset-0 bg-black/25 transition-colors group-hover:bg-black/35" />
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white">
-              <Eye className="size-7 drop-shadow transition-transform duration-300 group-hover:scale-110" strokeWidth={1.75} />
-              <span className="text-[19px] font-normal drop-shadow transition-transform duration-300 group-hover:scale-105">
+              <Eye className="size-7 drop-shadow transition-transform duration-300 group-hover:scale-110 xl:size-5" strokeWidth={1.75} />
+              <span className="text-[19px] font-normal drop-shadow transition-transform duration-300 group-hover:scale-105 xl:text-[14px]">
                 {t.viewMore}
               </span>
             </div>
@@ -271,7 +274,7 @@ function TonerSection({
         {needsMore && expanded && (
           <button
             onClick={() => setExpanded(false)}
-            className="group relative aspect-square w-[87.5%] mb-[70px] cursor-pointer overflow-hidden transition-all duration-300 ease-in-out transform-gpu [backface-visibility:hidden]"
+            className={cn("group relative aspect-square w-[87.5%] mb-[70px] cursor-pointer overflow-hidden transition-all duration-300 ease-in-out transform-gpu [backface-visibility:hidden] xl:mb-[50px]", toners.length < TONER_CARDS_PER_ROW && "xl:hidden")}
             aria-label={`${t.collapse} ${label}`}
           >
             <div className="paint-flow absolute inset-0" />
@@ -279,8 +282,8 @@ function TonerSection({
             <div className="paint-blob right-[5%] bottom-[10%] h-[55%] w-[55%]" style={{ animationDelay: "-3s", backgroundColor: "rgba(228,113,253,0.45)" }} />
             <div className="absolute inset-0 bg-black/25 transition-colors group-hover:bg-black/35" />
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white">
-              <ChevronUp className="size-7 drop-shadow transition-transform duration-300 group-hover:scale-110" strokeWidth={1.75} />
-              <span className="text-[19px] font-normal drop-shadow transition-transform duration-300 group-hover:scale-105">
+              <ChevronUp className="size-7 drop-shadow transition-transform duration-300 group-hover:scale-110 xl:size-5" strokeWidth={1.75} />
+              <span className="text-[19px] font-normal drop-shadow transition-transform duration-300 group-hover:scale-105 xl:text-[14px]">
                 {t.collapse}
               </span>
             </div>
@@ -1076,7 +1079,7 @@ export default function TonerPage() {
         ) : (
           /* 单分类视图：平铺网格 */
           <div
-            className="grid grid-cols-2 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10 sm:grid-cols-3 md:grid-cols-5"
+            className="grid grid-cols-2 justify-items-center gap-x-0 gap-y-0 px-0 pb-4 mt-10 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-7"
             style={{ ["--card-delay" as string]: "0s" }}
           >
             {filteredToners.map((toner) => (
