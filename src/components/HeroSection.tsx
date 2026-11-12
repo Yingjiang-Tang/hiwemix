@@ -23,6 +23,8 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
     const handleError = () => setPlayFailed(true);
     video.addEventListener("canplay", handleCanPlay);
     video.addEventListener("error", handleError);
+    // 资源可在 hydration 前就绪，补上已发生的 canplay 事件。
+    if (video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) handleCanPlay();
     return () => {
       video.removeEventListener("canplay", handleCanPlay);
       video.removeEventListener("error", handleError);
@@ -70,18 +72,20 @@ export default function HeroSection({ onExplore }: HeroSectionProps) {
       {/* ---- 背景视频层 ---- */}
       <video
         ref={videoRef}
-        className={`hidden md:block absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+        className={`hidden md:block absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${
           showVideo ? "opacity-100" : "opacity-0"
         }`}
-        src="/video/hero.mp4"
-        preload="metadata"
+        preload="auto"
         muted
         loop
         autoPlay
         playsInline
         aria-hidden="true"
         tabIndex={-1}
-      />
+      >
+        {/* 由浏览器原生媒体条件选择，移动端和减少动态效果模式不下载视频。 */}
+        <source src="/video/hero-v2.mp4" type="video/mp4" media="(min-width: 768px) and (prefers-reduced-motion: no-preference)" />
+      </video>
       {/* ---- 黑色滤镜叠加层 ---- */}
       <div
         className="pointer-events-none absolute inset-0 bg-black/30 max-md:hidden"

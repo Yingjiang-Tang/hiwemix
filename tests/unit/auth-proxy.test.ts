@@ -8,7 +8,7 @@ import { proxy } from "@/proxy";
 beforeEach(() => { vi.clearAllMocks(); });
 
 test.each(["GET", "HEAD"])("首页静态视频 %s 请求不等待会话校验", async (method) => {
-  const response = await proxy(new NextRequest("https://hiwemix.com/video/hero.mp4", {
+  const response = await proxy(new NextRequest("https://hiwemix.com/video/hero-v2.mp4", {
     method, headers: { Range: "bytes=0-65535" },
   }));
   expect(response.headers.get("x-middleware-next")).toBe("1");

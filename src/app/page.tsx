@@ -101,8 +101,8 @@ export default function Home() {
     <div className="flex h-screen flex-col overflow-hidden">
       <SiteHeader useHomeTheme />
       <main hidden={hasExplored === null} className={`relative flex-1 ${hasExplored ? "overflow-y-auto" : "overflow-hidden"}`}>
-        {/* Hero：占满 main 区域，点击后隐藏 */}
-        {hasExplored === false && (
+        {/* 初始 HTML 即提供视频资源；历史状态恢复前仍由 main 隐藏，避免页面闪跳。 */}
+        {hasExplored !== true && (
           <section className="h-full">
             <HeroSection onExplore={handleExplore} />
           </section>

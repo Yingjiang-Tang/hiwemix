@@ -21,7 +21,7 @@ export async function proxy(req: NextRequest) {
   }
 
   // 首页静态视频的分段请求直接读取文件，避免每次等待 Supabase 会话校验。
-  if (pathname === "/video/hero.mp4" && (req.method === "GET" || req.method === "HEAD")) {
+  if (pathname === "/video/hero-v2.mp4" && (req.method === "GET" || req.method === "HEAD")) {
     return NextResponse.next();
   }
 
