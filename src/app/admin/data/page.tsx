@@ -39,7 +39,7 @@ function SideNav({ activeTab, onSelect, onClose }: { activeTab: TabKey; onSelect
               onClick={() => { onSelect(tab.key); onClose?.(); }}
               className={`relative flex items-center gap-3 rounded-none w-full ${linkPadding} py-2.5 text-left text-sm transition-colors ${
                 active
-                  ? "bg-blue-50/80 font-semibold text-primary dark:bg-primary dark:text-primary-foreground"
+                  ? "font-semibold text-primary"
                   : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground/80"
               }`}
               aria-current={active ? "page" : undefined}
