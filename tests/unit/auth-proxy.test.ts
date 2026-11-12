@@ -7,7 +7,15 @@ import { proxy } from "@/proxy";
 
 beforeEach(() => { vi.clearAllMocks(); });
 
-test.each(["/favorites", "/api/favorites"]) ("未登录响应 %s 也保留会话清理及禁止缓存标头", async (path) => {
+test.each(["GET", "HEAD"])("首页静态视频 %s 请求不等待会话校验", async (method) => {
+  const response = await proxy(new NextRequest("https://hiwemix.com/video/hero.mp4", {
+    method, headers: { Range: "bytes=0-65535" },
+  }));
+  expect(response.headers.get("x-middleware-next")).toBe("1");
+  expect(mocks.updateSession).not.toHaveBeenCalled();
+});
+
+test.each(["/favorites", "/api/favorites", "/api/formulas/hero.mp4", "/admin/hero.mp4"]) ("未登录响应 %s 也保留会话清理及禁止缓存标头", async (path) => {
   const refreshed = NextResponse.next();
   refreshed.cookies.set("sb-audit-auth-token", "", { maxAge: 0 });
   refreshed.headers.set("Cache-Control", "private, no-store");

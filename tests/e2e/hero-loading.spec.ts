@@ -1,5 +1,25 @@
 import { expect, test } from "@playwright/test";
 
+test("首页视频分段请求直接返回媒体，不跳转登录", async ({ request }) => {
+  const response = await request.get("/video/hero.mp4", {
+    headers: { Range: "bytes=0-65535" },
+    maxRedirects: 0,
+  });
+  expect(response.status()).toBe(206);
+  expect(response.headers()["content-type"]).toContain("video/mp4");
+  expect(response.headers()["content-range"]).toMatch(/^bytes 0-65535\//);
+});
+
+test("首次进入首页能够自动起播并显示视频", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const startedAt = Date.now();
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const video = page.locator("video");
+  await expect.poll(() => video.evaluate((element) => (element as HTMLVideoElement).currentTime), { timeout: 10000 }).toBeGreaterThan(0);
+  await expect(video).toHaveCSS("opacity", "1");
+  console.log(`首页冷启动到视频显示：${Date.now() - startedAt}ms`);
+});
+
 test("首页媒体尚未加载时不露出蓝色背景", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   // 阻断媒体请求，稳定复现冷启动时图片和视频均不可用的首屏。

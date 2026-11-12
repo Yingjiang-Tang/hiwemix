@@ -20,6 +20,11 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(newUrl, 301);
   }
 
+  // 首页静态视频的分段请求直接读取文件，避免每次等待 Supabase 会话校验。
+  if (pathname === "/video/hero.mp4" && (req.method === "GET" || req.method === "HEAD")) {
+    return NextResponse.next();
+  }
+
   if (isLocalPreviewRequest(req)) {
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set(LOCAL_PREVIEW_HEADER, "1");
