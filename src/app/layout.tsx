@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { LanguageProvider } from "@/components/LanguageContext";
 import { AuthProvider } from "@/components/AuthContext";
 import { FavoritesProvider } from "@/components/FavoritesContext";
@@ -9,6 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import BackToTop from "@/components/BackToTop";
 import { Noto_Sans_SC, Noto_Sans_Arabic, Noto_Sans_Hebrew, Geist } from "next/font/google";
 import { LANGS, type Lang } from "@/lib/i18n";
+import { detectLangFromAcceptLanguage } from "@/lib/i18n/detect";
 import { LANG_COOKIE, THEME_COOKIE } from "@/lib/cookies";
 
 import "./globals.css";
@@ -28,14 +29,23 @@ export const metadata: Metadata = {
   },
 };
 
-// 服务端读取语言 cookie：首屏直接输出正确 <html lang>，避免客户端再切换
-async function resolveLangCookie(): Promise<string> {
+// 服务端解析首屏语言：cookie 优先（用户手动选择过就以它为准），
+// 否则按浏览器 Accept-Language 自动匹配，让首次访问的外国用户直接看到母语；
+// 首屏输出正确 <html lang>，避免客户端再切换
+async function resolveLang(): Promise<Lang> {
   try {
     const store = await cookies();
     const stored = store.get(LANG_COOKIE)?.value;
-    if (stored && LANGS.some((l) => l.code === stored)) return stored;
+    if (stored && LANGS.some((l) => l.code === stored)) return stored as Lang;
   } catch {
-    /* 构建期等场景 cookies() 不可用，回退默认 */
+    /* 构建期等场景 cookies() 不可用，继续尝试请求头 */
+  }
+  try {
+    const requestHeaders = await headers();
+    const detected = detectLangFromAcceptLanguage(requestHeaders.get("accept-language"));
+    if (detected) return detected;
+  } catch {
+    /* 构建期等场景 headers() 不可用，回退默认 */
   }
   return "en";
 }
@@ -56,7 +66,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const lang = await resolveLangCookie();
+  const lang = await resolveLang();
   const isDark = await resolveThemeIsDark();
   return (
     <html
@@ -73,7 +83,7 @@ export default async function RootLayout({
       <body className="min-h-full">
         <TooltipProvider delay={300}>
           <Providers>
-          <LanguageProvider initialLang={lang as Lang}>
+          <LanguageProvider initialLang={lang}>
             <AuthProvider>
               <FavoritesProvider>
                 <CompareProvider>

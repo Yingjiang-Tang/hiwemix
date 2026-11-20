@@ -55,10 +55,11 @@ export function LanguageProvider({ children, initialLang = "en" }: { children: R
   }, []);
 
   // 客户端挂载后从 cookie 读取真实语言，避免 SSR/客户端不一致
+  // 非受支持的 cookie 值（损坏/旧格式）忽略，避免覆盖服务端按请求头检测出的语言
   useEffect(() => {
     try {
       const stored = getClientCookie(LANG_COOKIE);
-      if (stored && stored !== lang) {
+      if (stored && stored !== lang && LANGS.some((l) => l.code === stored)) {
         setLang(stored as Lang);
       }
     } catch { /* noop */ }

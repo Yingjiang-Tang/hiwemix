@@ -1,4 +1,5 @@
 import Image from "next/image";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 // 认证页外壳：强制亮色主题 + 左上角品牌 Logo + 居中双栏卡片容器
 // 登录 / 注册 / 重置密码三个页面共用
@@ -21,6 +22,11 @@ export function AuthPageLayout({ children }: { children: React.ReactNode }) {
           className="h-8 w-auto object-contain lg:h-10"
         />
       </a>
+
+      {/* 右上角语言切换器：与居中/居左 logo 同一水平线，手机端只显示国旗 */}
+      <div className="absolute right-6 top-[29px] z-20 md:right-10 md:top-8 lg:top-9">
+        <LanguageSwitcher variant="auth" />
+      </div>
 
       <div className="flex min-h-svh flex-col items-center justify-center bg-muted px-6 pb-6 pt-24 md:p-10">
         <div className="w-full max-w-sm md:max-w-4xl">{children}</div>

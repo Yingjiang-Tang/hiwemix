@@ -39,21 +39,48 @@ function FlagIcon({ code }: { code: string }) {
   );
 }
 
-/* LanguageSwitcher — 样式与右侧按钮组严格统一 */
+/* LanguageSwitcher — header 变体与顶部按钮组严格统一；
+   auth 变体用于认证页（强制亮色外壳）：不能复用 header-action-btn，
+   因为 --header-* 变量在 .dark 下解析于 <html> 上，进入 .auth-light 后仍是浅色，会看不清 */
+const HEADER_TRIGGER_CLASS =
+  "h-8 w-auto min-w-0 gap-1.5 rounded-lg border border-border bg-transparent px-3 text-2xs font-medium header-action-btn";
+const AUTH_TRIGGER_CLASS =
+  "h-8 max-md:h-11! w-auto min-w-0 gap-1.5 rounded-lg border border-border bg-background px-3 text-2xs font-medium text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground";
+
 export default function LanguageSwitcher({
-  transitionStyle,
+  transitionStyle = "",
+  variant = "header",
 }: {
-  transitionStyle: string;
+  transitionStyle?: string;
+  variant?: "header" | "auth";
 }) {
   const { lang, setLang } = useLang();
+  const isAuth = variant === "auth";
 
   return (
     <Select value={lang} onValueChange={(v) => setLang((v as Lang) || "en")}>
       <SelectTrigger
-        className="h-8 w-auto min-w-0 gap-1.5 rounded-lg border border-border bg-transparent px-3 text-2xs font-medium header-action-btn"
-        style={{ transition: transitionStyle }}
+        aria-label={isAuth ? "Language" : undefined}
+        className={isAuth ? AUTH_TRIGGER_CLASS : HEADER_TRIGGER_CLASS}
+        style={isAuth ? undefined : { transition: transitionStyle }}
       >
-        <SelectValue />
+        {isAuth ? (
+          /* 手机端只显示国旗，避免与居中的 logo 重叠；md 以上显示语言名 */
+          <SelectValue>
+            {(value: string | null) => {
+              const selected = LANGS.find((l) => l.code === value);
+              if (!selected) return null;
+              return (
+                <>
+                  <FlagIcon code={selected.flag} />
+                  <span className="max-md:hidden">{selected.name}</span>
+                </>
+              );
+            }}
+          </SelectValue>
+        ) : (
+          <SelectValue />
+        )}
       </SelectTrigger>
       <SelectContent align="end" side="bottom" sideOffset={8} alignItemWithTrigger={false} className="max-h-[300px] min-w-[200px] overflow-y-auto bg-popover text-popover-foreground rounded-lg shadow-md border border-border">
         {LANGS.map((l) => (
