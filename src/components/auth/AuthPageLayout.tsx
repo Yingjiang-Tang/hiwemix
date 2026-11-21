@@ -12,19 +12,19 @@ export function AuthPageLayout({ children }: { children: React.ReactNode }) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="HIWE MIX"
-        className="absolute left-1/2 top-[35px] z-20 -translate-x-1/2 lg:left-10 lg:top-8 lg:translate-x-0"
+        className="absolute left-1/2 top-[35px] z-20 -translate-x-1/2 max-md:left-6 max-md:translate-x-0 lg:left-10 lg:top-8 lg:translate-x-0"
       >
         <Image
           src="/hiwemix2-01.png"
           alt="HIWE MIX"
           width={1206}
           height={334}
-          className="h-8 w-auto object-contain lg:h-10"
+          className="h-8 w-auto object-contain max-md:h-10 lg:h-10"
         />
       </a>
 
-      {/* 右上角语言切换器：与居中/居左 logo 同一水平线，手机端只显示国旗 */}
-      <div className="absolute right-6 top-[29px] z-20 md:right-10 md:top-8 lg:top-9">
+      {/* 右上角语言切换器：手机端与左侧 logo 垂直居中对齐；md 以上保持原有位置 */}
+      <div className="absolute right-6 top-[42px] z-20 md:right-10 md:top-8 lg:top-9">
         <LanguageSwitcher variant="auth" />
       </div>
 
