@@ -43,7 +43,7 @@ export async function proxy(req: NextRequest) {
 
   // 公开路由，不需要认证（全站内容已锁定：仅认证页 + auth 回调 + 静态资源）
   // 精确匹配的路由（页面）
-  const exactPublic = ["/login", "/register", "/reset-password", "/auth/recovery"];
+  const exactPublic = ["/login", "/register", "/reset-password", "/auth/recovery", "/terms", "/privacy"];
   // 前缀匹配的路由（API + 静态资源）
   // 注意：/api/auth/login、/api/auth/register 路由并不存在，不列入白名单（避免未来误开放）
   const prefixPublic = [
