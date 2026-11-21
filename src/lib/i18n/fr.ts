@@ -42,7 +42,7 @@ const dict_fr = dict({
     navAdmin: "Gestion des données",
     userManagement: "Gestion des utilisateurs",
     logout: "Déconnexion",
-    loginWelcome: "Bon retour",
+    loginWelcome: "Se connecter",
     loginSubtitle: "Entrez vos identifiants pour accéder au système",
     loginEmail: "E-mail", loginPassword: "Mot de passe",
     loginPlaceholderEmail: "vous@exemple.com",

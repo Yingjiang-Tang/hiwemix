@@ -45,7 +45,7 @@ const dict_zh = dict({
     userManagement: "用户管理",
     logout: "退出",
 
-    loginWelcome: "欢迎回来",
+    loginWelcome: "请登录",
     loginSubtitle: "请输入账号信息登录系统",
     loginPassword: "密码",
     loginPlaceholderPassword: "请输入密码",

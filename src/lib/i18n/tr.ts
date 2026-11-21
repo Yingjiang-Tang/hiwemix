@@ -73,7 +73,7 @@ const dict_tr = dict({
     registerLoginLink: "Zaten hesabınız var mı? Giriş yapın",
     registerErrorFailed: "Kayıt başarısız",
 
-    loginWelcome: "Tekrar hoş geldiniz",
+    loginWelcome: "Giriş yap",
     loginSubtitle: "Sisteme erişmek için kimlik bilgilerinizi girin",
     loginEmail: "E-posta", loginPassword: "Parola",
     loginPlaceholderEmail: "siz@ornek.com",

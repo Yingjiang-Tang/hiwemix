@@ -73,7 +73,7 @@ const dict_sl = dict({
     registerLoginLink: "Že imate račun? Prijava",
     registerErrorFailed: "Registracija ni uspela",
 
-    loginWelcome: "Dobrodošli nazaj",
+    loginWelcome: "Prijava",
     loginSubtitle: "Vnesite poverilnice za dostop do sistema",
     loginEmail: "E-pošta", loginPassword: "Geslo",
     loginPlaceholderEmail: "vi@primer.com",

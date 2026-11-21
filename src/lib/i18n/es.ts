@@ -73,7 +73,7 @@ const dict_es = dict({
     registerLoginLink: "¿Ya tienes cuenta? Inicia sesión",
     registerErrorFailed: "Error al registrarse",
 
-    loginWelcome: "Bienvenido de nuevo",
+    loginWelcome: "Iniciar sesión",
     loginSubtitle: "Ingrese sus credenciales para acceder al sistema",
     loginEmail: "Correo electrónico", loginPassword: "Contraseña",
     loginPlaceholderEmail: "usted@ejemplo.com",

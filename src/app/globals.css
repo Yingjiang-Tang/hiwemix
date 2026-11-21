@@ -303,6 +303,52 @@ body[data-bg-state="white"] {
   --ring: oklch(0.708 0 0);
 }
 
+/* ===== 认证卡片悬浮：柔和投影 ===== */
+.auth-card {
+  /* 干净、贴近的浅投影：只负责把卡片从背景上轻轻托起，避免深色晕染显脏 */
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.05),
+    0 14px 30px -12px rgba(15, 23, 42, 0.13),
+    0 30px 60px -26px rgba(15, 23, 42, 0.17);
+}
+
+/* ===== 认证页背景水印：倾斜重复的 HIWE MIX logo，相邻两行以不同速度沿斜线滚动 ===== */
+/* 图案单元由 AuthPageLayout 的内联 SVG <pattern> 定义：每层 908×240（两行高度），
+   A 层画偶数行、B 层画奇数行；所有 logo 统一为浅灰色水印 */
+.auth-watermark {
+  /* fixed：页面内容超出一屏（如手机端注册页）时水印仍完整铺满视口 */
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  display: block;
+  /* 旋转 45° 后覆盖视口所需的本地尺寸（视口投影，cos45=sin45≈0.707）+ 动画位移余量（2 × 908px） */
+  width: calc(70.7vw + 70.7vh + 1916px);
+  height: calc(70.7vw + 70.7vh + 20px);
+  will-change: transform;
+}
+
+/* 水印 logo：灰度 + 低透明度 */
+.auth-watermark__logo--gray {
+  filter: grayscale(1);
+  opacity: 0.08;
+}
+
+/* A 层（偶数行）：向上滚动（B 层在组件里用 animation-direction: reverse 反向播放） */
+.auth-watermark--slow {
+  animation: auth-watermark-scroll-up 174s linear infinite;
+}
+
+/* 位移发生在旋转后的坐标系里，落到屏幕上沿 45° 斜线移动；
+   908px = 1 个图案周期（<pattern> 宽度），保证首尾无缝 */
+@keyframes auth-watermark-scroll-up {
+  from { transform: translate(-50%, -50%) rotate(-45deg) translate3d(0, 0, 0); }
+  to   { transform: translate(-50%, -50%) rotate(-45deg) translate3d(908px, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-watermark { animation: none; }
+}
+
 /* ===== RTL / RTL 语言字体支持 ===== */
 /* 布局方向固定 LTR（不做镜像翻转），阿语/希语文字按 lang 应用对应字体 */
 html[lang="ar"] body,

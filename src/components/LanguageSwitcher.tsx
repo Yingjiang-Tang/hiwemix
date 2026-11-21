@@ -25,16 +25,24 @@ import TR from "country-flag-icons/react/3x2/TR";
 import IL from "country-flag-icons/react/3x2/IL";
 import SA from "country-flag-icons/react/3x2/SA";
 
-const FLAG_MAP: Record<string, React.FC<{ className?: string }>> = {
+const FLAG_MAP: Record<string, React.FC<{ className?: string; style?: React.CSSProperties }>> = {
   GB, CN, FR, DE, ES, PT, IT, RU, SI, TR, IL, SA,
 };
 
-function FlagIcon({ code }: { code: string }) {
+function FlagIcon({
+  code,
+  className,
+  style,
+}: {
+  code: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   const Flag = FLAG_MAP[code];
   if (!Flag) return null;
   return (
     <span className="inline-flex items-center justify-center leading-none">
-      <Flag />
+      <Flag className={className} style={style} />
     </span>
   );
 }
@@ -45,7 +53,7 @@ function FlagIcon({ code }: { code: string }) {
 const HEADER_TRIGGER_CLASS =
   "h-8 w-auto min-w-0 gap-1.5 rounded-lg border border-border bg-transparent px-3 text-2xs font-medium header-action-btn";
 const AUTH_TRIGGER_CLASS =
-  "h-8 max-md:h-11! w-auto min-w-0 gap-1.5 rounded-lg border border-border bg-background px-3 text-2xs font-medium text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground";
+  "relative justify-center rounded-none border border-border bg-background p-0 text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground after:absolute after:inset-x-0 after:-inset-y-[9px] after:content-['']";
 
 export default function LanguageSwitcher({
   transitionStyle = "",
@@ -62,20 +70,16 @@ export default function LanguageSwitcher({
       <SelectTrigger
         aria-label={isAuth ? "Language" : undefined}
         className={isAuth ? AUTH_TRIGGER_CLASS : HEADER_TRIGGER_CLASS}
-        style={isAuth ? undefined : { transition: transitionStyle }}
+        style={isAuth ? { width: 38, height: 26 } : { transition: transitionStyle }}
+        hideIcon={isAuth}
       >
         {isAuth ? (
-          /* 手机端只显示国旗，避免与居中的 logo 重叠；md 以上显示语言名 */
-          <SelectValue>
+          /* 认证页：只显示国旗，无语言名与下拉箭头 */
+          <SelectValue className="justify-center">
             {(value: string | null) => {
               const selected = LANGS.find((l) => l.code === value);
               if (!selected) return null;
-              return (
-                <>
-                  <FlagIcon code={selected.flag} />
-                  <span className="max-md:hidden">{selected.name}</span>
-                </>
-              );
+              return <FlagIcon code={selected.flag} style={{ width: 36, height: 24 }} />;
             }}
           </SelectValue>
         ) : (

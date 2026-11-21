@@ -73,7 +73,7 @@ const dict_ar = dict({
     registerLoginLink: "لديك حساب بالفعل؟ سجل الدخول",
     registerErrorFailed: "فشل التسجيل",
 
-    loginWelcome: "مرحبًا بعودتك",
+    loginWelcome: "تسجيل الدخول",
     loginSubtitle: "أدخل بيانات اعتمادك للوصول إلى النظام",
     loginEmail: "البريد الإلكتروني", loginPassword: "كلمة المرور",
     loginPlaceholderEmail: "أنت@مثال.com",

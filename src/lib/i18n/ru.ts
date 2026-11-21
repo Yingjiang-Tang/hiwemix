@@ -73,7 +73,7 @@ const dict_ru = dict({
     registerLoginLink: "Уже есть аккаунт? Войти",
     registerErrorFailed: "Ошибка регистрации",
 
-    loginWelcome: "С возвращением",
+    loginWelcome: "Вход",
     loginSubtitle: "Введите свои учётные данные для входа",
     loginEmail: "Эл. почта", loginPassword: "Пароль",
     loginPlaceholderEmail: "вы@пример.com",

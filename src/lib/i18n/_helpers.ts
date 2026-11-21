@@ -306,7 +306,7 @@ export const ENGLISH_DEFAULTS: I18nDict = {
   navAdmin: "Data Management",
   userManagement: "User Management",
   logout: "Logout",
-  loginWelcome: "Welcome back",
+  loginWelcome: "Sign in",
   loginSubtitle: "Enter your credentials to access the system",
   loginEmail: "Email",
   loginPassword: "Password",

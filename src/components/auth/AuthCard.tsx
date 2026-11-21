@@ -13,7 +13,7 @@ export function AuthCard({
 }: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="overflow-hidden rounded-[25px] p-0">
+      <Card className="auth-card overflow-hidden rounded-none p-0">
         <CardContent className="grid min-h-[700px] overflow-hidden px-0 py-0 md:grid-cols-2">
           {/* 左侧图片栏（桌面端显示） */}
           <div className="relative hidden overflow-hidden bg-muted md:block">

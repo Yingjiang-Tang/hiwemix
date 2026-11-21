@@ -73,7 +73,7 @@ const dict_he = dict({
     registerLoginLink: "כבר יש חשבון? התחבר",
     registerErrorFailed: "ההרשמה נכשלה",
 
-    loginWelcome: "ברוך שובך",
+    loginWelcome: "התחברות",
     loginSubtitle: "הזן את האישורים שלך כדי לגשת למערכת",
     loginEmail: "דוא״ל", loginPassword: "סיסמה",
     loginPlaceholderEmail: "אתה@דוגמה.com",
