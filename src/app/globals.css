@@ -916,4 +916,12 @@ html, body {
   [data-admin-data] label:has(input:is([type="checkbox"], [type="file"])) {
     min-height: 44px;
   }
+  /* 分析中心分段控件：暗色下选中态是同色填充 + 浅色描边的"空心胶囊"，移动端改为实心主色，
+     与页面上选中的日期按钮保持一致（桌面端保留组件库默认样式） */
+  [data-admin-data] [data-slot="tabs-trigger"][data-active] {
+    border-color: transparent;
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow: none;
+  }
 }

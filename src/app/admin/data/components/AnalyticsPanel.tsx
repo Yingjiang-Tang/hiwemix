@@ -17,6 +17,7 @@ import {
   Users,
 } from "lucide-react";
 import type { AnalyticsRankItem, AnalyticsSummary } from "@/types";
+import { cn } from "@/lib/utils";
 
 const DAY_OPTIONS = [7, 14, 30, 90] as const;
 
@@ -30,18 +31,27 @@ function StatCard({
   label,
   value,
   hint,
+  className,
 }: {
   icon: typeof Users;
   label: string;
   value: string | number;
   hint?: string;
+  className?: string;
 }) {
+  // 手机上卡片内容区很窄，把「（14天）」整体作为不可断行的一段，避免断在数字与「天）」之间
+  const parenIndex = label.indexOf("（");
+  const labelMain = parenIndex === -1 ? label : label.slice(0, parenIndex);
+  const labelNote = parenIndex === -1 ? "" : label.slice(parenIndex);
   return (
-    <Card className="border-border bg-card">
+    <Card className={cn("border-border bg-card", className)}>
       <CardContent className="pt-5 pb-[30px]">
         <div className="-mt-[10px] flex items-center gap-2 text-muted-foreground">
           <Icon className="size-4" />
-          <span className="text-[15px] font-medium">{label}</span>
+          <span className="text-[15px] font-medium">
+            {labelMain}
+            {labelNote && <span className="whitespace-nowrap">{labelNote}</span>}
+          </span>
         </div>
         <p className="mt-2 text-left text-[29px] font-semibold text-foreground">{value}</p>
         {hint && <p className="mt-1 text-left text-xs text-muted-foreground">{hint}</p>}
@@ -162,7 +172,7 @@ export default function AnalyticsPanel() {
       )}
 
       <Tabs defaultValue="usage">
-        <TabsList className="h-auto w-full justify-start gap-1 rounded-lg p-1 max-md:grid max-md:grid-cols-3">
+        <TabsList className="h-auto w-full justify-start gap-1 rounded-lg p-1 max-md:grid max-md:grid-cols-3 max-md:bg-transparent max-md:p-0">
           <TabsTrigger value="usage" className="max-md:min-h-11">使用分析</TabsTrigger>
           <TabsTrigger value="search-quality" className="max-md:min-h-11">搜索质量</TabsTrigger>
           <TabsTrigger value="mixing" className="max-md:min-h-11">调漆运营</TabsTrigger>
@@ -172,7 +182,8 @@ export default function AnalyticsPanel() {
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
             <StatCard icon={Users} label={`独立访客（${days}天）`} value={data?.uniqueVisitors ?? 0} hint="按匿名 visitor_id 去重" />
             <StatCard icon={Eye} label={`页面访问（${days}天）`} value={data?.eventTypeCounts?.page_view ?? 0} />
-            <StatCard icon={Search} label={`搜索次数（${days}天）`} value={data?.eventTypeCounts?.search ?? 0} />
+            {/* 手机端只有 2 列，第三张卡补满整行，避免右下留空 */}
+            <StatCard icon={Search} label={`搜索次数（${days}天）`} value={data?.eventTypeCounts?.search ?? 0} className="max-md:col-span-2" />
           </div>
 
           <Card className="border-border bg-card">
